@@ -141,7 +141,10 @@ func SetupRoutes() *gin.Engine {
 		flowRoutes.POST("/:id/reject", flowController.RejectTask)
 		flowRoutes.POST("/:id/goals", flowController.SubmitGoals)
 		flowRoutes.POST("/:id/review", flowController.InitiateReview)
-		flowRoutes.POST("/:id/execution-plan", flowController.SubmitExecutionPlan)
+		// 提交解决方案（第一步：方案审核）
+		flowRoutes.POST("/:id/solution", flowController.SubmitSolution)
+		// 提交执行计划+目标（第二步：计划审核）
+		flowRoutes.POST("/:id/execution-plan", flowController.SubmitExecutionPlanWithGoals)
 	}
 
 	// 审核会话路由

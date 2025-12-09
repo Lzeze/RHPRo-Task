@@ -21,7 +21,7 @@ func NewTaskFlowController() *TaskFlowController {
 
 // AcceptTask 接受任务
 // @Summary 接受任务
-// @Description 执行人接受被指派的任务
+// @Description 执行人接受被指派的任务，需求类任务接受后进入待提交方案状态
 // @Tags 任务流程
 // @Accept json
 // @Produce json
@@ -36,7 +36,6 @@ func (ctrl *TaskFlowController) AcceptTask(c *gin.Context) {
 		return
 	}
 
-	// 从上下文获取用户ID
 	userIDValue, exists := c.Get("userID")
 	if !exists {
 		utils.Unauthorized(c, "未授权")
@@ -91,9 +90,89 @@ func (ctrl *TaskFlowController) RejectTask(c *gin.Context) {
 	utils.SuccessWithMessage(c, "任务已拒绝", nil)
 }
 
-// SubmitGoals 提交目标和方案
-// @Summary 提交目标和方案
-// @Description 执行人提交需求任务的目标和解决方案
+// SubmitSolution 提交解决方案
+// @Summary 提交解决方案
+// @Description 执行人提交需求任务的解决方案（不包含目标，目标将在执行计划阶段提交）
+// @Tags 任务流程
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "任务ID"
+// @Param request body dto.SubmitSolutionRequest true "解决方案"
+// @Success 200 {object} map[string]interface{} "提交成功"
+// @Router /tasks/{id}/solution [post]
+func (ctrl *TaskFlowController) SubmitSolution(c *gin.Context) {
+	taskID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		utils.BadRequest(c, "无效的任务ID")
+		return
+	}
+
+	var req dto.SubmitSolutionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.BadRequest(c, err.Error())
+		return
+	}
+
+	userIDValue, exists := c.Get("userID")
+	if !exists {
+		utils.Unauthorized(c, "未授权")
+		return
+	}
+	userID := userIDValue.(uint)
+
+	if err := ctrl.flowService.SubmitSolution(uint(taskID), userID, &req); err != nil {
+		utils.Error(c, 400, err.Error())
+		return
+	}
+
+	utils.SuccessWithMessage(c, "解决方案提交成功", nil)
+}
+
+// SubmitExecutionPlanWithGoals 提交执行计划和目标
+// @Summary 提交执行计划和目标
+// @Description 执行人提交需求任务的执行计划和目标（合并提交）
+// @Tags 任务流程
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "任务ID"
+// @Param request body dto.SubmitExecutionPlanWithGoalsRequest true "执行计划和目标"
+// @Success 200 {object} map[string]interface{} "提交成功"
+// @Router /tasks/{id}/execution-plan [post]
+func (ctrl *TaskFlowController) SubmitExecutionPlanWithGoals(c *gin.Context) {
+	taskID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		utils.BadRequest(c, "无效的任务ID")
+		return
+	}
+
+	var req dto.SubmitExecutionPlanWithGoalsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.BadRequest(c, err.Error())
+		return
+	}
+
+	userIDValue, exists := c.Get("userID")
+	if !exists {
+		utils.Unauthorized(c, "未授权")
+		return
+	}
+	userID := userIDValue.(uint)
+
+	if err := ctrl.flowService.SubmitExecutionPlanWithGoals(uint(taskID), userID, &req); err != nil {
+		utils.Error(c, 400, err.Error())
+		return
+	}
+
+	utils.SuccessWithMessage(c, "执行计划和目标提交成功", nil)
+}
+
+// ========== 已废弃的方法（保留用于兼容） ==========
+
+// SubmitGoals 提交目标和方案（已废弃）
+// @Summary 提交目标和方案（已废弃）
+// @Description 此接口已废弃，请使用 POST /tasks/{id}/solution 提交方案
 // @Tags 任务流程
 // @Accept json
 // @Produce json
@@ -101,6 +180,7 @@ func (ctrl *TaskFlowController) RejectTask(c *gin.Context) {
 // @Param id path int true "任务ID"
 // @Param request body dto.SubmitGoalsAndSolutionRequest true "目标和方案"
 // @Success 200 {object} map[string]interface{} "提交成功"
+// @Deprecated true
 // @Router /tasks/{id}/goals [post]
 func (ctrl *TaskFlowController) SubmitGoals(c *gin.Context) {
 	taskID, err := strconv.ParseUint(c.Param("id"), 10, 32)
@@ -122,17 +202,40 @@ func (ctrl *TaskFlowController) SubmitGoals(c *gin.Context) {
 	}
 	userID := userIDValue.(uint)
 
-	if err := ctrl.flowService.SubmitGoalsAndSolution(uint(taskID), userID, &req); err != nil {
+	// 转换为新方法
+	newReq := &dto.SubmitSolutionRequest{
+		Solution: req.Solution,
+	}
+
+	if err := ctrl.flowService.SubmitSolution(uint(taskID), userID, newReq); err != nil {
 		utils.Error(c, 400, err.Error())
 		return
 	}
 
-	utils.SuccessWithMessage(c, "思路方案提交成功", nil)
+	utils.SuccessWithMessage(c, "方案提交成功（注意：此接口已废弃，目标需在执行计划阶段提交）", nil)
 }
+
+// SubmitExecutionPlan 提交执行计划（已废弃）
+// @Summary 提交执行计划（已废弃）
+// @Description 此接口已废弃，请使用 POST /tasks/{id}/execution-plan 同时提交执行计划和目标
+// @Tags 任务流程
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "任务ID"
+// @Param request body dto.SubmitExecutionPlanRequest true "执行计划"
+// @Success 200 {object} map[string]interface{} "提交成功"
+// @Deprecated true
+// @Router /tasks/{id}/plan [post]
+func (ctrl *TaskFlowController) SubmitExecutionPlan(c *gin.Context) {
+	utils.Error(c, 400, "此接口已废弃，请使用 POST /tasks/{id}/execution-plan 同时提交执行计划和目标")
+}
+
+// ========== 以下方法保持不变 ==========
 
 // InitiateReview 发起审核
 // @Summary 发起审核
-// @Description 创建人发起目标或计划审核
+// @Description 创建人发起方案或执行计划审核
 // @Tags 任务流程
 // @Accept json
 // @Produce json
@@ -350,43 +453,4 @@ func (ctrl *TaskFlowController) RemoveJuryMember(c *gin.Context) {
 	}
 
 	utils.SuccessWithMessage(c, "陪审团成员已移除", nil)
-}
-
-// SubmitExecutionPlan 提交执行计划
-// @Summary 提交执行计划
-// @Description 执行人提交需求任务的执行计划
-// @Tags 任务流程
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Param id path int true "任务ID"
-// @Param request body dto.SubmitExecutionPlanRequest true "执行计划"
-// @Success 200 {object} map[string]interface{} "提交成功"
-// @Router /tasks/{id}/execution-plan [post]
-func (ctrl *TaskFlowController) SubmitExecutionPlan(c *gin.Context) {
-	taskID, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		utils.BadRequest(c, "无效的任务ID")
-		return
-	}
-
-	var req dto.SubmitExecutionPlanRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.BadRequest(c, err.Error())
-		return
-	}
-
-	userIDValue, exists := c.Get("userID")
-	if !exists {
-		utils.Unauthorized(c, "未授权")
-		return
-	}
-	userID := userIDValue.(uint)
-
-	if err := ctrl.flowService.SubmitExecutionPlan(uint(taskID), userID, &req); err != nil {
-		utils.Error(c, 400, err.Error())
-		return
-	}
-
-	utils.SuccessWithMessage(c, "执行计划提交成功", nil)
 }

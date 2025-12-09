@@ -25,10 +25,41 @@ type SolutionItem struct {
 	FileName   string `json:"file_name"`
 }
 
-// SubmitGoalsAndSolutionRequest 提交目标和方案请求
+// SubmitSolutionRequest 提交方案请求（只提交方案，不包含目标）
+type SubmitSolutionRequest struct {
+	Solution SolutionItem `json:"solution" binding:"required"`
+}
+
+// SubmitExecutionPlanWithGoalsRequest 提交执行计划+目标请求（合并提交）
+type SubmitExecutionPlanWithGoalsRequest struct {
+	// 目标列表（至少一个）
+	Goals []GoalItem `json:"goals" binding:"required,min=1,dive"`
+	// 技术栈
+	TechStack string `json:"tech_stack" binding:"required"`
+	// 实施步骤
+	ImplementationSteps map[string]interface{} `json:"implementation_steps" binding:"required"`
+	// 资源需求
+	ResourceRequirements string `json:"resource_requirements"`
+	// 风险评估
+	RiskAssessment string `json:"risk_assessment"`
+}
+
+// ========== 保留原有的 DTO（兼容性）==========
+
+// SubmitGoalsAndSolutionRequest 提交目标和方案请求（已废弃，保留用于兼容）
+// Deprecated: 使用 SubmitSolutionRequest 替代
 type SubmitGoalsAndSolutionRequest struct {
 	Goals    []GoalItem   `json:"goals" binding:"required,min=1,dive"`
 	Solution SolutionItem `json:"solution" binding:"required"`
+}
+
+// SubmitExecutionPlanRequest 提交执行计划请求（已废弃，保留用于兼容）
+// Deprecated: 使用 SubmitExecutionPlanWithGoalsRequest 替代
+type SubmitExecutionPlanRequest struct {
+	TechStack            string                 `json:"tech_stack" binding:"required"`
+	ImplementationSteps  map[string]interface{} `json:"implementation_steps" binding:"required"`
+	ResourceRequirements string                 `json:"resource_requirements"`
+	RiskAssessment       string                 `json:"risk_assessment"`
 }
 
 // InitiateReviewRequest 发起审核请求
@@ -85,12 +116,4 @@ type ReviewRecordResponse struct {
 type InviteJuryRequest struct {
 	JuryMemberIDs     []uint `json:"jury_member_ids" binding:"required,min=1"`
 	RequiredApprovals int    `json:"required_approvals" binding:"required,min=1"`
-}
-
-// SubmitExecutionPlanRequest 提交执行计划请求
-type SubmitExecutionPlanRequest struct {
-	TechStack            string                 `json:"tech_stack" binding:"required"`
-	ImplementationSteps  map[string]interface{} `json:"implementation_steps" binding:"required"`
-	ResourceRequirements string                 `json:"resource_requirements"`
-	RiskAssessment       string                 `json:"risk_assessment"`
 }

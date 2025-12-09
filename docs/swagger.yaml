@@ -198,6 +198,32 @@ definitions:
     - implementation_steps
     - tech_stack
     type: object
+  dto.SubmitExecutionPlanWithGoalsRequest:
+    properties:
+      goals:
+        description: 目标列表（至少一个）
+        items:
+          $ref: '#/definitions/dto.GoalItem'
+        minItems: 1
+        type: array
+      implementation_steps:
+        additionalProperties: true
+        description: 实施步骤
+        type: object
+      resource_requirements:
+        description: 资源需求
+        type: string
+      risk_assessment:
+        description: 风险评估
+        type: string
+      tech_stack:
+        description: 技术栈
+        type: string
+    required:
+    - goals
+    - implementation_steps
+    - tech_stack
+    type: object
   dto.SubmitGoalsAndSolutionRequest:
     properties:
       goals:
@@ -225,6 +251,13 @@ definitions:
         type: integer
     required:
     - opinion
+    type: object
+  dto.SubmitSolutionRequest:
+    properties:
+      solution:
+        $ref: '#/definitions/dto.SolutionItem'
+    required:
+    - solution
     type: object
   dto.TaskDetailResponse:
     properties:
@@ -421,6 +454,9 @@ definitions:
         type: integer
       root_task_id:
         type: integer
+      solution_deadline:
+        description: 思路方案截止时间（可选，仅需求类任务适用）
+        type: string
       split_from_plan_id:
         type: integer
       status:
@@ -1181,7 +1217,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: 执行人接受被指派的任务
+      description: 执行人接受被指派的任务，需求类任务接受后进入待提交方案状态
       parameters:
       - description: 任务ID
         in: path
@@ -1250,19 +1286,19 @@ paths:
     post:
       consumes:
       - application/json
-      description: 执行人提交需求任务的执行计划
+      description: 执行人提交需求任务的执行计划和目标（合并提交）
       parameters:
       - description: 任务ID
         in: path
         name: id
         required: true
         type: integer
-      - description: 执行计划
+      - description: 执行计划和目标
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/dto.SubmitExecutionPlanRequest'
+          $ref: '#/definitions/dto.SubmitExecutionPlanWithGoalsRequest'
       produces:
       - application/json
       responses:
@@ -1273,14 +1309,15 @@ paths:
             type: object
       security:
       - BearerAuth: []
-      summary: 提交执行计划
+      summary: 提交执行计划和目标
       tags:
       - 任务流程
   /tasks/{id}/goals:
     post:
       consumes:
       - application/json
-      description: 执行人提交需求任务的目标和解决方案
+      deprecated: true
+      description: 此接口已废弃，请使用 POST /tasks/{id}/solution 提交方案
       parameters:
       - description: 任务ID
         in: path
@@ -1303,7 +1340,38 @@ paths:
             type: object
       security:
       - BearerAuth: []
-      summary: 提交目标和方案
+      summary: 提交目标和方案（已废弃）
+      tags:
+      - 任务流程
+  /tasks/{id}/plan:
+    post:
+      consumes:
+      - application/json
+      deprecated: true
+      description: 此接口已废弃，请使用 POST /tasks/{id}/execution-plan 同时提交执行计划和目标
+      parameters:
+      - description: 任务ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 执行计划
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SubmitExecutionPlanRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 提交成功
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 提交执行计划（已废弃）
       tags:
       - 任务流程
   /tasks/{id}/reject:
@@ -1340,7 +1408,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: 创建人发起目标或计划审核
+      description: 创建人发起方案或执行计划审核
       parameters:
       - description: 任务ID
         in: path
@@ -1364,6 +1432,36 @@ paths:
       security:
       - BearerAuth: []
       summary: 发起审核
+      tags:
+      - 任务流程
+  /tasks/{id}/solution:
+    post:
+      consumes:
+      - application/json
+      description: 执行人提交需求任务的解决方案（不包含目标，目标将在执行计划阶段提交）
+      parameters:
+      - description: 任务ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 解决方案
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SubmitSolutionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 提交成功
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 提交解决方案
       tags:
       - 任务流程
   /tasks/{id}/transit:

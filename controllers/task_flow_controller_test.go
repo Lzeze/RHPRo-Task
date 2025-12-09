@@ -207,47 +207,6 @@ func TestInitiateReview_InvalidInput(t *testing.T) {
 	assert.Equal(t, 400, resp.Code)
 }
 
-// TestSubmitExecutionPlan_Success 测试提交执行计划
-func TestSubmitExecutionPlan_Success(t *testing.T) {
-	router := testutils.SetupTestRouterWithAuth(1, "executor")
-	flowController := NewTaskFlowController()
-	router.POST("/api/v1/tasks/:id/execution-plan", flowController.SubmitExecutionPlan)
-
-	reqBody := dto.SubmitExecutionPlanRequest{
-		TechStack: "Go + PostgreSQL",
-		ImplementationSteps: map[string]interface{}{
-			"step1": "设计数据库",
-			"step2": "实现API",
-			"step3": "测试",
-		},
-		ResourceRequirements: "2名开发人员",
-		RiskAssessment:       "低风险",
-	}
-
-	w := testutils.HTTPRequest(router, "POST", "/api/v1/tasks/1/execution-plan", reqBody)
-	assert.Equal(t, http.StatusOK, w.Code)
-
-	resp, err := testutils.ParseResponse(w)
-	assert.NoError(t, err)
-	assert.True(t, resp.Code == 0 || resp.Code == 400 || resp.Code == 500)
-}
-
-// TestSubmitExecutionPlan_InvalidInput 测试提交执行计划无效输入
-func TestSubmitExecutionPlan_InvalidInput(t *testing.T) {
-	router := testutils.SetupTestRouterWithAuth(1, "executor")
-	flowController := NewTaskFlowController()
-	router.POST("/api/v1/tasks/:id/execution-plan", flowController.SubmitExecutionPlan)
-
-	reqBody := dto.SubmitExecutionPlanRequest{
-		TechStack: "", // 空技术栈
-	}
-
-	w := testutils.HTTPRequest(router, "POST", "/api/v1/tasks/1/execution-plan", reqBody)
-	resp, err := testutils.ParseResponse(w)
-	assert.NoError(t, err)
-	assert.Equal(t, 400, resp.Code)
-}
-
 // TestGetReviewSession_Success 测试获取审核会话
 func TestGetReviewSession_Success(t *testing.T) {
 	router := testutils.SetupTestRouterWithAuth(1, "admin")
@@ -462,5 +421,220 @@ func TestRemoveJuryMember_InvalidMemberID(t *testing.T) {
 	router.DELETE("/api/v1/review-sessions/:sessionId/jury/:juryMemberId", flowController.RemoveJuryMember)
 
 	w := testutils.HTTPRequest(router, "DELETE", "/api/v1/review-sessions/1/jury/invalid", nil)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+// ========== 新接口测试：提交方案 ==========
+
+// TestSubmitSolution_Success 测试提交方案成功
+func TestSubmitSolution_Success(t *testing.T) {
+	router := testutils.SetupTestRouterWithAuth(1, "executor")
+	flowController := NewTaskFlowController()
+	router.POST("/api/v1/tasks/:id/solution", flowController.SubmitSolution)
+
+	reqBody := dto.SubmitSolutionRequest{
+		Solution: dto.SolutionItem{
+			Content:    "使用微服务架构实现系统",
+			MindmapURL: "https://example.com/mindmap.png",
+			FileName:   "solution.xmind",
+		},
+	}
+
+	w := testutils.HTTPRequest(router, "POST", "/api/v1/tasks/1/solution", reqBody)
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	resp, err := testutils.ParseResponse(w)
+	assert.NoError(t, err)
+	assert.True(t, resp.Code == 0 || resp.Code == 400 || resp.Code == 500,
+		"Response code should be 0, 400 or 500, got %d", resp.Code)
+}
+
+// TestSubmitSolution_InvalidInput 测试提交方案无效输入
+func TestSubmitSolution_InvalidInput(t *testing.T) {
+	router := testutils.SetupTestRouterWithAuth(1, "executor")
+	flowController := NewTaskFlowController()
+	router.POST("/api/v1/tasks/:id/solution", flowController.SubmitSolution)
+
+	reqBody := dto.SubmitSolutionRequest{
+		Solution: dto.SolutionItem{
+			Content: "", // 空内容
+		},
+	}
+
+	w := testutils.HTTPRequest(router, "POST", "/api/v1/tasks/1/solution", reqBody)
+	resp, err := testutils.ParseResponse(w)
+	assert.NoError(t, err)
+	assert.Equal(t, 400, resp.Code)
+}
+
+// TestSubmitSolution_InvalidID 测试提交方案无效任务ID
+func TestSubmitSolution_InvalidID(t *testing.T) {
+	router := testutils.SetupTestRouterWithAuth(1, "executor")
+	flowController := NewTaskFlowController()
+	router.POST("/api/v1/tasks/:id/solution", flowController.SubmitSolution)
+
+	reqBody := dto.SubmitSolutionRequest{
+		Solution: dto.SolutionItem{
+			Content: "测试方案",
+		},
+	}
+
+	w := testutils.HTTPRequest(router, "POST", "/api/v1/tasks/invalid/solution", reqBody)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+// TestSubmitSolution_WrongStatus 测试在错误状态提交方案
+func TestSubmitSolution_WrongStatus(t *testing.T) {
+	router := testutils.SetupTestRouterWithAuth(1, "executor")
+	flowController := NewTaskFlowController()
+	router.POST("/api/v1/tasks/:id/solution", flowController.SubmitSolution)
+
+	reqBody := dto.SubmitSolutionRequest{
+		Solution: dto.SolutionItem{
+			Content: "测试方案",
+		},
+	}
+
+	// 假设任务ID=999的任务不在正确的状态
+	w := testutils.HTTPRequest(router, "POST", "/api/v1/tasks/999/solution", reqBody)
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	resp, err := testutils.ParseResponse(w)
+	assert.NoError(t, err)
+	// 应该返回状态错误
+	assert.True(t, resp.Code == 400 || resp.Code == 500)
+}
+
+// ========== 新接口测试：提交执行计划+目标 ==========
+
+// TestSubmitExecutionPlanWithGoals_Success 测试提交执行计划+目标成功
+func TestSubmitExecutionPlanWithGoals_Success(t *testing.T) {
+	router := testutils.SetupTestRouterWithAuth(1, "executor")
+	flowController := NewTaskFlowController()
+	router.POST("/api/v1/tasks/:id/execution-plan", flowController.SubmitExecutionPlanWithGoals)
+
+	reqBody := dto.SubmitExecutionPlanWithGoalsRequest{
+		Goals: []dto.GoalItem{
+			{
+				Title:           "实现用户认证模块",
+				Description:     "完成用户登录、注册、密码重置功能",
+				SuccessCriteria: "所有功能测试通过，性能达标",
+				Priority:        1,
+			},
+			{
+				Title:           "实现权限管理",
+				Description:     "完成角色权限分配功能",
+				SuccessCriteria: "权限控制准确，无越权访问",
+				Priority:        2,
+			},
+		},
+		TechStack: "Go + PostgreSQL + Redis",
+		ImplementationSteps: map[string]interface{}{
+			"step1": "设计数据库表结构",
+			"step2": "实现认证中间件",
+			"step3": "开发API接口",
+			"step4": "编写单元测试",
+		},
+		ResourceRequirements: "2名开发人员，1周时间",
+		RiskAssessment:       "技术风险低，进度风险中等",
+	}
+
+	w := testutils.HTTPRequest(router, "POST", "/api/v1/tasks/1/execution-plan", reqBody)
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	resp, err := testutils.ParseResponse(w)
+	assert.NoError(t, err)
+	assert.True(t, resp.Code == 0 || resp.Code == 400 || resp.Code == 500,
+		"Response code should be 0, 400 or 500, got %d", resp.Code)
+}
+
+// TestSubmitExecutionPlanWithGoals_NoGoals 测试提交计划时没有目标
+func TestSubmitExecutionPlanWithGoals_NoGoals(t *testing.T) {
+	router := testutils.SetupTestRouterWithAuth(1, "executor")
+	flowController := NewTaskFlowController()
+	router.POST("/api/v1/tasks/:id/execution-plan", flowController.SubmitExecutionPlanWithGoals)
+
+	reqBody := dto.SubmitExecutionPlanWithGoalsRequest{
+		Goals:     []dto.GoalItem{}, // 空目标列表
+		TechStack: "Go + PostgreSQL",
+		ImplementationSteps: map[string]interface{}{
+			"step1": "测试",
+		},
+	}
+
+	w := testutils.HTTPRequest(router, "POST", "/api/v1/tasks/1/execution-plan", reqBody)
+	resp, err := testutils.ParseResponse(w)
+	assert.NoError(t, err)
+	assert.Equal(t, 400, resp.Code) // 验证失败
+}
+
+// TestSubmitExecutionPlanWithGoals_InvalidGoal 测试提交计划时目标数据无效
+func TestSubmitExecutionPlanWithGoals_InvalidGoal(t *testing.T) {
+	router := testutils.SetupTestRouterWithAuth(1, "executor")
+	flowController := NewTaskFlowController()
+	router.POST("/api/v1/tasks/:id/execution-plan", flowController.SubmitExecutionPlanWithGoals)
+
+	reqBody := dto.SubmitExecutionPlanWithGoalsRequest{
+		Goals: []dto.GoalItem{
+			{
+				Title:       "", // 空标题
+				Description: "描述",
+			},
+		},
+		TechStack: "Go",
+		ImplementationSteps: map[string]interface{}{
+			"step1": "测试",
+		},
+	}
+
+	w := testutils.HTTPRequest(router, "POST", "/api/v1/tasks/1/execution-plan", reqBody)
+	resp, err := testutils.ParseResponse(w)
+	assert.NoError(t, err)
+	assert.Equal(t, 400, resp.Code)
+}
+
+// TestSubmitExecutionPlanWithGoals_InvalidSteps 测试提交计划时步骤无效
+func TestSubmitExecutionPlanWithGoals_InvalidSteps(t *testing.T) {
+	router := testutils.SetupTestRouterWithAuth(1, "executor")
+	flowController := NewTaskFlowController()
+	router.POST("/api/v1/tasks/:id/execution-plan", flowController.SubmitExecutionPlanWithGoals)
+
+	reqBody := dto.SubmitExecutionPlanWithGoalsRequest{
+		Goals: []dto.GoalItem{
+			{
+				Title:       "目标",
+				Description: "描述",
+			},
+		},
+		TechStack:           "Go",
+		ImplementationSteps: nil, // 空步骤
+	}
+
+	w := testutils.HTTPRequest(router, "POST", "/api/v1/tasks/1/execution-plan", reqBody)
+	resp, err := testutils.ParseResponse(w)
+	assert.NoError(t, err)
+	assert.Equal(t, 400, resp.Code)
+}
+
+// TestSubmitExecutionPlanWithGoals_InvalidID 测试提交计划时任务ID无效
+func TestSubmitExecutionPlanWithGoals_InvalidID(t *testing.T) {
+	router := testutils.SetupTestRouterWithAuth(1, "executor")
+	flowController := NewTaskFlowController()
+	router.POST("/api/v1/tasks/:id/execution-plan", flowController.SubmitExecutionPlanWithGoals)
+
+	reqBody := dto.SubmitExecutionPlanWithGoalsRequest{
+		Goals: []dto.GoalItem{
+			{
+				Title:       "目标",
+				Description: "描述",
+			},
+		},
+		TechStack: "Go",
+		ImplementationSteps: map[string]interface{}{
+			"step1": "测试",
+		},
+	}
+
+	w := testutils.HTTPRequest(router, "POST", "/api/v1/tasks/invalid/execution-plan", reqBody)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }

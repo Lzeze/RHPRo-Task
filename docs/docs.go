@@ -1263,7 +1263,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "执行人接受被指派的任务",
+                "description": "执行人接受被指派的任务，需求类任务接受后进入待提交方案状态",
                 "consumes": [
                     "application/json"
                 ],
@@ -1369,7 +1369,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "执行人提交需求任务的执行计划",
+                "description": "执行人提交需求任务的执行计划和目标（合并提交）",
                 "consumes": [
                     "application/json"
                 ],
@@ -1379,7 +1379,7 @@ const docTemplate = `{
                 "tags": [
                     "任务流程"
                 ],
-                "summary": "提交执行计划",
+                "summary": "提交执行计划和目标",
                 "parameters": [
                     {
                         "type": "integer",
@@ -1389,12 +1389,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "执行计划",
+                        "description": "执行计划和目标",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.SubmitExecutionPlanRequest"
+                            "$ref": "#/definitions/dto.SubmitExecutionPlanWithGoalsRequest"
                         }
                     }
                 ],
@@ -1416,7 +1416,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "执行人提交需求任务的目标和解决方案",
+                "description": "此接口已废弃，请使用 POST /tasks/{id}/solution 提交方案",
                 "consumes": [
                     "application/json"
                 ],
@@ -1426,7 +1426,8 @@ const docTemplate = `{
                 "tags": [
                     "任务流程"
                 ],
-                "summary": "提交目标和方案",
+                "summary": "提交目标和方案（已废弃）",
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "integer",
@@ -1442,6 +1443,54 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/dto.SubmitGoalsAndSolutionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "提交成功",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/tasks/{id}/plan": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "此接口已废弃，请使用 POST /tasks/{id}/execution-plan 同时提交执行计划和目标",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "任务流程"
+                ],
+                "summary": "提交执行计划（已废弃）",
+                "deprecated": true,
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "任务ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "执行计划",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SubmitExecutionPlanRequest"
                         }
                     }
                 ],
@@ -1510,7 +1559,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "创建人发起目标或计划审核",
+                "description": "创建人发起方案或执行计划审核",
                 "consumes": [
                     "application/json"
                 ],
@@ -1542,6 +1591,53 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "审核发起成功",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/tasks/{id}/solution": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "执行人提交需求任务的解决方案（不包含目标，目标将在执行计划阶段提交）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "任务流程"
+                ],
+                "summary": "提交解决方案",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "任务ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "解决方案",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SubmitSolutionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "提交成功",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -2329,6 +2425,41 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.SubmitExecutionPlanWithGoalsRequest": {
+            "type": "object",
+            "required": [
+                "goals",
+                "implementation_steps",
+                "tech_stack"
+            ],
+            "properties": {
+                "goals": {
+                    "description": "目标列表（至少一个）",
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/dto.GoalItem"
+                    }
+                },
+                "implementation_steps": {
+                    "description": "实施步骤",
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "resource_requirements": {
+                    "description": "资源需求",
+                    "type": "string"
+                },
+                "risk_assessment": {
+                    "description": "风险评估",
+                    "type": "string"
+                },
+                "tech_stack": {
+                    "description": "技术栈",
+                    "type": "string"
+                }
+            }
+        },
         "dto.SubmitGoalsAndSolutionRequest": {
             "type": "object",
             "required": [
@@ -2367,6 +2498,17 @@ const docTemplate = `{
                 },
                 "score": {
                     "type": "integer"
+                }
+            }
+        },
+        "dto.SubmitSolutionRequest": {
+            "type": "object",
+            "required": [
+                "solution"
+            ],
+            "properties": {
+                "solution": {
+                    "$ref": "#/definitions/dto.SolutionItem"
                 }
             }
         },
@@ -2662,6 +2804,10 @@ const docTemplate = `{
                 },
                 "root_task_id": {
                     "type": "integer"
+                },
+                "solution_deadline": {
+                    "description": "思路方案截止时间（可选，仅需求类任务适用）",
+                    "type": "string"
                 },
                 "split_from_plan_id": {
                     "type": "integer"

@@ -160,8 +160,8 @@ func (s *TaskFlowService) RejectTask(taskID uint, userID uint, req *dto.RejectTa
 	return nil
 }
 
-// SubmitGoalsAndSolution 提交目标和方案
-func (s *TaskFlowService) SubmitGoalsAndSolution(taskID uint, userID uint, req *dto.SubmitGoalsAndSolutionRequest) error {
+// SubmitSolution 提交思路方案
+func (s *TaskFlowService) SubmitSolution(taskID uint, userID uint, req *dto.SubmitSolutionRequest) error {
 	var task models.Task
 	if err := database.DB.First(&task, taskID).Error; err != nil {
 		return errors.New("任务不存在")
@@ -169,12 +169,12 @@ func (s *TaskFlowService) SubmitGoalsAndSolution(taskID uint, userID uint, req *
 
 	// 验证是否为执行人
 	if task.ExecutorID == nil || *task.ExecutorID != userID {
-		return errors.New("只有执行人可以提交目标和方案")
+		return errors.New("只有执行人可以提交方案")
 	}
 
-	// 验证当前状态（允许 req_pending_goal 和 req_goal_rejected）
-	if task.StatusCode != "req_pending_goal" && task.StatusCode != "req_goal_rejected" {
-		return errors.New("当前状态无法提交目标和方案")
+	// 验证当前状态（允许 req_pending_solution 和 req_solution_rejected）
+	if task.StatusCode != "req_pending_solution" && task.StatusCode != "req_solution_rejected" {
+		return errors.New("当前状态无法提交方案")
 	}
 
 	// 开启事务
@@ -194,31 +194,7 @@ func (s *TaskFlowService) SubmitGoalsAndSolution(taskID uint, userID uint, req *
 
 	newVersion := maxVersion + 1
 
-	// 删除该版本的旧目标记录（如果是重新提交）
-	if newVersion > 1 {
-		tx.Where("task_id = ? AND status = ?", taskID, "pending").
-			Delete(&models.RequirementGoal{})
-	}
-
-	// 创建目标记录
-	for i, goalItem := range req.Goals {
-		goal := &models.RequirementGoal{
-			TaskID:          taskID,
-			GoalNo:          i + 1,
-			Title:           goalItem.Title,
-			Description:     goalItem.Description,
-			SuccessCriteria: goalItem.SuccessCriteria,
-			Priority:        goalItem.Priority,
-			Status:          "pending",
-			SortOrder:       i + 1,
-		}
-		if err := tx.Create(goal).Error; err != nil {
-			tx.Rollback()
-			return err
-		}
-	}
-
-	// 创建方案记录（使用新版本号）
+	// 创建方案记录
 	now := time.Now()
 	solution := &models.RequirementSolution{
 		TaskID:      taskID,
@@ -235,17 +211,17 @@ func (s *TaskFlowService) SubmitGoalsAndSolution(taskID uint, userID uint, req *
 		return err
 	}
 
-	// 更新任务状态
-	if err := tx.Model(&task).Update("status_code", "req_goal_review").Error; err != nil {
+	// 更新任务状态为方案审核中
+	if err := tx.Model(&task).Update("status_code", "req_solution_review").Error; err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	// 自动发起单人审核
+	// 自动发起单人审核（创建人审核）
 	now2 := time.Now()
 	reviewSession := &models.ReviewSession{
 		TaskID:            taskID,
-		ReviewType:        "goal_solution_review",
+		ReviewType:        "solution_review",
 		TargetType:        "requirement_solutions",
 		TargetID:          solution.ID,
 		InitiatedBy:       userID,
@@ -263,15 +239,24 @@ func (s *TaskFlowService) SubmitGoalsAndSolution(taskID uint, userID uint, req *
 	changeLog := &models.TaskChangeLog{
 		TaskID:     taskID,
 		UserID:     userID,
-		ChangeType: "goals_submitted",
+		ChangeType: "solution_submitted",
 		FieldName:  "status_code",
 		OldValue:   task.StatusCode,
-		NewValue:   "req_goal_review",
-		Comment:    fmt.Sprintf("提交了目标和方案（版本 v%d），自动发起单人审核", newVersion),
+		NewValue:   "req_solution_review",
+		Comment:    fmt.Sprintf("提交了解决方案（版本 v%d），自动发起单人审核", newVersion),
 	}
 	tx.Create(changeLog)
 
 	return tx.Commit().Error
+}
+
+// SubmitGoalsAndSolution 提交目标和方案(已废弃)
+// Deprecated: 使用 SubmitExecutionPlanWithGoals 替代
+func (s *TaskFlowService) SubmitGoalsAndSolution(taskID uint, userID uint, req *dto.SubmitGoalsAndSolutionRequest) error {
+	newReq := &dto.SubmitSolutionRequest{
+		Solution: req.Solution,
+	}
+	return s.SubmitSolution(taskID, userID, newReq)
 }
 
 // InitiateReview 发起审核
@@ -688,7 +673,8 @@ func (s *TaskFlowService) RemoveJuryMember(sessionID uint, userID uint, juryMemb
 	return nil
 }
 
-// SubmitExecutionPlan 提交执行计划
+// SubmitExecutionPlan 提交执行计划(已废弃)
+// Deprecated: 使用 SubmitExecutionPlanWithGoals 替代
 func (s *TaskFlowService) SubmitExecutionPlan(taskID uint, userID uint, req *dto.SubmitExecutionPlanRequest) error {
 	var task models.Task
 	if err := database.DB.First(&task, taskID).Error; err != nil {
@@ -780,6 +766,122 @@ func (s *TaskFlowService) SubmitExecutionPlan(taskID uint, userID uint, req *dto
 		OldValue:   task.StatusCode,
 		NewValue:   "req_plan_review",
 		Comment:    fmt.Sprintf("提交了执行计划（版本 v%d），自动发起单人审核", newVersion),
+	}
+	tx.Create(changeLog)
+
+	return tx.Commit().Error
+}
+
+// SubmitExecutionPlanWithGoals 提交执行计划和目标（合并提交）
+func (s *TaskFlowService) SubmitExecutionPlanWithGoals(taskID uint, userID uint, req *dto.SubmitExecutionPlanWithGoalsRequest) error {
+	var task models.Task
+	if err := database.DB.First(&task, taskID).Error; err != nil {
+		return errors.New("任务不存在")
+	}
+
+	// 验证是否为执行人
+	if task.ExecutorID == nil || *task.ExecutorID != userID {
+		return errors.New("只有执行人可以提交执行计划")
+	}
+
+	// 验证当前状态（允许 req_pending_plan 和 req_plan_rejected）
+	if task.StatusCode != "req_pending_plan" && task.StatusCode != "req_plan_rejected" {
+		return errors.New("当前状态无法提交执行计划")
+	}
+
+	// 开启事务
+	tx := database.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// 查询该任务的最大版本号
+	var maxVersion int
+	tx.Model(&models.ExecutionPlan{}).
+		Where("task_id = ?", taskID).
+		Select("COALESCE(MAX(version), 0)").
+		Scan(&maxVersion)
+
+	newVersion := maxVersion + 1
+
+	// 将实施步骤转换为 JSON
+	stepsJSON, err := json.Marshal(req.ImplementationSteps)
+	if err != nil {
+		tx.Rollback()
+		return errors.New("实施步骤格式错误")
+	}
+
+	// 创建执行计划记录
+	now := time.Now()
+	plan := &models.ExecutionPlan{
+		TaskID:               taskID,
+		Version:              newVersion,
+		TechStack:            req.TechStack,
+		ImplementationSteps:  stepsJSON,
+		ResourceRequirements: req.ResourceRequirements,
+		RiskAssessment:       req.RiskAssessment,
+		Status:               "pending",
+		SubmittedBy:          &userID,
+		SubmittedAt:          &now,
+	}
+	if err := tx.Create(plan).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// 创建目标记录（关联到执行计划）
+	for i, goalItem := range req.Goals {
+		goal := &models.RequirementGoal{
+			ExecutionPlanID: plan.ID, // 关联执行计划ID
+			GoalNo:          i + 1,
+			Title:           goalItem.Title,
+			Description:     goalItem.Description,
+			SuccessCriteria: goalItem.SuccessCriteria,
+			Priority:        goalItem.Priority,
+			Status:          "pending",
+			SortOrder:       i + 1,
+		}
+		if err := tx.Create(goal).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	// 更新任务状态为计划审核中
+	if err := tx.Model(&task).Update("status_code", "req_plan_review").Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// 自动发起单人审核（创建人审核）
+	now2 := time.Now()
+	reviewSession := &models.ReviewSession{
+		TaskID:            taskID,
+		ReviewType:        "execution_plan_review",
+		TargetType:        "execution_plans",
+		TargetID:          plan.ID,
+		InitiatedBy:       userID,
+		InitiatedAt:       now2,
+		Status:            "in_review",
+		ReviewMode:        "single",
+		RequiredApprovals: 1,
+	}
+	if err := tx.Create(reviewSession).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// 记录变更日志
+	changeLog := &models.TaskChangeLog{
+		TaskID:     taskID,
+		UserID:     userID,
+		ChangeType: "plan_submitted",
+		FieldName:  "status_code",
+		OldValue:   task.StatusCode,
+		NewValue:   "req_plan_review",
+		Comment:    fmt.Sprintf("提交了执行计划和目标（版本 v%d，包含 %d 个目标），自动发起单人审核", newVersion, len(req.Goals)),
 	}
 	tx.Create(changeLog)
 
