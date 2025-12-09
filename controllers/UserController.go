@@ -31,7 +31,7 @@ func NewUserController() *UserController {
 // @Failure 404 {object} map[string]interface{} "用户不存在"
 // @Router /users/profile [get]
 func (ctrl *UserController) GetProfile(c *gin.Context) {
-	userID, _ := c.Get("user_id")
+	userID, _ := c.Get("userID")
 
 	user, err := ctrl.userService.GetUserByID(userID.(uint))
 	if err != nil {

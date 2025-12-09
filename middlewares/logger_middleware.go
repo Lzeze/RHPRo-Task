@@ -55,7 +55,7 @@ func LoggerMiddleware() gin.HandlerFunc {
 		userAgent := c.Request.UserAgent()
 
 		// 获取用户ID（如果已登录）
-		userID, _ := c.Get("user_id")
+		userID, _ := c.Get("userID")
 
 		// 构建完整路径
 		fullPath := path

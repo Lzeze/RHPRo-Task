@@ -34,7 +34,7 @@ func NewTaskController() *TaskController {
 // @Router /tasks [post]
 func (ctrl *TaskController) CreateTask(c *gin.Context) {
 	// 获取当前用户ID
-	userID, exists := c.Get("user_id")
+	userID, exists := c.Get("userID")
 	if !exists {
 		utils.Error(c, 401, "未授权")
 		return
@@ -292,7 +292,7 @@ func (ctrl *TaskController) TransitStatus(c *gin.Context) {
 	}
 
 	// 获取当前用户ID
-	userID, exists := c.Get("user_id")
+	userID, exists := c.Get("userID")
 	if !exists {
 		utils.Error(c, 401, "未授权")
 		return

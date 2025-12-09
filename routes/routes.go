@@ -111,7 +111,7 @@ func SetupRoutes() *gin.Engine {
 
 	// 任务管理路由
 	taskRoutes := router.Group("/api/v1/tasks")
-	// taskRoutes.Use(middlewares.AuthMiddleware())
+	taskRoutes.Use(middlewares.AuthMiddleware())
 	{
 		// 任务 CRUD
 		taskRoutes.POST("", taskController.CreateTask)
