@@ -1,0 +1,77 @@
+{"level":"info","msg":"Starting application...","time":"2025-11-26 17:06:20"}
+{"level":"fatal","msg":"Failed to connect to database: failed to connect to `user=postgres database=gin_app`: 127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused","time":"2025-11-26 17:06:20"}
+{"level":"info","msg":"Starting application...","time":"2025-11-26 17:09:11"}
+{"level":"info","msg":"Server starting on :8080","time":"2025-11-26 17:09:11"}
+{"client_ip":"::1","latency":492,"level":"info","method":"GET","msg":"Request processed","path":"/","status_code":404,"time":"2025-11-26 17:11:53"}
+{"client_ip":"::1","latency":641,"level":"info","method":"GET","msg":"Request processed","path":"/favicon.ico","status_code":404,"time":"2025-11-26 17:11:55"}
+{"client_ip":"::1","latency":1464,"level":"info","method":"GET","msg":"Request processed","path":"/register","status_code":404,"time":"2025-11-26 17:12:00"}
+{"client_ip":"::1","latency":1159,"level":"info","method":"GET","msg":"Request processed","path":"/api/v1/register","status_code":404,"time":"2025-11-26 17:12:34"}
+{"client_ip":"::1","latency":630,"level":"info","method":"GET","msg":"Request processed","path":"/api/v1/register","status_code":404,"time":"2025-11-26 17:12:36"}
+{"client_ip":"::1","latency":49757,"level":"info","method":"GET","msg":"Request processed","path":"/api/v1/health","status_code":200,"time":"2025-11-26 17:13:10"}
+{"level":"info","msg":"Starting application...","time":"2025-11-26 17:13:32"}
+{"level":"info","msg":"Server starting on :8080","time":"2025-11-26 17:13:32"}
+{"level":"info","msg":"Starting application...","time":"2025-11-26 17:15:37"}
+{"level":"info","msg":"Server starting on :8080","time":"2025-11-26 17:15:37"}
+{"level":"info","msg":"Starting application...","time":"2025-11-26 17:20:47"}
+{"level":"info","msg":"Server starting on :8080","time":"2025-11-26 17:20:47"}
+{"level":"info","msg":"Starting application...","time":"2025-11-26 17:22:20"}
+{"level":"info","msg":"Server starting on :8080","time":"2025-11-26 17:22:20"}
+{"level":"info","msg":"Starting application...","time":"2025-11-26 17:24:07"}
+{"level":"info","msg":"Server starting on :8080","time":"2025-11-26 17:24:07"}
+{"client_ip":"::1","latency":162872,"level":"info","method":"GET","msg":"Request processed","path":"/api/v1/health","status_code":200,"time":"2025-11-26 17:25:49"}
+{"level":"info","msg":"Starting application...","time":"2025-11-26 17:28:03"}
+{"level":"info","msg":"Server starting on :8989","time":"2025-11-26 17:28:03"}
+{"level":"info","msg":"Starting application...","time":"2025-11-26 17:29:00"}
+{"level":"info","msg":"Server starting on :8989","time":"2025-11-26 17:29:00"}
+{"level":"info","msg":"Starting application...","time":"2025-11-26 17:30:39"}
+{"level":"info","msg":"value8686keySERVER_PORT","time":"2025-11-26 17:30:39"}
+{"level":"info","msg":"value5432keyDB_PORT","time":"2025-11-26 17:30:39"}
+{"level":"info","msg":"value6379keyREDIS_PORT","time":"2025-11-26 17:30:39"}
+{"level":"info","msg":"value0keyREDIS_DB","time":"2025-11-26 17:30:39"}
+{"level":"info","msg":"value24keyJWT_EXPIRE_HOURS","time":"2025-11-26 17:30:39"}
+{"level":"info","msg":"Server starting on :8686","time":"2025-11-26 17:30:39"}
+{"level":"info","msg":"Starting application...","time":"2025-11-26 17:31:00"}
+{"level":"info","msg":"value8888keySERVER_PORT","time":"2025-11-26 17:31:00"}
+{"level":"info","msg":"value5432keyDB_PORT","time":"2025-11-26 17:31:00"}
+{"level":"info","msg":"value6379keyREDIS_PORT","time":"2025-11-26 17:31:00"}
+{"level":"info","msg":"value0keyREDIS_DB","time":"2025-11-26 17:31:00"}
+{"level":"info","msg":"value24keyJWT_EXPIRE_HOURS","time":"2025-11-26 17:31:00"}
+{"level":"info","msg":"Server starting on :8888","time":"2025-11-26 17:31:00"}
+{"client_ip":"::1","latency":64145,"level":"info","method":"GET","msg":"Request processed","path":"/api/v1/health","status_code":200,"time":"2025-11-26 17:31:08"}
+{"client_ip":"::1","latency":350,"level":"info","method":"GET","msg":"Request processed","path":"/favicon.ico","status_code":404,"time":"2025-11-26 17:31:11"}
+{"level":"info","msg":"Starting application...","time":"2025-11-28 14:36:52"}
+{"level":"info","msg":"value8888keySERVER_PORT","time":"2025-11-28 14:38:49"}
+{"level":"info","msg":"value5432keyDB_PORT","time":"2025-11-28 14:38:50"}
+{"level":"info","msg":"value6379keyREDIS_PORT","time":"2025-11-28 14:38:50"}
+{"level":"info","msg":"value0keyREDIS_DB","time":"2025-11-28 14:38:50"}
+{"level":"info","msg":"value24keyJWT_EXPIRE_HOURS","time":"2025-11-28 14:38:50"}
+{"level":"info","msg":"Server starting on :8888","time":"2025-11-28 14:39:08"}
+{"level":"info","msg":"Starting application...","time":"2025-11-28 14:39:57"}
+{"level":"info","msg":"value8888keySERVER_PORT","time":"2025-11-28 14:39:57"}
+{"level":"info","msg":"value5432keyDB_PORT","time":"2025-11-28 14:39:57"}
+{"level":"info","msg":"value6379keyREDIS_PORT","time":"2025-11-28 14:39:57"}
+{"level":"info","msg":"value0keyREDIS_DB","time":"2025-11-28 14:39:57"}
+{"level":"info","msg":"value24keyJWT_EXPIRE_HOURS","time":"2025-11-28 14:39:57"}
+{"level":"info","msg":"Server starting on :8888","time":"2025-11-28 14:41:00"}
+{"level":"info","msg":"Starting application...","time":"2025-11-28 14:41:41"}
+{"level":"info","msg":"value8888keySERVER_PORT","time":"2025-11-28 14:41:41"}
+{"level":"info","msg":"value5432keyDB_PORT","time":"2025-11-28 14:41:41"}
+{"level":"info","msg":"value6379keyREDIS_PORT","time":"2025-11-28 14:41:41"}
+{"level":"info","msg":"value0keyREDIS_DB","time":"2025-11-28 14:41:41"}
+{"level":"info","msg":"value24keyJWT_EXPIRE_HOURS","time":"2025-11-28 14:41:41"}
+{"level":"info","msg":"Starting application...","time":"2025-12-01 14:31:58"}
+{"level":"info","msg":"value8888keySERVER_PORT","time":"2025-12-01 14:31:58"}
+{"level":"info","msg":"value5432keyDB_PORT","time":"2025-12-01 14:31:58"}
+{"level":"info","msg":"value6379keyREDIS_PORT","time":"2025-12-01 14:31:58"}
+{"level":"info","msg":"value0keyREDIS_DB","time":"2025-12-01 14:31:58"}
+{"level":"info","msg":"value24keyJWT_EXPIRE_HOURS","time":"2025-12-01 14:31:58"}
+{"level":"info","msg":"Database connected successfully","time":"2025-12-01 14:31:58"}
+{"level":"fatal","msg":"Failed to connect to Redis: dial tcp [::1]:6379: connect: connection refused","time":"2025-12-01 14:32:00"}
+{"level":"info","msg":"Starting application...","time":"2025-12-01 14:33:26"}
+{"level":"info","msg":"value8888keySERVER_PORT","time":"2025-12-01 14:33:26"}
+{"level":"info","msg":"value5432keyDB_PORT","time":"2025-12-01 14:33:26"}
+{"level":"info","msg":"value6379keyREDIS_PORT","time":"2025-12-01 14:33:26"}
+{"level":"info","msg":"value0keyREDIS_DB","time":"2025-12-01 14:33:26"}
+{"level":"info","msg":"value24keyJWT_EXPIRE_HOURS","time":"2025-12-01 14:33:26"}
+{"level":"info","msg":"Database connected successfully","time":"2025-12-01 14:33:26"}
+{"level":"info","msg":"Server starting on :8888","time":"2025-12-01 14:33:26"}

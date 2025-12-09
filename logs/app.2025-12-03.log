@@ -1,0 +1,94 @@
+{"level":"info","msg":"Starting application...","time":"2025-12-03 10:04:18"}
+{"level":"info","msg":"value8888keySERVER_PORT","time":"2025-12-03 10:04:18"}
+{"level":"info","msg":"value5432keyDB_PORT","time":"2025-12-03 10:04:18"}
+{"level":"info","msg":"value6379keyREDIS_PORT","time":"2025-12-03 10:04:18"}
+{"level":"info","msg":"value0keyREDIS_DB","time":"2025-12-03 10:04:18"}
+{"level":"info","msg":"value24keyJWT_EXPIRE_HOURS","time":"2025-12-03 10:04:18"}
+{"level":"info","msg":"Database connected successfully","time":"2025-12-03 10:04:18"}
+{"level":"info","msg":"Server starting on :8888","time":"2025-12-03 10:04:18"}
+{"client_ip":"::1","latency":636,"level":"info","method":"GET","msg":"Request processed","path":"/","status_code":404,"time":"2025-12-03 10:05:36"}
+{"client_ip":"::1","latency":328,"level":"info","method":"GET","msg":"Request processed","path":"/favicon.ico","status_code":404,"time":"2025-12-03 10:05:37"}
+{"client_ip":"::1","latency":361,"level":"info","method":"GET","msg":"Request processed","path":"/health","status_code":404,"time":"2025-12-03 10:05:42"}
+{"client_ip":"::1","latency":14933,"level":"info","method":"GET","msg":"Request processed","path":"/health","status_code":404,"time":"2025-12-03 10:05:52"}
+{"client_ip":"::1","latency":17134,"level":"info","method":"GET","msg":"Request processed","path":"/health","status_code":404,"time":"2025-12-03 10:05:54"}
+{"client_ip":"::1","latency":85491,"level":"info","method":"GET","msg":"Request processed","path":"/api/v1/health","status_code":200,"time":"2025-12-03 10:06:11"}
+{"client_ip":"::1","latency":107545,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/","status_code":404,"time":"2025-12-03 10:06:25"}
+{"client_ip":"::1","latency":16540,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/any","status_code":404,"time":"2025-12-03 10:06:29"}
+{"client_ip":"::1","latency":83084,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/api","status_code":404,"time":"2025-12-03 10:06:45"}
+{"client_ip":"::1","latency":15594,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/task","status_code":404,"time":"2025-12-03 10:06:48"}
+{"client_ip":"::1","latency":54814,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/tasks","status_code":404,"time":"2025-12-03 10:06:51"}
+{"client_ip":"::1","latency":10530,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/","status_code":404,"time":"2025-12-03 10:07:41"}
+{"client_ip":"::1","latency":343689,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/index.html","status_code":200,"time":"2025-12-03 10:07:46"}
+{"client_ip":"::1","latency":133243,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/swagger-initializer.js","status_code":200,"time":"2025-12-03 10:07:46"}
+{"client_ip":"::1","latency":32436,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/index.css","status_code":200,"time":"2025-12-03 10:07:46"}
+{"client_ip":"::1","latency":47489005,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/swagger-ui.css","status_code":200,"time":"2025-12-03 10:07:46"}
+{"client_ip":"::1","latency":70870958,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/swagger-ui-standalone-preset.js","status_code":200,"time":"2025-12-03 10:07:46"}
+{"client_ip":"::1","latency":97923783,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/swagger-ui-bundle.js","status_code":200,"time":"2025-12-03 10:07:46"}
+{"client_ip":"::1","latency":428037,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/doc.json","status_code":200,"time":"2025-12-03 10:07:47"}
+{"client_ip":"::1","latency":149447,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/favicon-32x32.png","status_code":200,"time":"2025-12-03 10:07:47"}
+{"client_ip":"::1","latency":1721503,"level":"info","method":"POST","msg":"Request processed","path":"/api/v1/tasks","status_code":401,"time":"2025-12-03 10:13:25"}
+{"client_ip":"::1","latency":20653,"level":"info","method":"POST","msg":"Request processed","path":"/api/v1/tasks","status_code":401,"time":"2025-12-03 10:15:42"}
+{"level":"info","msg":"Starting application...","time":"2025-12-03 10:16:00"}
+{"level":"info","msg":"value8888keySERVER_PORT","time":"2025-12-03 10:16:00"}
+{"level":"info","msg":"value5432keyDB_PORT","time":"2025-12-03 10:16:00"}
+{"level":"info","msg":"value6379keyREDIS_PORT","time":"2025-12-03 10:16:00"}
+{"level":"info","msg":"value0keyREDIS_DB","time":"2025-12-03 10:16:00"}
+{"level":"info","msg":"value24keyJWT_EXPIRE_HOURS","time":"2025-12-03 10:16:00"}
+{"level":"info","msg":"Database connected successfully","time":"2025-12-03 10:16:01"}
+{"level":"info","msg":"Server starting on :8888","time":"2025-12-03 10:16:01"}
+{"client_ip":"::1","latency":91685,"level":"info","method":"POST","msg":"Request processed","path":"/api/v1/tasks","status_code":200,"time":"2025-12-03 10:16:35"}
+{"client_ip":"::1","latency":17177,"level":"info","method":"POST","msg":"Request processed","path":"/api/v1/tasks","status_code":200,"time":"2025-12-03 10:16:38"}
+{"client_ip":"::1","latency":19784,"level":"info","method":"POST","msg":"Request processed","path":"/api/v1/tasks","status_code":200,"time":"2025-12-03 10:18:20"}
+{"client_ip":"::1","latency":27674983,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/doc.json","status_code":200,"time":"2025-12-03 10:18:44"}
+{"client_ip":"::1","latency":30041450,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/index.html","status_code":200,"time":"2025-12-03 11:45:09"}
+{"client_ip":"::1","latency":25870,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/index.css","status_code":200,"time":"2025-12-03 11:45:09"}
+{"client_ip":"::1","latency":1566551,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/swagger-initializer.js","status_code":200,"time":"2025-12-03 11:45:09"}
+{"client_ip":"::1","latency":5176953,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/swagger-ui.css","status_code":200,"time":"2025-12-03 11:45:09"}
+{"client_ip":"::1","latency":10040454,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/swagger-ui-standalone-preset.js","status_code":200,"time":"2025-12-03 11:45:09"}
+{"client_ip":"::1","latency":25231801,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/swagger-ui-bundle.js","status_code":200,"time":"2025-12-03 11:45:09"}
+{"client_ip":"::1","latency":4454687,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/doc.json","status_code":200,"time":"2025-12-03 11:45:10"}
+{"client_ip":"::1","latency":558668,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/favicon-32x32.png","status_code":200,"time":"2025-12-03 11:45:11"}
+{"level":"info","msg":"Starting application...","time":"2025-12-03 11:46:32"}
+{"level":"info","msg":"value8888keySERVER_PORT","time":"2025-12-03 11:46:32"}
+{"level":"info","msg":"value5432keyDB_PORT","time":"2025-12-03 11:46:32"}
+{"level":"info","msg":"value6379keyREDIS_PORT","time":"2025-12-03 11:46:32"}
+{"level":"info","msg":"value0keyREDIS_DB","time":"2025-12-03 11:46:32"}
+{"level":"info","msg":"value24keyJWT_EXPIRE_HOURS","time":"2025-12-03 11:46:32"}
+{"level":"info","msg":"Database connected successfully","time":"2025-12-03 11:46:33"}
+{"level":"info","msg":"Server starting on :8888","time":"2025-12-03 11:46:33"}
+{"client_ip":"::1","latency":387429,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/index.html","status_code":200,"time":"2025-12-03 11:46:49"}
+{"client_ip":"::1","latency":164192,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/swagger-initializer.js","status_code":200,"time":"2025-12-03 11:46:49"}
+{"client_ip":"::1","latency":19877,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/index.css","status_code":200,"time":"2025-12-03 11:46:49"}
+{"client_ip":"::1","latency":959120,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/doc.json","status_code":200,"time":"2025-12-03 11:46:49"}
+{"level":"info","msg":"Starting application...","time":"2025-12-03 15:10:01"}
+{"level":"info","msg":"value8888keySERVER_PORT","time":"2025-12-03 15:10:01"}
+{"level":"info","msg":"value5432keyDB_PORT","time":"2025-12-03 15:10:01"}
+{"level":"info","msg":"value6379keyREDIS_PORT","time":"2025-12-03 15:10:01"}
+{"level":"info","msg":"value0keyREDIS_DB","time":"2025-12-03 15:10:01"}
+{"level":"info","msg":"value24keyJWT_EXPIRE_HOURS","time":"2025-12-03 15:10:01"}
+{"level":"info","msg":"Database connected successfully","time":"2025-12-03 15:10:01"}
+{"level":"info","msg":"Server starting on :8888","time":"2025-12-03 15:10:01"}
+{"client_ip":"::1","latency":15249342,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/index.html","status_code":200,"time":"2025-12-03 15:10:20"}
+{"client_ip":"::1","latency":131762,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/index.css","status_code":200,"time":"2025-12-03 15:10:21"}
+{"client_ip":"::1","latency":6188333,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/swagger-ui.css","status_code":200,"time":"2025-12-03 15:10:21"}
+{"client_ip":"::1","latency":18838679,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/swagger-ui-bundle.js","status_code":200,"time":"2025-12-03 15:10:21"}
+{"client_ip":"::1","latency":430581,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/swagger-ui-standalone-preset.js","status_code":200,"time":"2025-12-03 15:10:21"}
+{"client_ip":"::1","latency":58738,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/swagger-initializer.js","status_code":200,"time":"2025-12-03 15:10:21"}
+{"client_ip":"::1","latency":451236,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/doc.json","status_code":200,"time":"2025-12-03 15:10:22"}
+{"client_ip":"::1","latency":87799,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/favicon-32x32.png","status_code":200,"time":"2025-12-03 15:10:23"}
+{"client_ip":"::1","latency":83111,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/index.html","status_code":200,"time":"2025-12-03 15:10:34"}
+{"client_ip":"::1","latency":54373,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/swagger-ui-standalone-preset.js","status_code":304,"time":"2025-12-03 15:10:34"}
+{"client_ip":"::1","latency":62295,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/swagger-ui-bundle.js","status_code":304,"time":"2025-12-03 15:10:34"}
+{"client_ip":"::1","latency":32735,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/swagger-ui.css","status_code":304,"time":"2025-12-03 15:10:34"}
+{"client_ip":"::1","latency":10402,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/index.css","status_code":200,"time":"2025-12-03 15:10:34"}
+{"client_ip":"::1","latency":66506,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/swagger-initializer.js","status_code":200,"time":"2025-12-03 15:10:34"}
+{"client_ip":"::1","latency":433907,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/doc.json","status_code":200,"time":"2025-12-03 15:10:34"}
+{"client_ip":"::1","latency":38995,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/favicon-32x32.png","status_code":304,"time":"2025-12-03 15:10:34"}
+{"client_ip":"::1","latency":15332073,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/index.html","status_code":200,"time":"2025-12-03 17:50:19"}
+{"client_ip":"::1","latency":290982,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/index.css","status_code":200,"time":"2025-12-03 17:50:19"}
+{"client_ip":"::1","latency":1518081,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/swagger-ui-standalone-preset.js","status_code":304,"time":"2025-12-03 17:50:19"}
+{"client_ip":"::1","latency":1180901,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/swagger-ui.css","status_code":304,"time":"2025-12-03 17:50:19"}
+{"client_ip":"::1","latency":2121116,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/swagger-initializer.js","status_code":200,"time":"2025-12-03 17:50:19"}
+{"client_ip":"::1","latency":9953944,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/swagger-ui-bundle.js","status_code":304,"time":"2025-12-03 17:50:19"}
+{"client_ip":"::1","latency":4623960,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/doc.json","status_code":200,"time":"2025-12-03 17:50:20"}
+{"client_ip":"::1","latency":108180,"level":"info","method":"GET","msg":"Request processed","path":"/swagger/favicon-32x32.png","status_code":304,"time":"2025-12-03 17:50:20"}

@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Task Tags Color Preview</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 24px; background:#f7f7f7; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+    .card { background:#fff; border-radius:8px; padding:12px; box-shadow:0 1px 4px rgba(0,0,0,0.08); display:flex; align-items:center; gap:12px; }
+    .swatch { width:48px; height:48px; border-radius:6px; border:1px solid rgba(0,0,0,0.06); flex:0 0 48px; }
+    .meta { display:flex; flex-direction:column; gap:4px; }
+    .name { font-weight:600; font-size:14px; }
+    .hex { font-family:monospace; color:#666; font-size:13px; }
+    .desc { color:#444; font-size:13px; }
+  </style>
+</head>
+<body>
+  <h2>任务标签颜色预览</h2>
+  <div class="grid">
+    <div class="card"><div class="swatch" style="background:#e74c3c"></div><div class="meta"><div class="name">bug</div><div class="hex">#e74c3c</div><div class="desc">缺陷/错误</div></div></div>
+    <div class="card"><div class="swatch" style="background:#3498db"></div><div class="meta"><div class="name">feature</div><div class="hex">#3498db</div><div class="desc">功能需求</div></div></div>
+    <div class="card"><div class="swatch" style="background:#2ecc71"></div><div class="meta"><div class="name">enhancement</div><div class="hex">#2ecc71</div><div class="desc">改进/优化</div></div></div>
+    <div class="card"><div class="swatch" style="background:#9b59b6"></div><div class="meta"><div class="name">documentation</div><div class="hex">#9b59b6</div><div class="desc">文档</div></div></div>
+
+    <div class="card"><div class="swatch" style="background:#e67e22"></div><div class="meta"><div class="name">urgent</div><div class="hex">#e67e22</div><div class="desc">紧急</div></div></div>
+    <div class="card"><div class="swatch" style="background:#95a5a6"></div><div class="meta"><div class="name">low-priority</div><div class="hex">#95a5a6</div><div class="desc">低优先级</div></div></div>
+    <div class="card"><div class="swatch" style="background:#f1c40f"></div><div class="meta"><div class="name">research</div><div class="hex">#f1c40f</div><div class="desc">调研/探索</div></div></div>
+    <div class="card"><div class="swatch" style="background:#34495e"></div><div class="meta"><div class="name">backend</div><div class="hex">#34495e</div><div class="desc">后端相关</div></div></div>
+
+    <div class="card"><div class="swatch" style="background:#1abc9c"></div><div class="meta"><div class="name">frontend</div><div class="hex">#1abc9c</div><div class="desc">前端相关</div></div></div>
+    <div class="card"><div class="swatch" style="background:#7f8c8d"></div><div class="meta"><div class="name">devops</div><div class="hex">#7f8c8d</div><div class="desc">运维/部署</div></div></div>
+    <div class="card"><div class="swatch" style="background:#d35400"></div><div class="meta"><div class="name">design</div><div class="hex">#d35400</div><div class="desc">设计</div></div></div>
+    <div class="card"><div class="swatch" style="background:#8e44ad"></div><div class="meta"><div class="name">qa</div><div class="hex">#8e44ad</div><div class="desc">测试</div></div></div>
+
+    <div class="card"><div class="swatch" style="background:#c0392b"></div><div class="meta"><div class="name">security</div><div class="hex">#c0392b</div><div class="desc">安全</div></div></div>
+    <div class="card"><div class="swatch" style="background:#16a085"></div><div class="meta"><div class="name">performance</div><div class="hex">#16a085</div><div class="desc">性能</div></div></div>
+    <div class="card"><div class="swatch" style="background:#27ae60"></div><div class="meta"><div class="name">refactor</div><div class="hex">#27ae60</div><div class="desc">重构</div></div></div>
+
+    <div class="card"><div class="swatch" style="background:#e74c3c"></div><div class="meta"><div class="name">blocked</div><div class="hex">#e74c3c</div><div class="desc">阻塞/阻碍</div></div></div>
+    <div class="card"><div class="swatch" style="background:#f39c12"></div><div class="meta"><div class="name">on-hold</div><div class="hex">#f39c12</div><div class="desc">暂停/搁置</div></div></div>
+    <div class="card"><div class="swatch" style="background:#2980b9"></div><div class="meta"><div class="name">in-review</div><div class="hex">#2980b9</div><div class="desc">评审中</div></div></div>
+    <div class="card"><div class="swatch" style="background:#c0392b"></div><div class="meta"><div class="name">blocked-by-dependency</div><div class="hex">#c0392b</div><div class="desc">被依赖阻塞</div></div></div>
+
+  </div>
+</body>
+</html>
+
+

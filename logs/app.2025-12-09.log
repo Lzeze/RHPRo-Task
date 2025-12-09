@@ -1,0 +1,60 @@
+{"level":"info","msg":"value5432keyDB_PORT","time":"2025-12-09 09:35:29"}
+{"level":"fatal","msg":"Failed to connect to database: failed to connect to `user=postgres database=rhpro_task`:\n\t[::1]:5432 (localhost): dial error: dial tcp [::1]:5432: connect: connection refused\n\t127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused","time":"2025-12-09 09:35:29"}
+{"level":"info","msg":"value5432keyDB_PORT","time":"2025-12-09 09:36:04"}
+{"level":"info","msg":"Database connected successfully","time":"2025-12-09 09:36:04"}
+{"level":"info","msg":"Starting application...","time":"2025-12-09 10:53:54"}
+{"level":"info","msg":"value8888keySERVER_PORT","time":"2025-12-09 10:53:54"}
+{"level":"info","msg":"value5432keyDB_PORT","time":"2025-12-09 10:53:54"}
+{"level":"info","msg":"value6379keyREDIS_PORT","time":"2025-12-09 10:53:54"}
+{"level":"info","msg":"value0keyREDIS_DB","time":"2025-12-09 10:53:54"}
+{"level":"info","msg":"value24keyJWT_EXPIRE_HOURS","time":"2025-12-09 10:53:54"}
+{"level":"info","msg":"value72keyEXECUTION_PLAN_DEADLINE_HOURS","time":"2025-12-09 10:53:54"}
+{"level":"info","msg":"Database connected successfully","time":"2025-12-09 10:53:54"}
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] POST   /api/v1/auth/register     --> RHPRo-Task/controllers.(*AuthController).Register-fm (6 handlers)
+[GIN-debug] POST   /api/v1/auth/login        --> RHPRo-Task/controllers.(*AuthController).Login-fm (6 handlers)
+[GIN-debug] GET    /api/v1/health            --> RHPRo-Task/routes.SetupRoutes.func1 (6 handlers)
+[GIN-debug] GET    /swagger/*any             --> github.com/swaggo/gin-swagger.CustomWrapHandler.func1 (6 handlers)
+[GIN-debug] GET    /api/v1/profile           --> RHPRo-Task/controllers.(*UserController).GetProfile-fm (7 handlers)
+[GIN-debug] GET    /api/v1/users             --> RHPRo-Task/controllers.(*UserController).GetUserList-fm (8 handlers)
+[GIN-debug] GET    /api/v1/users/:id         --> RHPRo-Task/controllers.(*UserController).GetUserByID-fm (8 handlers)
+[GIN-debug] PUT    /api/v1/users/:id         --> RHPRo-Task/controllers.(*UserController).UpdateUser-fm (8 handlers)
+[GIN-debug] POST   /api/v1/users/:id/roles   --> RHPRo-Task/controllers.(*UserController).AssignRoles-fm (8 handlers)
+[GIN-debug] POST   /api/v1/users             --> RHPRo-Task/controllers.(*UserController).CreateUser-fm (8 handlers)
+[GIN-debug] POST   /api/v1/users/:id/approve --> RHPRo-Task/controllers.(*UserController).ApproveUser-fm (8 handlers)
+[GIN-debug] POST   /api/v1/departments       --> RHPRo-Task/controllers.(*DepartmentController).CreateDepartment-fm (7 handlers)
+[GIN-debug] PUT    /api/v1/departments/:id   --> RHPRo-Task/controllers.(*DepartmentController).UpdateDepartment-fm (7 handlers)
+[GIN-debug] DELETE /api/v1/departments/:id   --> RHPRo-Task/controllers.(*DepartmentController).DeleteDepartment-fm (7 handlers)
+[GIN-debug] GET    /api/v1/departments       --> RHPRo-Task/controllers.(*DepartmentController).GetDepartmentList-fm (7 handlers)
+[GIN-debug] GET    /api/v1/departments/:id   --> RHPRo-Task/controllers.(*DepartmentController).GetDepartmentDetail-fm (7 handlers)
+[GIN-debug] POST   /api/v1/departments/:id/leaders --> RHPRo-Task/controllers.(*DepartmentController).AddLeader-fm (7 handlers)
+[GIN-debug] DELETE /api/v1/departments/:id/leaders/:userId --> RHPRo-Task/controllers.(*DepartmentController).RemoveLeader-fm (7 handlers)
+[GIN-debug] POST   /api/v1/departments/:id/users --> RHPRo-Task/controllers.(*DepartmentController).AssignUsers-fm (7 handlers)
+[GIN-debug] POST   /api/v1/tasks             --> RHPRo-Task/controllers.(*TaskController).CreateTask-fm (6 handlers)
+[GIN-debug] GET    /api/v1/tasks             --> RHPRo-Task/controllers.(*TaskController).GetTaskList-fm (6 handlers)
+[GIN-debug] GET    /api/v1/tasks/my          --> RHPRo-Task/controllers.(*TaskController).GetMyTasks-fm (6 handlers)
+[GIN-debug] GET    /api/v1/tasks/:id         --> RHPRo-Task/controllers.(*TaskController).GetTaskByID-fm (6 handlers)
+[GIN-debug] PUT    /api/v1/tasks/:id         --> RHPRo-Task/controllers.(*TaskController).UpdateTask-fm (6 handlers)
+[GIN-debug] DELETE /api/v1/tasks/:id         --> RHPRo-Task/controllers.(*TaskController).DeleteTask-fm (6 handlers)
+[GIN-debug] POST   /api/v1/tasks/:id/transit --> RHPRo-Task/controllers.(*TaskController).TransitStatus-fm (6 handlers)
+[GIN-debug] POST   /api/v1/tasks/:id/assign  --> RHPRo-Task/controllers.(*TaskController).AssignExecutor-fm (6 handlers)
+[GIN-debug] GET    /api/v1/tasks/current     --> RHPRo-Task/controllers.(*TaskController).GetTaskInfo-fm (7 handlers)
+[GIN-debug] POST   /api/v1/tasks/:id/accept  --> RHPRo-Task/controllers.(*TaskFlowController).AcceptTask-fm (6 handlers)
+[GIN-debug] POST   /api/v1/tasks/:id/reject  --> RHPRo-Task/controllers.(*TaskFlowController).RejectTask-fm (6 handlers)
+[GIN-debug] POST   /api/v1/tasks/:id/goals   --> RHPRo-Task/controllers.(*TaskFlowController).SubmitGoals-fm (6 handlers)
+[GIN-debug] POST   /api/v1/tasks/:id/review  --> RHPRo-Task/controllers.(*TaskFlowController).InitiateReview-fm (6 handlers)
+[GIN-debug] POST   /api/v1/tasks/:id/execution-plan --> RHPRo-Task/controllers.(*TaskFlowController).SubmitExecutionPlan-fm (6 handlers)
+[GIN-debug] GET    /api/v1/review-sessions/:sessionId --> RHPRo-Task/controllers.(*TaskFlowController).GetReviewSession-fm (6 handlers)
+[GIN-debug] POST   /api/v1/review-sessions/:sessionId/opinion --> RHPRo-Task/controllers.(*TaskFlowController).SubmitReviewOpinion-fm (6 handlers)
+[GIN-debug] POST   /api/v1/review-sessions/:sessionId/finalize --> RHPRo-Task/controllers.(*TaskFlowController).FinalizeReview-fm (6 handlers)
+[GIN-debug] POST   /api/v1/review-sessions/:sessionId/invite-jury --> RHPRo-Task/controllers.(*TaskFlowController).InviteJury-fm (6 handlers)
+[GIN-debug] DELETE /api/v1/review-sessions/:sessionId/jury/:juryMemberId --> RHPRo-Task/controllers.(*TaskFlowController).RemoveJuryMember-fm (6 handlers)
+[GIN-debug] GET    /api/v1/admin/roles       --> RHPRo-Task/controllers.(*AdminController).GetRoleList-fm (8 handlers)
+[GIN-debug] GET    /api/v1/admin/permissions --> RHPRo-Task/controllers.(*AdminController).GetPermissionList-fm (8 handlers)
+{"level":"info","msg":"Server starting on :8888","time":"2025-12-09 10:53:54"}
+[GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
+Please check https://github.com/gin-gonic/gin/blob/master/docs/doc.md#dont-trust-all-proxies for details.
+[GIN-debug] Listening and serving HTTP on :8888
