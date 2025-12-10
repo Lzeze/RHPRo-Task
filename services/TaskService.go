@@ -7,20 +7,21 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"strings"
 	"time"
 )
 
 type TaskService struct{}
 
-// CreateTask 创建任务
+// CreateTask 创建任务，包含完整的层级管理、验证和统计更新
 func (s *TaskService) CreateTask(req *dto.TaskRequest, creatorID uint) (*models.Task, error) {
-	// 检查任务编号是否已存在
+	// 1. 检查任务编号是否已存在
 	var existingTask models.Task
 	if err := database.DB.Where("task_no = ?", req.TaskNo).First(&existingTask).Error; err == nil {
 		return nil, errors.New("任务编号已存在")
 	}
 
-	// 设置默认状态码（如果未提供）
+	// 2. 设置默认状态码（如果未提供）
 	statusCode := req.StatusCode
 	if statusCode == "" {
 		// 根据任务类型设置默认状态
@@ -33,13 +34,14 @@ func (s *TaskService) CreateTask(req *dto.TaskRequest, creatorID uint) (*models.
 			statusCode = "unit_pending_assign"
 		}
 	}
-	//如果未指派执行人，任务进入任务池
+
+	// 3. 如果未指派执行人，任务进入任务池
 	isInPool := req.IsInPool
 	if req.ExecutorID == nil {
 		isInPool = true
 	}
 
-	// 判断是否跨部门（执行人部门与创建人部门是否不同）
+	// 4. 判断是否跨部门（执行人部门与创建人部门是否不同）
 	isCrossDepartment := false
 	if req.ExecutorID != nil && req.DepartmentID != nil {
 		// 获取创建人信息以取得其部门ID
@@ -52,7 +54,7 @@ func (s *TaskService) CreateTask(req *dto.TaskRequest, creatorID uint) (*models.
 		}
 	}
 
-	// 创建任务
+	// 5. 创建任务对象
 	task := &models.Task{
 		TaskNo:            req.TaskNo,
 		Title:             req.Title,
@@ -63,51 +65,78 @@ func (s *TaskService) CreateTask(req *dto.TaskRequest, creatorID uint) (*models.
 		ExecutorID:        req.ExecutorID,
 		DepartmentID:      req.DepartmentID,
 		ParentTaskID:      req.ParentTaskID,
-		RootTaskID:        req.RootTaskID,
-		TaskLevel:         req.TaskLevel,
 		Priority:          req.Priority,
 		ExpectedStartDate: req.ExpectedStartDate,
 		ExpectedEndDate:   req.ExpectedEndDate,
 		IsInPool:          isInPool,
 		IsCrossDepartment: isCrossDepartment,
 		SolutionDeadline:  req.SolutionDeadline,
+		TotalSubtasks:     0, // 新建任务没有子任务
+		CompletedSubtasks: 0, // 新建任务没有完成的子任务
+		Progress:          0, // 新建任务进度为0
 	}
 
-	// 如果有父任务，自动设置层级和根任务ID
+	// 6. 处理父任务相关逻辑
+	var parentTask *models.Task
 	if req.ParentTaskID != nil {
-		var parentTask models.Task
-		if err := database.DB.First(&parentTask, *req.ParentTaskID).Error; err != nil {
+		// 验证父任务存在
+		parentTask = &models.Task{}
+		if err := database.DB.First(parentTask, *req.ParentTaskID).Error; err != nil {
 			return nil, errors.New("父任务不存在")
 		}
-		//父任务的状态是需求类任务，状态必须计划审核通过后待开始状态eq_pending_start,才能创建子任务
-		if req.TaskTypeCode == "requirement" && parentTask.StatusCode != "eq_pending_start" {
-			return nil, errors.New("父任务状态不允许创建子任务")
+
+		// 验证父任务未被删除
+		if parentTask.DeletedAt.Valid {
+			return nil, errors.New("父任务已被删除，无法创建子任务")
 		}
+
+		// 验证父任务状态允许创建子任务
+		if parentTask.TaskTypeCode == "requirement" && parentTask.StatusCode != "eq_pending_start" {
+			return nil, errors.New("父任务状态不允许创建子任务（需求类需要审核通过后才能拆分）")
+		}
+
+		// 防止循环引用
+		if err := s.validateNoCircularReference(*req.ParentTaskID, 0); err != nil {
+			return nil, err
+		}
+
+		// 自动计算子任务的层级、路径、根任务ID
 		task.TaskLevel = parentTask.TaskLevel + 1
 		if parentTask.RootTaskID != nil {
 			task.RootTaskID = parentTask.RootTaskID
 		} else {
 			task.RootTaskID = req.ParentTaskID
 		}
-		// 更新任务路径
+
+		// 构建任务路径
 		if parentTask.TaskPath != "" {
 			task.TaskPath = fmt.Sprintf("%s/%d", parentTask.TaskPath, parentTask.ID)
 		} else {
 			task.TaskPath = fmt.Sprintf("%d", parentTask.ID)
 		}
+
+		// 自动分配子任务序号
+		var siblingCount int64
+		database.DB.Model(&models.Task{}).
+			Where("parent_task_id = ? AND deleted_at IS NULL", *req.ParentTaskID).
+			Count(&siblingCount)
+		task.ChildSequence = int(siblingCount) + 1
+	} else {
+		// 顶层任务设置
+		task.TaskLevel = 0
+		task.RootTaskID = nil
+		task.TaskPath = ""
+		task.ChildSequence = 0
 	}
 
-	// 保存到数据库
+	// 7. 保存到数据库
 	if err := database.DB.Create(task).Error; err != nil {
 		return nil, err
 	}
 
-	// 如果有父任务，更新父任务的子任务计数
-	if req.ParentTaskID != nil {
-		database.DB.Model(&models.Task{}).Where("id = ?", *req.ParentTaskID).
-			UpdateColumn("total_subtasks", database.DB.Model(&models.Task{}).
-				Where("parent_task_id = ?", *req.ParentTaskID).
-				Select("count(*)"))
+	// 8. 如果有父任务，更新父任务统计信息
+	if parentTask != nil {
+		_ = s.recalculateTaskStats(parentTask.ID)
 	}
 
 	return task, nil
@@ -406,6 +435,11 @@ func (s *TaskService) UpdateTask(taskID uint, userID uint, req *dto.UpdateTaskRe
 		return err
 	}
 
+	// 验证层级字段不被修改
+	if err := s.validateTaskHierarchyFieldsForUpdate(req); err != nil {
+		return err
+	}
+
 	// 开启事务
 	tx := database.DB.Begin()
 	defer func() {
@@ -557,29 +591,140 @@ func (s *TaskService) validateUpdatePermission(task *models.Task) error {
 	return nil
 }
 
-// DeleteTask 软删除任务
+// validateTaskHierarchyFieldsForUpdate 验证层级字段是否可以更新
+// 完善的验证方法：检查所有由系统自动维护的字段，防止用户破坏层级结构
+//
+// 系统维护的字段说明：
+// - parent_task_id: 父任务ID，控制任务的上下级关系
+// - task_level: 任务深度，由 parent.task_level + 1 自动计算
+// - task_path: 层级路径，由 parent.path + "/" + parent.id 自动构建
+// - root_task_id: 根任务ID，由 parent.root_task_id 或 parent.id 自动继承
+// - child_sequence: 同级序号，由 COUNT(siblings) + 1 自动分配
+//
+// 这些字段不允许手动修改，否则会导致：
+// 1. 层级结构被破坏
+// 2. 统计数据不一致
+// 3. 循环引用产生
+// 4. 查询性能下降
+func (s *TaskService) validateTaskHierarchyFieldsForUpdate(req *dto.UpdateTaskRequest) error {
+	var blockedFields []string
+
+	// 1. parent_task_id - 最关键的字段，控制任务的上下级关系
+	// 禁止理由：修改会破坏整个层级结构，导致循环引用或孤立任务
+	if req.ParentTaskID != 0 {
+		blockedFields = append(blockedFields, "parent_task_id")
+	}
+
+	// 2. task_level - 由系统根据父任务自动计算
+	// 禁止理由：手动修改会导致层级深度信息不准确
+	// 正确值应该是：parent.task_level + 1
+	if req.TaskLevel != 0 {
+		blockedFields = append(blockedFields, "task_level")
+	}
+
+	// 3. task_path - 由系统根据父任务自动构建
+	// 禁止理由：修改会影响任务追溯链，导致无法找到祖先任务
+	// 正确值应该是：parent.task_path + "/" + parent.id
+	if req.TaskPath != "" {
+		blockedFields = append(blockedFields, "task_path")
+	}
+
+	// 4. root_task_id - 由系统自动继承
+	// 禁止理由：修改会导致根任务ID不正确，影响快速查询顶层任务的性能
+	// 正确值应该是：parent.root_task_id （如果 parent 有） 或 parent.id （如果 parent 是顶层）
+	if req.RootTaskID != 0 {
+		blockedFields = append(blockedFields, "root_task_id")
+	}
+
+	// 5. child_sequence - 由系统根据同级任务数自动分配
+	// 禁止理由：修改会导致同级任务的序号混乱
+	// 正确值应该是：COUNT(sibling_tasks) + 1
+	if req.ChildSequence != 0 {
+		blockedFields = append(blockedFields, "child_sequence")
+	}
+
+	// 检查是否有被阻止的字段被修改
+	if len(blockedFields) > 0 {
+		// 构建详细的错误消息，帮助用户理解问题
+		var errorBuilder strings.Builder
+
+		if len(blockedFields) == 1 {
+			// 单个错误时，提供简洁明快的错误信息
+			errorBuilder.WriteString(fmt.Sprintf(
+				"不支持修改字段 '%s'：该字段由系统自动维护\n\n",
+				blockedFields[0]))
+		} else {
+			// 多个错误时，列出所有错误字段
+			errorBuilder.WriteString("不支持修改以下字段（由系统自动维护）:\n")
+			for i, field := range blockedFields {
+				errorBuilder.WriteString(fmt.Sprintf("  %d. %s\n", i+1, field))
+			}
+			errorBuilder.WriteString("\n")
+		}
+
+		// 添加帮助信息
+		errorBuilder.WriteString("原因：这些字段由系统根据任务层级自动计算和维护，\n")
+		errorBuilder.WriteString("手动修改会导致任务层级结构被破坏。\n\n")
+
+		// 提示解决方案
+		errorBuilder.WriteString("💡 解决方案：\n")
+		if containsField(blockedFields, "parent_task_id") {
+			errorBuilder.WriteString("  • 如需修改父任务：使用专门的 MoveTask 方法（计划中）\n")
+		}
+		errorBuilder.WriteString("  • 其他字段：由系统自动维护，无需修改\n")
+		errorBuilder.WriteString("  • 如有问题：请联系管理员或检查任务数据一致性\n")
+
+		return errors.New(errorBuilder.String())
+	}
+
+	return nil
+}
+
+// containsField 检查字段列表中是否包含指定字段
+func containsField(fields []string, target string) bool {
+	for _, field := range fields {
+		if field == target {
+			return true
+		}
+	}
+	return false
+}
+
+// DeleteTask 软删除任务，并更新父任务统计信息
 func (s *TaskService) DeleteTask(taskID uint) error {
 	var task models.Task
 	if err := database.DB.First(&task, taskID).Error; err != nil {
 		return errors.New("任务不存在")
 	}
 
-	// 检查是否有子任务
+	// 检查是否有未删除的子任务
 	var subTaskCount int64
-	database.DB.Model(&models.Task{}).Where("parent_task_id = ?", taskID).Count(&subTaskCount)
+	database.DB.Model(&models.Task{}).
+		Where("parent_task_id = ? AND deleted_at IS NULL", taskID).
+		Count(&subTaskCount)
 	if subTaskCount > 0 {
-		return errors.New("存在子任务，无法删除")
+		return fmt.Errorf("存在 %d 个子任务，无法删除", subTaskCount)
 	}
 
-	// 软删除
+	// 记录父任务ID（用于后续更新统计）
+	parentTaskID := task.ParentTaskID
+
+	// 执行软删除
 	if err := database.DB.Delete(&task).Error; err != nil {
 		return err
+	}
+
+	// 如果有父任务，更新父任务统计信息
+	if parentTaskID != nil {
+		if err := s.recalculateTaskStats(*parentTaskID); err != nil {
+			return fmt.Errorf("删除后更新父任务统计失败: %v", err)
+		}
 	}
 
 	return nil
 }
 
-// TransitStatus 执行任务状态转换
+// TransitStatus 执行任务状态转换，并自动更新完成统计
 func (s *TaskService) TransitStatus(taskID uint, userID uint, req *dto.TaskStatusTransitionRequest) error {
 	// 创建状态转换服务
 	statusTransition := &StatusTransitionService{}
@@ -588,6 +733,9 @@ func (s *TaskService) TransitStatus(taskID uint, userID uint, req *dto.TaskStatu
 	if err := database.DB.First(&task, taskID).Error; err != nil {
 		return errors.New("任务不存在")
 	}
+
+	// 保存原始状态码
+	oldStatusCode := task.StatusCode
 
 	// 验证目标状态是否存在
 	var toStatus models.TaskStatus
@@ -602,7 +750,7 @@ func (s *TaskService) TransitStatus(taskID uint, userID uint, req *dto.TaskStatu
 	// 使用规则验证状态转换是否允许（支持多角色）
 	if err := statusTransition.ValidateTransition(
 		task.TaskTypeCode,
-		task.StatusCode,
+		oldStatusCode,
 		req.ToStatusCode,
 		userRoles,
 	); err != nil {
@@ -620,11 +768,24 @@ func (s *TaskService) TransitStatus(taskID uint, userID uint, req *dto.TaskStatu
 		UserID:     userID,
 		ChangeType: "status_change",
 		FieldName:  "status_code",
-		OldValue:   task.StatusCode,
+		OldValue:   oldStatusCode,
 		NewValue:   req.ToStatusCode,
 		Comment:    req.Comment,
 	}
-	database.DB.Create(changeLog)
+	if err := database.DB.Create(changeLog).Error; err != nil {
+		return fmt.Errorf("记录状态变更日志失败: %v", err)
+	}
+
+	// 检测完成状态转换，并更新父任务统计
+	isOldCompleted := oldStatusCode == "req_completed" || oldStatusCode == "unit_completed"
+	isNewCompleted := req.ToStatusCode == "req_completed" || req.ToStatusCode == "unit_completed"
+
+	// 如果状态转换涉及完成状态变化，更新父任务的完成统计
+	if isOldCompleted != isNewCompleted && task.ParentTaskID != nil {
+		if err := s.recalculateTaskStats(*task.ParentTaskID); err != nil {
+			return fmt.Errorf("更新父任务统计失败: %v", err)
+		}
+	}
 
 	return nil
 }
@@ -815,4 +976,168 @@ func (s *TaskService) loadSubtasksRecursive(parentResp *dto.TaskResponse, parent
 		s.loadTaskAssociations(&subResp, st.ID)
 		parentResp.Subtasks[i] = &subResp
 	}
+}
+
+// ========== 辅助方法：任务层级和统计管理 ==========
+
+// validateNoCircularReference 验证是否存在循环引用
+// 防止将子任务设为父任务，导致无限递归
+func (s *TaskService) validateNoCircularReference(parentID uint, currentID uint) error {
+	// 使用递归或迭代查询检查循环引用
+	visited := make(map[uint]bool)
+	currentCheck := parentID
+
+	for currentCheck != 0 {
+		if visited[currentCheck] {
+			return errors.New("不能设置父任务：会导致循环引用")
+		}
+		visited[currentCheck] = true
+
+		var parentTask models.Task
+		if err := database.DB.Select("parent_task_id").First(&parentTask, currentCheck).Error; err != nil {
+			break
+		}
+
+		if parentTask.ParentTaskID == nil {
+			break
+		}
+
+		currentCheck = *parentTask.ParentTaskID
+
+		// 如果检查到当前要创建的任务，说明形成了循环
+		if currentCheck == currentID {
+			return errors.New("不能设置父任务：会导致循环引用")
+		}
+	}
+
+	return nil
+}
+
+// recalculateTaskStats 重新计算任务的统计信息
+// 包括 total_subtasks、completed_subtasks 和 progress
+func (s *TaskService) recalculateTaskStats(taskID uint) error {
+	// 统计直接子任务总数（未删除的）
+	var totalCount int64
+	database.DB.Model(&models.Task{}).
+		Where("parent_task_id = ? AND deleted_at IS NULL", taskID).
+		Count(&totalCount)
+
+	// 统计已完成的子任务数
+	var completedCount int64
+	database.DB.Model(&models.Task{}).
+		Where("parent_task_id = ? AND deleted_at IS NULL AND (status_code = ? OR status_code = ?)",
+			taskID, "req_completed", "unit_completed").
+		Count(&completedCount)
+
+	// 计算进度百分比
+	var progress int
+	if totalCount > 0 {
+		progress = int(math.Round(float64(completedCount) * 100.0 / float64(totalCount)))
+	}
+
+	// 更新任务
+	return database.DB.Model(&models.Task{}).
+		Where("id = ?", taskID).
+		Updates(map[string]interface{}{
+			"total_subtasks":     totalCount,
+			"completed_subtasks": completedCount,
+			"progress":           progress,
+		}).Error
+}
+
+// GetTaskAncestors 获取任务的所有祖先任务（父任务、祖父任务等）
+// 用于追溯任务的来源链条
+func (s *TaskService) GetTaskAncestors(taskID uint) ([]models.Task, error) {
+	var ancestors []models.Task
+	var currentID *uint = &taskID
+
+	for currentID != nil {
+		var task models.Task
+		if err := database.DB.Select("id", "parent_task_id", "task_no", "title", "task_level").
+			First(&task, *currentID).Error; err != nil {
+			break
+		}
+
+		ancestors = append(ancestors, task)
+		currentID = task.ParentTaskID
+	}
+
+	// 反转数组，使顺序从根到叶
+	for i, j := 0, len(ancestors)-1; i < j; i, j = i+1, j-1 {
+		ancestors[i], ancestors[j] = ancestors[j], ancestors[i]
+	}
+
+	return ancestors, nil
+}
+
+// ValidateTaskHierarchy 验证任务的层级信息是否一致
+// 检查 task_level、task_path、root_task_id 等字段的正确性
+func (s *TaskService) ValidateTaskHierarchy(taskID uint) (bool, string, error) {
+	var task models.Task
+	if err := database.DB.First(&task, taskID).Error; err != nil {
+		return false, "任务不存在", err
+	}
+
+	// 验证1：检查任务层级逻辑
+	if task.ParentTaskID != nil {
+		var parentTask models.Task
+		if err := database.DB.Select("task_level", "task_path", "root_task_id", "deleted_at").
+			First(&parentTask, *task.ParentTaskID).Error; err != nil {
+			return false, "父任务不存在", err
+		}
+
+		// 检查层级是否正确
+		if task.TaskLevel != parentTask.TaskLevel+1 {
+			return false, fmt.Sprintf("层级错误：期望 %d，实际 %d", parentTask.TaskLevel+1, task.TaskLevel), nil
+		}
+
+		// 检查路径是否正确
+		if parentTask.TaskPath != "" {
+			expectedPath := fmt.Sprintf("%s/%d", parentTask.TaskPath, parentTask.ID)
+			if task.TaskPath != expectedPath {
+				return false, fmt.Sprintf("路径错误：期望 %s，实际 %s", expectedPath, task.TaskPath), nil
+			}
+		}
+
+		// 检查根任务ID是否正确
+		if task.RootTaskID != parentTask.RootTaskID && task.RootTaskID != &parentTask.ID {
+			return false, "根任务ID错误", nil
+		}
+
+		// 检查父任务是否被软删除
+		if parentTask.DeletedAt.Valid {
+			return false, "父任务已被删除", nil
+		}
+	} else {
+		// 顶层任务的验证
+		if task.TaskLevel != 0 {
+			return false, fmt.Sprintf("顶层任务的层级应为0，实际为 %d", task.TaskLevel), nil
+		}
+		if task.RootTaskID != nil {
+			return false, "顶层任务的根任务ID应为NULL", nil
+		}
+	}
+
+	// 验证2：检查子任务统计是否准确
+	var actualCount int64
+	database.DB.Model(&models.Task{}).
+		Where("parent_task_id = ? AND deleted_at IS NULL", task.ID).
+		Count(&actualCount)
+
+	if int(actualCount) != task.TotalSubtasks {
+		return false, fmt.Sprintf("子任务总数错误：期望 %d，实际 %d", actualCount, task.TotalSubtasks), nil
+	}
+
+	// 验证3：检查完成统计
+	var completedActual int64
+	database.DB.Model(&models.Task{}).
+		Where("parent_task_id = ? AND deleted_at IS NULL AND (status_code = ? OR status_code = ?)",
+			task.ID, "req_completed", "unit_completed").
+		Count(&completedActual)
+
+	if int(completedActual) != task.CompletedSubtasks {
+		return false, fmt.Sprintf("完成子任务数错误：期望 %d，实际 %d", completedActual, task.CompletedSubtasks), nil
+	}
+
+	return true, "验证通过", nil
 }
