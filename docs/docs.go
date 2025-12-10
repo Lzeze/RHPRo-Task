@@ -45,8 +45,7 @@ const docTemplate = `{
                     "200": {
                         "description": "获取成功",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.PermissionResponse"
                         }
                     },
                     "401": {
@@ -88,8 +87,7 @@ const docTemplate = `{
                     "200": {
                         "description": "获取成功",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.RoleResponse"
                         }
                     },
                     "401": {
@@ -137,8 +135,7 @@ const docTemplate = `{
                     "200": {
                         "description": "登录成功，返回token",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.LoginResponse"
                         }
                     },
                     "400": {
@@ -222,8 +219,7 @@ const docTemplate = `{
                     "200": {
                         "description": "获取成功",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/models.Department"
                         }
                     }
                 }
@@ -298,8 +294,7 @@ const docTemplate = `{
                     "200": {
                         "description": "获取成功",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.DepartmentDetailResponse"
                         }
                     }
                 }
@@ -528,6 +523,48 @@ const docTemplate = `{
                 }
             }
         },
+        "/profile": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取当前登录用户的详细信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户管理"
+                ],
+                "summary": "获取当前用户信息",
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "$ref": "#/definitions/dto.UserResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "用户不存在",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/review-sessions/{sessionId}": {
             "get": {
                 "security": [
@@ -559,8 +596,7 @@ const docTemplate = `{
                     "200": {
                         "description": "查询成功",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.ReviewSessionResponse"
                         }
                     }
                 }
@@ -952,8 +988,7 @@ const docTemplate = `{
                     "200": {
                         "description": "获取成功",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/models.Task"
                         }
                     },
                     "401": {
@@ -1082,7 +1117,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "根据任务ID获取任务详细信息，包含关联数据",
+                "description": "获取任务基本信息和当前最新版本的方案、执行计划、以及当前进行中的审核会话",
                 "consumes": [
                     "application/json"
                 ],
@@ -1090,9 +1125,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "任务管理"
+                    "任务详情"
                 ],
-                "summary": "获取任务详情",
+                "summary": "获取任务详情（包含最新版本的方案和计划）",
                 "parameters": [
                     {
                         "type": "integer",
@@ -1104,13 +1139,13 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "查询成功",
+                        "description": "获取成功",
                         "schema": {
-                            "$ref": "#/definitions/dto.TaskDetailResponse"
+                            "$ref": "#/definitions/dto.TaskDetailEnhancedResponse"
                         }
                     },
                     "400": {
-                        "description": "无效的任务ID",
+                        "description": "参数错误",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -1362,6 +1397,60 @@ const docTemplate = `{
                 }
             }
         },
+        "/tasks/{id}/change-logs": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "查询任务的所有状态变更和字段更新记录，按时间从新到旧排序",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "任务详情"
+                ],
+                "summary": "获取任务的变更历史",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "任务ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.ChangeLogResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/tasks/{id}/execution-plan": {
             "post": {
                 "security": [
@@ -1401,6 +1490,60 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "提交成功",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/tasks/{id}/execution-plans": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "查询任务的所有执行计划版本历史(包含关联的目标)，按版本号从新到旧排序",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "任务详情"
+                ],
+                "summary": "获取任务的所有执行计划版本",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "任务ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.ExecutionPlanVersionResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -1599,6 +1742,60 @@ const docTemplate = `{
                 }
             }
         },
+        "/tasks/{id}/reviews": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "查询任务的所有审核会话、审核记录和陪审团信息，包括已完成和进行中的审核",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "任务详情"
+                ],
+                "summary": "获取任务的所有审核历史",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "任务ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.ReviewHistoryResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/tasks/{id}/solution": {
             "post": {
                 "security": [
@@ -1638,6 +1835,114 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "提交成功",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/tasks/{id}/solutions": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "查询任务的所有思路方案版本历史，按版本号从新到旧排序",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "任务详情"
+                ],
+                "summary": "获取任务的所有方案版本",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "任务ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.SolutionVersionResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/tasks/{id}/timeline": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取任务的完整时间轴，包括方案提交、计划提交、审核进度、状态变更等所有事件，按时间从旧到新排序",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "任务详情"
+                ],
+                "summary": "获取任务的时间轴视图",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "任务ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.TimelineEventResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -1838,49 +2143,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/profile": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "获取当前登录用户的详细信息",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "用户管理"
-                ],
-                "summary": "获取当前用户信息",
-                "responses": {
-                    "200": {
-                        "description": "获取成功",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "未授权",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "404": {
-                        "description": "用户不存在",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
         "/users/{id}": {
             "get": {
                 "security": [
@@ -1912,8 +2174,7 @@ const docTemplate = `{
                     "200": {
                         "description": "获取成功",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.UserResponse"
                         }
                     },
                     "400": {
@@ -2142,9 +2403,11 @@ const docTemplate = `{
             ],
             "properties": {
                 "is_primary": {
+                    "description": "是否为主负责人（可选，默认为false）",
                     "type": "boolean"
                 },
                 "user_id": {
+                    "description": "用户ID（要添加为负责人的用户）",
                     "type": "integer"
                 }
             }
@@ -2156,6 +2419,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "executor_id": {
+                    "description": "执行人用户ID（要分配为任务执行人的用户）",
                     "type": "integer"
                 }
             }
@@ -2167,11 +2431,109 @@ const docTemplate = `{
             ],
             "properties": {
                 "role_ids": {
+                    "description": "角色ID列表（至少指定一个角色）",
                     "type": "array",
                     "minItems": 1,
                     "items": {
                         "type": "integer"
                     }
+                }
+            }
+        },
+        "dto.ChangeLogResponse": {
+            "type": "object",
+            "properties": {
+                "change_type": {
+                    "description": "变更类型（修改、删除等）",
+                    "type": "string"
+                },
+                "comment": {
+                    "description": "变更备注",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "变更发生时间",
+                    "type": "string"
+                },
+                "field_name": {
+                    "description": "被修改的字段名",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "变更日志ID",
+                    "type": "integer"
+                },
+                "new_value": {
+                    "description": "修改后的值",
+                    "type": "string"
+                },
+                "old_value": {
+                    "description": "修改前的值",
+                    "type": "string"
+                },
+                "user_id": {
+                    "description": "变更操作人用户ID",
+                    "type": "integer"
+                },
+                "username": {
+                    "description": "变更操作人用户名",
+                    "type": "string"
+                }
+            }
+        },
+        "dto.DepartmentDetailResponse": {
+            "type": "object",
+            "properties": {
+                "children": {
+                    "description": "子部门列表（递归展示，可选）",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.DepartmentResponse"
+                    }
+                },
+                "description": {
+                    "description": "部门描述",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "部门ID",
+                    "type": "integer"
+                },
+                "leaders": {
+                    "description": "部门负责人列表",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.DepartmentLeader"
+                    }
+                },
+                "name": {
+                    "description": "部门名称",
+                    "type": "string"
+                },
+                "parent_id": {
+                    "description": "父部门ID",
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "部门状态（1=正常, 2=禁用）",
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.DepartmentLeader": {
+            "type": "object",
+            "properties": {
+                "is_primary": {
+                    "description": "是否为主负责人",
+                    "type": "boolean"
+                },
+                "user_id": {
+                    "description": "用户ID",
+                    "type": "integer"
+                },
+                "username": {
+                    "description": "用户名",
+                    "type": "string"
                 }
             }
         },
@@ -2182,17 +2544,20 @@ const docTemplate = `{
             ],
             "properties": {
                 "description": {
+                    "description": "部门描述（可选）",
                     "type": "string"
                 },
                 "name": {
+                    "description": "部门名称（最多100个字符）",
                     "type": "string",
                     "maxLength": 100
                 },
                 "parent_id": {
+                    "description": "父部门ID（用于构建部门树结构，可选）",
                     "type": "integer"
                 },
                 "status": {
-                    "description": "1=正常, 2=禁用",
+                    "description": "部门状态（1=正常, 2=禁用，可选，默认为1）",
                     "type": "integer",
                     "enum": [
                         1,
@@ -2201,13 +2566,114 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.DepartmentResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "description": "部门ID",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "部门名称",
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ExecutionPlanListItemResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "description": "执行计划版本ID",
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "执行计划状态（pending=待审核, approved=已批准, rejected=已拒绝）",
+                    "type": "string"
+                },
+                "submitted_at": {
+                    "description": "提交时间",
+                    "type": "string"
+                },
+                "submitted_by": {
+                    "description": "提交人用户ID",
+                    "type": "integer"
+                },
+                "submitted_by_username": {
+                    "description": "提交人用户名",
+                    "type": "string"
+                },
+                "title": {
+                    "description": "执行计划标题（用于在列表中显示）",
+                    "type": "string"
+                },
+                "version": {
+                    "description": "执行计划版本号（第几版，如 v1, v2）",
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ExecutionPlanVersionResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string"
+                },
+                "goals": {
+                    "description": "关联的目标列表（此执行计划关联的所有目标）",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.GoalItemResponse"
+                    }
+                },
+                "id": {
+                    "description": "执行计划版本ID",
+                    "type": "integer"
+                },
+                "implementation_steps": {
+                    "description": "实施步骤（实现计划的详细步骤，JSON格式存储）",
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "resource_requirements": {
+                    "description": "资源需求（所需资源、人力、硬件等描述）",
+                    "type": "string"
+                },
+                "risk_assessment": {
+                    "description": "风险评估（可能的风险和应对方案）",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "执行计划状态（pending=待审核, approved=已批准, rejected=已拒绝）",
+                    "type": "string"
+                },
+                "submitted_at": {
+                    "description": "提交时间（可选）",
+                    "type": "string"
+                },
+                "submitted_by": {
+                    "description": "提交人用户ID",
+                    "type": "integer"
+                },
+                "tech_stack": {
+                    "description": "技术栈（使用的技术和工具列表）",
+                    "type": "string"
+                },
+                "version": {
+                    "description": "执行计划版本号（第几版）",
+                    "type": "integer"
+                }
+            }
+        },
         "dto.FinalizeReviewRequest": {
             "type": "object",
             "properties": {
                 "approved": {
+                    "description": "是否批准（true=批准, false=拒绝）",
                     "type": "boolean"
                 },
                 "comment": {
+                    "description": "最终决策备注",
                     "type": "string"
                 }
             }
@@ -2220,15 +2686,52 @@ const docTemplate = `{
             ],
             "properties": {
                 "description": {
+                    "description": "目标描述（详细说明目标内容）",
                     "type": "string"
                 },
                 "priority": {
+                    "description": "优先级（1=低, 2=中, 3=高, 4=紧急）",
                     "type": "integer"
                 },
                 "success_criteria": {
+                    "description": "成功标准（如何判定目标已完成）",
                     "type": "string"
                 },
                 "title": {
+                    "description": "目标标题",
+                    "type": "string"
+                }
+            }
+        },
+        "dto.GoalItemResponse": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "description": "目标描述",
+                    "type": "string"
+                },
+                "goal_no": {
+                    "description": "目标序号（第几个目标）",
+                    "type": "integer"
+                },
+                "id": {
+                    "description": "目标ID",
+                    "type": "integer"
+                },
+                "priority": {
+                    "description": "目标优先级",
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "目标状态（pending=进行中, completed=已完成）",
+                    "type": "string"
+                },
+                "success_criteria": {
+                    "description": "成功标准（如何判定目标完成）",
+                    "type": "string"
+                },
+                "title": {
+                    "description": "目标标题",
                     "type": "string"
                 }
             }
@@ -2243,15 +2746,18 @@ const docTemplate = `{
             ],
             "properties": {
                 "jury_member_ids": {
+                    "description": "陪审团成员ID列表（陪审团模式下需指定）",
                     "type": "array",
                     "items": {
                         "type": "integer"
                     }
                 },
                 "required_approvals": {
+                    "description": "所需批准数（陪审团模式下需要的最少批准数）",
                     "type": "integer"
                 },
                 "review_mode": {
+                    "description": "审核模式（single=单人审核, jury=陪审团审核）",
                     "type": "string",
                     "enum": [
                         "single",
@@ -2259,6 +2765,7 @@ const docTemplate = `{
                     ]
                 },
                 "review_type": {
+                    "description": "审核类型（goal_review=目标审核, solution_review=方案审核, plan_review=计划审核）",
                     "type": "string",
                     "enum": [
                         "goal_review",
@@ -2267,9 +2774,11 @@ const docTemplate = `{
                     ]
                 },
                 "target_id": {
+                    "description": "目标ID（被审核的目标、方案或计划的ID）",
                     "type": "integer"
                 },
                 "target_type": {
+                    "description": "目标类型（goal=目标, solution=方案, plan=计划）",
                     "type": "string"
                 }
             }
@@ -2282,6 +2791,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "jury_member_ids": {
+                    "description": "陪审团成员ID列表（要邀请为陪审团成员的用户）",
                     "type": "array",
                     "minItems": 1,
                     "items": {
@@ -2289,8 +2799,26 @@ const docTemplate = `{
                     }
                 },
                 "required_approvals": {
+                    "description": "所需批准数（陪审团审核需要的最少批准数）",
                     "type": "integer",
                     "minimum": 1
+                }
+            }
+        },
+        "dto.JuryMemberResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "description": "陪审团成员状态（pending=待回复, accepted=已接受, rejected=已拒绝）",
+                    "type": "string"
+                },
+                "user_id": {
+                    "description": "陪审团成员用户ID",
+                    "type": "integer"
+                },
+                "username": {
+                    "description": "陪审团成员用户名",
+                    "type": "string"
                 }
             }
         },
@@ -2302,30 +2830,67 @@ const docTemplate = `{
             ],
             "properties": {
                 "password": {
+                    "description": "密码（用户登录密码）",
                     "type": "string",
                     "example": "password123"
                 },
                 "username": {
+                    "description": "用户名或邮箱（用户在系统中注册的用户名或邮箱）",
                     "type": "string",
                     "example": "johndoe"
+                }
+            }
+        },
+        "dto.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "description": "JWT 访问令牌（用于后续API请求的身份验证）",
+                    "type": "string"
+                },
+                "user_info": {
+                    "description": "用户信息（包含用户基本信息和权限等）"
                 }
             }
         },
         "dto.PaginationResponse": {
             "type": "object",
             "properties": {
-                "data": {},
+                "data": {
+                    "description": "分页数据列表"
+                },
                 "page": {
+                    "description": "当前页码",
                     "type": "integer"
                 },
                 "page_size": {
+                    "description": "每页数量",
                     "type": "integer"
                 },
                 "total": {
+                    "description": "数据总数",
                     "type": "integer"
                 },
                 "total_pages": {
+                    "description": "总页数",
                     "type": "integer"
+                }
+            }
+        },
+        "dto.PermissionResponse": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "description": "权限描述",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "权限ID",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "权限名称",
+                    "type": "string"
                 }
             }
         },
@@ -2338,24 +2903,29 @@ const docTemplate = `{
             ],
             "properties": {
                 "email": {
+                    "description": "邮箱地址（唯一，格式必须为有效邮箱）",
                     "type": "string",
                     "example": "user@example.com"
                 },
                 "mobile": {
+                    "description": "手机号码（可选，格式为11位中国手机号）",
                     "type": "string",
                     "example": "13800138000"
                 },
                 "nickname": {
+                    "description": "昵称（用户昵称，用于显示，可选）",
                     "type": "string",
                     "example": "John"
                 },
                 "password": {
+                    "description": "密码（6-20个字符，需要包含字母和数字）",
                     "type": "string",
                     "maxLength": 20,
                     "minLength": 6,
                     "example": "password123"
                 },
                 "username": {
+                    "description": "用户名（唯一，字母数字组合，5-50个字符）",
                     "type": "string",
                     "example": "johndoe"
                 }
@@ -2368,7 +2938,188 @@ const docTemplate = `{
             ],
             "properties": {
                 "reason": {
+                    "description": "拒绝原因（为什么拒绝接受这个任务）",
                     "type": "string"
+                }
+            }
+        },
+        "dto.ReviewHistoryResponse": {
+            "type": "object",
+            "properties": {
+                "completed_at": {
+                    "description": "完成时间（可选）",
+                    "type": "string"
+                },
+                "final_decision": {
+                    "description": "最终决议（可选，如果审核已完成）",
+                    "type": "string"
+                },
+                "final_decision_comment": {
+                    "description": "最终决议备注",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "审核记录ID",
+                    "type": "integer"
+                },
+                "initiated_at": {
+                    "description": "发起时间",
+                    "type": "string"
+                },
+                "initiated_by": {
+                    "description": "发起人用户ID",
+                    "type": "integer"
+                },
+                "jury_members": {
+                    "description": "陪审团成员列表（陪审团模式下的成员，可选）",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.JuryMemberResponse"
+                    }
+                },
+                "required_approvals": {
+                    "description": "所需批准数（陪审团模式下需要的最少批准数）",
+                    "type": "integer"
+                },
+                "review_mode": {
+                    "description": "审核模式（single=单人审核, jury=陪审团审核）",
+                    "type": "string"
+                },
+                "review_records": {
+                    "description": "审核记录列表（各个审核人的意见）",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ReviewRecordResponse"
+                    }
+                },
+                "review_type": {
+                    "description": "审核类型（goal_review=目标审核, solution_review=方案审核, plan_review=计划审核）",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "审核状态（pending=进行中, approved=已批准, rejected=已拒绝, abstained=弃权）",
+                    "type": "string"
+                },
+                "target_id": {
+                    "description": "目标ID（被审核的目标、方案或计划的ID）",
+                    "type": "integer"
+                },
+                "target_type": {
+                    "description": "目标类型（goal=目标, solution=方案, plan=计划）",
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ReviewRecordResponse": {
+            "type": "object",
+            "properties": {
+                "comment": {
+                    "description": "审核备注",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "审核记录ID",
+                    "type": "integer"
+                },
+                "opinion": {
+                    "description": "审核意见（approve=批准, reject=拒绝, abstain=弃权）",
+                    "type": "string"
+                },
+                "reviewer_id": {
+                    "description": "审核人用户ID",
+                    "type": "integer"
+                },
+                "reviewer_name": {
+                    "description": "审核人用户名（可选）",
+                    "type": "string"
+                },
+                "reviewer_role": {
+                    "description": "审核人角色（reviewer=评审人, jury=陪审团成员）",
+                    "type": "string"
+                },
+                "score": {
+                    "description": "评分（可选）",
+                    "type": "integer"
+                },
+                "vote_weight": {
+                    "description": "投票权重（陪审团模式下的权重）",
+                    "type": "number"
+                }
+            }
+        },
+        "dto.ReviewSessionResponse": {
+            "type": "object",
+            "properties": {
+                "final_decision": {
+                    "description": "最终决议（可选）",
+                    "type": "string"
+                },
+                "final_decision_comment": {
+                    "description": "最终决议备注",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "审核会话ID",
+                    "type": "integer"
+                },
+                "required_approvals": {
+                    "description": "所需批准数",
+                    "type": "integer"
+                },
+                "review_mode": {
+                    "description": "审核模式（single=单人审核, jury=陪审团审核）",
+                    "type": "string"
+                },
+                "review_records": {
+                    "description": "审核记录列表（各个审核人的意见，可选）",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ReviewRecordResponse"
+                    }
+                },
+                "review_type": {
+                    "description": "审核类型（goal_review=目标审核, solution_review=方案审核, plan_review=计划审核）",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "审核状态（pending=进行中, approved=已批准, rejected=已拒绝）",
+                    "type": "string"
+                },
+                "target_id": {
+                    "description": "被审核的对象ID",
+                    "type": "integer"
+                },
+                "target_type": {
+                    "description": "目标类型",
+                    "type": "string"
+                },
+                "task_id": {
+                    "description": "关联的任务ID",
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.RoleResponse": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "description": "角色描述",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "角色ID",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "角色名称",
+                    "type": "string"
+                },
+                "permissions": {
+                    "description": "角色包含的权限列表（可选）",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.PermissionResponse"
+                    }
                 }
             }
         },
@@ -2376,12 +3127,15 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "email": {
+                    "description": "邮箱地址",
                     "type": "string"
                 },
                 "id": {
+                    "description": "用户ID",
                     "type": "integer"
                 },
                 "username": {
+                    "description": "用户名",
                     "type": "string"
                 }
             }
@@ -2393,13 +3147,90 @@ const docTemplate = `{
             ],
             "properties": {
                 "content": {
+                    "description": "方案内容（具体的方案说明）",
                     "type": "string"
                 },
                 "file_name": {
+                    "description": "关联的文件名（可选）",
                     "type": "string"
                 },
                 "mindmap_url": {
+                    "description": "思维导图URL（可选，用于可视化展示方案）",
                     "type": "string"
+                }
+            }
+        },
+        "dto.SolutionListItemResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "description": "方案版本ID",
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "方案状态（pending=待审核, approved=已批准, rejected=已拒绝）",
+                    "type": "string"
+                },
+                "submitted_at": {
+                    "description": "提交时间",
+                    "type": "string"
+                },
+                "submitted_by": {
+                    "description": "提交人用户ID",
+                    "type": "integer"
+                },
+                "submitted_by_username": {
+                    "description": "提交人用户名",
+                    "type": "string"
+                },
+                "title": {
+                    "description": "方案标题（用于在列表中显示）",
+                    "type": "string"
+                },
+                "version": {
+                    "description": "方案版本号（第几版，如 v1, v2）",
+                    "type": "string"
+                }
+            }
+        },
+        "dto.SolutionVersionResponse": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "方案内容（具体的方案说明）",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string"
+                },
+                "file_name": {
+                    "description": "关联的文件名（可选）",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "方案版本ID",
+                    "type": "integer"
+                },
+                "mindmap_url": {
+                    "description": "思维导图URL（可选，用于展示方案的可视化）",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "方案状态（pending=待审核, approved=已批准, rejected=已拒绝）",
+                    "type": "string"
+                },
+                "submitted_at": {
+                    "description": "提交时间（可选）",
+                    "type": "string"
+                },
+                "submitted_by": {
+                    "description": "提交人用户ID（谁提交的这个方案版本）",
+                    "type": "integer"
+                },
+                "version": {
+                    "description": "方案版本号（第几版）",
+                    "type": "integer"
                 }
             }
         },
@@ -2410,37 +3241,6 @@ const docTemplate = `{
                 "tech_stack"
             ],
             "properties": {
-                "implementation_steps": {
-                    "type": "object",
-                    "additionalProperties": true
-                },
-                "resource_requirements": {
-                    "type": "string"
-                },
-                "risk_assessment": {
-                    "type": "string"
-                },
-                "tech_stack": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.SubmitExecutionPlanWithGoalsRequest": {
-            "type": "object",
-            "required": [
-                "goals",
-                "implementation_steps",
-                "tech_stack"
-            ],
-            "properties": {
-                "goals": {
-                    "description": "目标列表（至少一个）",
-                    "type": "array",
-                    "minItems": 1,
-                    "items": {
-                        "$ref": "#/definitions/dto.GoalItem"
-                    }
-                },
                 "implementation_steps": {
                     "description": "实施步骤",
                     "type": "object",
@@ -2460,6 +3260,41 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.SubmitExecutionPlanWithGoalsRequest": {
+            "type": "object",
+            "required": [
+                "goals",
+                "implementation_steps",
+                "tech_stack"
+            ],
+            "properties": {
+                "goals": {
+                    "description": "目标列表（至少一个目标）",
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/dto.GoalItem"
+                    }
+                },
+                "implementation_steps": {
+                    "description": "实施步骤（具体的实现步骤，JSON格式）",
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "resource_requirements": {
+                    "description": "资源需求（所需资源、人力、设备等）",
+                    "type": "string"
+                },
+                "risk_assessment": {
+                    "description": "风险评估（可能的风险和应对方案）",
+                    "type": "string"
+                },
+                "tech_stack": {
+                    "description": "技术栈（使用的技术和工具）",
+                    "type": "string"
+                }
+            }
+        },
         "dto.SubmitGoalsAndSolutionRequest": {
             "type": "object",
             "required": [
@@ -2468,6 +3303,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "goals": {
+                    "description": "目标列表",
                     "type": "array",
                     "minItems": 1,
                     "items": {
@@ -2475,7 +3311,12 @@ const docTemplate = `{
                     }
                 },
                 "solution": {
-                    "$ref": "#/definitions/dto.SolutionItem"
+                    "description": "方案内容",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.SolutionItem"
+                        }
+                    ]
                 }
             }
         },
@@ -2486,9 +3327,11 @@ const docTemplate = `{
             ],
             "properties": {
                 "comment": {
+                    "description": "审核备注（审核人的意见和建议）",
                     "type": "string"
                 },
                 "opinion": {
+                    "description": "审核意见（approve=批准, reject=拒绝, abstain=弃权）",
                     "type": "string",
                     "enum": [
                         "approve",
@@ -2497,6 +3340,7 @@ const docTemplate = `{
                     ]
                 },
                 "score": {
+                    "description": "评分（可选，用于量化评估）",
                     "type": "integer"
                 }
             }
@@ -2508,7 +3352,234 @@ const docTemplate = `{
             ],
             "properties": {
                 "solution": {
-                    "$ref": "#/definitions/dto.SolutionItem"
+                    "description": "方案内容（只包含方案，不包含目标）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.SolutionItem"
+                        }
+                    ]
+                }
+            }
+        },
+        "dto.TaskDetailEnhancedResponse": {
+            "type": "object",
+            "properties": {
+                "actual_end_date": {
+                    "description": "实际完成日期",
+                    "type": "string"
+                },
+                "actual_start_date": {
+                    "description": "实际开始日期",
+                    "type": "string"
+                },
+                "assignee": {
+                    "description": "分配人用户ID",
+                    "type": "integer"
+                },
+                "attachments": {
+                    "description": "任务附件列表",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "child_sequence": {
+                    "description": "在父任务中的序号",
+                    "type": "integer"
+                },
+                "completed_subtasks": {
+                    "description": "已完成的子任务数",
+                    "type": "integer"
+                },
+                "creator": {
+                    "description": "创建者信息（可选）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.SimpleUserResponse"
+                        }
+                    ]
+                },
+                "creator_id": {
+                    "description": "创建者用户ID",
+                    "type": "integer"
+                },
+                "current_plan": {
+                    "description": "当前最新的执行计划（如果有，可选）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ExecutionPlanVersionResponse"
+                        }
+                    ]
+                },
+                "current_review": {
+                    "description": "当前进行中的审核会话（如果有，可选）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ReviewHistoryResponse"
+                        }
+                    ]
+                },
+                "current_solution": {
+                    "description": "当前最新的方案（如果有，可选）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.SolutionVersionResponse"
+                        }
+                    ]
+                },
+                "department_id": {
+                    "description": "所属部门ID",
+                    "type": "integer"
+                },
+                "description": {
+                    "description": "任务描述",
+                    "type": "string"
+                },
+                "due_date": {
+                    "description": "到期日期",
+                    "type": "string"
+                },
+                "executor": {
+                    "description": "执行人信息（可选）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.SimpleUserResponse"
+                        }
+                    ]
+                },
+                "executor_id": {
+                    "description": "执行人用户ID",
+                    "type": "integer"
+                },
+                "expected_end_date": {
+                    "description": "期望完成日期",
+                    "type": "string"
+                },
+                "expected_start_date": {
+                    "description": "期望开始日期",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "任务ID",
+                    "type": "integer"
+                },
+                "is_cross_department": {
+                    "description": "是否跨部门任务",
+                    "type": "boolean"
+                },
+                "is_in_pool": {
+                    "description": "是否在待领池中",
+                    "type": "boolean"
+                },
+                "is_template": {
+                    "description": "是否为模板任务",
+                    "type": "boolean"
+                },
+                "latest_execution_plan": {
+                    "description": "最新版本的执行计划（仅包含最新版本，与子任务同级展示）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ExecutionPlanListItemResponse"
+                        }
+                    ]
+                },
+                "latest_solution": {
+                    "description": "最新版本的思路方案（仅包含最新版本，与子任务同级展示）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.SolutionListItemResponse"
+                        }
+                    ]
+                },
+                "my_role": {
+                    "description": "当前用户在该任务中的角色（creator/executor/jury）",
+                    "type": "string"
+                },
+                "parent_task_id": {
+                    "description": "父任务ID",
+                    "type": "integer"
+                },
+                "priority": {
+                    "description": "任务优先级（1=低，2=中，3=高，4=紧急）",
+                    "type": "integer"
+                },
+                "progress": {
+                    "description": "任务进度百分比（0-100）",
+                    "type": "integer"
+                },
+                "reporter": {
+                    "description": "报告人用户ID",
+                    "type": "integer"
+                },
+                "root_task_id": {
+                    "description": "根任务ID",
+                    "type": "integer"
+                },
+                "split_from_plan_id": {
+                    "description": "拆分来源的执行计划ID",
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "任务状态",
+                    "type": "string"
+                },
+                "subtasks": {
+                    "description": "子任务列表（与思路方案、执行计划同级展示，支持递归）",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.TaskResponse"
+                    }
+                },
+                "tags": {
+                    "description": "任务标签列表",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "task_level": {
+                    "description": "任务层级（0=顶层）",
+                    "type": "integer"
+                },
+                "task_no": {
+                    "description": "任务编号（唯一标识）",
+                    "type": "string"
+                },
+                "task_path": {
+                    "description": "任务路径（如 \"1/5/12\"）",
+                    "type": "string"
+                },
+                "task_status": {
+                    "description": "任务状态信息（可选）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.TaskStatusResponse"
+                        }
+                    ]
+                },
+                "task_status_code": {
+                    "description": "任务状态编码",
+                    "type": "string"
+                },
+                "task_type": {
+                    "description": "任务类型信息（可选）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.TaskTypeResponse"
+                        }
+                    ]
+                },
+                "task_type_code": {
+                    "description": "任务类型编码",
+                    "type": "string"
+                },
+                "title": {
+                    "description": "任务标题",
+                    "type": "string"
+                },
+                "total_subtasks": {
+                    "description": "子任务总数",
+                    "type": "integer"
                 }
             }
         },
@@ -2516,118 +3587,196 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "actual_end_date": {
+                    "description": "实际完成日期",
                     "type": "string"
                 },
                 "actual_start_date": {
+                    "description": "实际开始日期",
                     "type": "string"
                 },
                 "assignee": {
+                    "description": "分配人用户ID",
                     "type": "integer"
                 },
                 "attachments": {
+                    "description": "任务附件列表",
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
                 },
                 "child_sequence": {
+                    "description": "在父任务中的序号",
+                    "type": "integer"
+                },
+                "completed_subtasks": {
+                    "description": "已完成的子任务数",
                     "type": "integer"
                 },
                 "creator": {
-                    "$ref": "#/definitions/dto.SimpleUserResponse"
+                    "description": "创建者信息（可选）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.SimpleUserResponse"
+                        }
+                    ]
                 },
                 "creator_id": {
+                    "description": "创建者用户ID",
                     "type": "integer"
                 },
                 "department_id": {
+                    "description": "所属部门ID",
                     "type": "integer"
                 },
                 "description": {
+                    "description": "任务描述",
                     "type": "string"
                 },
                 "due_date": {
+                    "description": "到期日期",
                     "type": "string"
                 },
                 "executor": {
-                    "$ref": "#/definitions/dto.SimpleUserResponse"
+                    "description": "执行人信息（可选）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.SimpleUserResponse"
+                        }
+                    ]
                 },
                 "executor_id": {
+                    "description": "执行人用户ID",
                     "type": "integer"
                 },
                 "expected_end_date": {
+                    "description": "期望完成日期",
                     "type": "string"
                 },
                 "expected_start_date": {
+                    "description": "期望开始日期",
                     "type": "string"
                 },
                 "id": {
+                    "description": "任务ID",
                     "type": "integer"
                 },
                 "is_cross_department": {
+                    "description": "是否跨部门任务",
                     "type": "boolean"
                 },
                 "is_in_pool": {
+                    "description": "是否在待领池中",
                     "type": "boolean"
                 },
                 "is_template": {
+                    "description": "是否为模板任务",
                     "type": "boolean"
                 },
+                "latest_execution_plan": {
+                    "description": "最新版本的执行计划（仅包含最新版本，与子任务同级展示）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ExecutionPlanListItemResponse"
+                        }
+                    ]
+                },
+                "latest_solution": {
+                    "description": "最新版本的思路方案（仅包含最新版本，与子任务同级展示）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.SolutionListItemResponse"
+                        }
+                    ]
+                },
                 "my_role": {
-                    "description": "当前用户在该任务中的角色：creator/executor/jury（用于标识陪审团任务）",
+                    "description": "当前用户在该任务中的角色（creator/executor/jury）",
                     "type": "string"
                 },
                 "parent_task_id": {
+                    "description": "父任务ID",
                     "type": "integer"
                 },
                 "priority": {
+                    "description": "任务优先级（1=低，2=中，3=高，4=紧急）",
                     "type": "integer"
                 },
                 "progress": {
+                    "description": "任务进度百分比（0-100）",
                     "type": "integer"
                 },
                 "reporter": {
+                    "description": "报告人用户ID",
                     "type": "integer"
                 },
                 "root_task_id": {
+                    "description": "根任务ID",
                     "type": "integer"
                 },
                 "split_from_plan_id": {
+                    "description": "拆分来源的执行计划ID",
                     "type": "integer"
                 },
                 "status": {
+                    "description": "任务状态",
                     "type": "string"
                 },
+                "subtasks": {
+                    "description": "子任务列表（与思路方案、执行计划同级展示，支持递归）",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.TaskResponse"
+                    }
+                },
                 "tags": {
+                    "description": "任务标签列表",
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
                 },
                 "task_level": {
+                    "description": "任务层级（0=顶层）",
                     "type": "integer"
                 },
                 "task_no": {
+                    "description": "任务编号（唯一标识）",
                     "type": "string"
                 },
                 "task_path": {
+                    "description": "任务路径（如 \"1/5/12\"）",
                     "type": "string"
                 },
                 "task_status": {
-                    "$ref": "#/definitions/dto.TaskStatusResponse"
+                    "description": "任务状态信息（可选）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.TaskStatusResponse"
+                        }
+                    ]
                 },
                 "task_status_code": {
+                    "description": "任务状态编码",
                     "type": "string"
                 },
                 "task_type": {
-                    "$ref": "#/definitions/dto.TaskTypeResponse"
+                    "description": "任务类型信息（可选）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.TaskTypeResponse"
+                        }
+                    ]
                 },
                 "task_type_code": {
+                    "description": "任务类型编码",
                     "type": "string"
                 },
                 "title": {
+                    "description": "任务标题",
                     "type": "string"
                 },
                 "total_subtasks": {
+                    "description": "子任务总数",
                     "type": "integer"
                 }
             }
@@ -2641,50 +3790,230 @@ const docTemplate = `{
             ],
             "properties": {
                 "department_id": {
+                    "description": "所属部门ID（任务所属的部门，可选）",
                     "type": "integer"
                 },
                 "description": {
+                    "description": "任务描述（详细的任务说明和需求）",
                     "type": "string"
                 },
                 "executor_id": {
+                    "description": "执行人用户ID（任务的具体执行者，可选）",
                     "type": "integer"
                 },
                 "expected_end_date": {
+                    "description": "期望完成日期（任务预计何时完成，可选）",
                     "type": "string"
                 },
                 "expected_start_date": {
+                    "description": "期望开始日期（任务预计何时开始，可选）",
                     "type": "string"
                 },
                 "is_in_pool": {
+                    "description": "是否在待领池（true=未指派执行人，需要其他人认领）",
                     "type": "boolean"
                 },
                 "parent_task_id": {
+                    "description": "父任务ID（用于建立任务层级关系，可选）",
                     "type": "integer"
                 },
                 "priority": {
+                    "description": "任务优先级（1=低，2=中，3=高，4=紧急）",
                     "type": "integer"
                 },
                 "root_task_id": {
+                    "description": "根任务ID（用于快速定位顶层任务，可选）",
                     "type": "integer"
                 },
                 "solution_deadline": {
-                    "description": "思路方案截止时间（可选，仅需求类任务适用，执行人需在此时间前提交方案）",
+                    "description": "思路方案截止时间（仅需求类任务适用，执行人需在此时间前提交解决方案）",
                     "type": "string"
                 },
                 "status_code": {
+                    "description": "任务状态编码（关联 task_statuses.code，可选，默认为初始状态）",
                     "type": "string"
                 },
                 "task_level": {
+                    "description": "任务层级（0=顶层任务，1=一级子任务，以此类推）",
                     "type": "integer"
                 },
                 "task_no": {
+                    "description": "任务编号（唯一，如 REQ-2024-001 格式）",
                     "type": "string"
                 },
                 "task_type_code": {
+                    "description": "任务类型编码（如：需求、缺陷、功能等，关联 task_types.code）",
                     "type": "string"
                 },
                 "title": {
+                    "description": "任务标题（简要描述任务内容）",
                     "type": "string"
+                }
+            }
+        },
+        "dto.TaskResponse": {
+            "type": "object",
+            "properties": {
+                "actual_end_date": {
+                    "description": "实际完成日期",
+                    "type": "string"
+                },
+                "actual_start_date": {
+                    "description": "实际开始日期",
+                    "type": "string"
+                },
+                "assignee": {
+                    "description": "分配人用户ID",
+                    "type": "integer"
+                },
+                "attachments": {
+                    "description": "任务附件列表",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "child_sequence": {
+                    "description": "在父任务中的序号",
+                    "type": "integer"
+                },
+                "completed_subtasks": {
+                    "description": "已完成的子任务数",
+                    "type": "integer"
+                },
+                "creator_id": {
+                    "description": "创建者用户ID",
+                    "type": "integer"
+                },
+                "department_id": {
+                    "description": "所属部门ID",
+                    "type": "integer"
+                },
+                "description": {
+                    "description": "任务描述",
+                    "type": "string"
+                },
+                "due_date": {
+                    "description": "到期日期",
+                    "type": "string"
+                },
+                "executor_id": {
+                    "description": "执行人用户ID",
+                    "type": "integer"
+                },
+                "expected_end_date": {
+                    "description": "期望完成日期",
+                    "type": "string"
+                },
+                "expected_start_date": {
+                    "description": "期望开始日期",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "任务ID",
+                    "type": "integer"
+                },
+                "is_cross_department": {
+                    "description": "是否跨部门任务",
+                    "type": "boolean"
+                },
+                "is_in_pool": {
+                    "description": "是否在待领池中",
+                    "type": "boolean"
+                },
+                "is_template": {
+                    "description": "是否为模板任务",
+                    "type": "boolean"
+                },
+                "latest_execution_plan": {
+                    "description": "最新版本的执行计划（仅包含最新版本，与子任务同级展示）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ExecutionPlanListItemResponse"
+                        }
+                    ]
+                },
+                "latest_solution": {
+                    "description": "最新版本的思路方案（仅包含最新版本，与子任务同级展示）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.SolutionListItemResponse"
+                        }
+                    ]
+                },
+                "my_role": {
+                    "description": "当前用户在该任务中的角色（creator/executor/jury）",
+                    "type": "string"
+                },
+                "parent_task_id": {
+                    "description": "父任务ID",
+                    "type": "integer"
+                },
+                "priority": {
+                    "description": "任务优先级（1=低，2=中，3=高，4=紧急）",
+                    "type": "integer"
+                },
+                "progress": {
+                    "description": "任务进度百分比（0-100）",
+                    "type": "integer"
+                },
+                "reporter": {
+                    "description": "报告人用户ID",
+                    "type": "integer"
+                },
+                "root_task_id": {
+                    "description": "根任务ID",
+                    "type": "integer"
+                },
+                "split_from_plan_id": {
+                    "description": "拆分来源的执行计划ID",
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "任务状态",
+                    "type": "string"
+                },
+                "subtasks": {
+                    "description": "子任务列表（与思路方案、执行计划同级展示，支持递归）",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.TaskResponse"
+                    }
+                },
+                "tags": {
+                    "description": "任务标签列表",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "task_level": {
+                    "description": "任务层级（0=顶层）",
+                    "type": "integer"
+                },
+                "task_no": {
+                    "description": "任务编号（唯一标识）",
+                    "type": "string"
+                },
+                "task_path": {
+                    "description": "任务路径（如 \"1/5/12\"）",
+                    "type": "string"
+                },
+                "task_status_code": {
+                    "description": "任务状态编码",
+                    "type": "string"
+                },
+                "task_type_code": {
+                    "description": "任务类型编码",
+                    "type": "string"
+                },
+                "title": {
+                    "description": "任务标题",
+                    "type": "string"
+                },
+                "total_subtasks": {
+                    "description": "子任务总数",
+                    "type": "integer"
                 }
             }
         },
@@ -2692,12 +4021,15 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "code": {
+                    "description": "任务状态编码",
                     "type": "string"
                 },
                 "id": {
+                    "description": "任务状态ID",
                     "type": "integer"
                 },
                 "name": {
+                    "description": "任务状态名称",
                     "type": "string"
                 }
             }
@@ -2709,9 +4041,11 @@ const docTemplate = `{
             ],
             "properties": {
                 "comment": {
+                    "description": "转换备注（状态转换的原因或说明，可选）",
                     "type": "string"
                 },
                 "to_status_code": {
+                    "description": "目标状态编码（要转换到的目标状态）",
                     "type": "string"
                 }
             }
@@ -2720,12 +4054,48 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "code": {
+                    "description": "任务类型编码（如：需求、缺陷等）",
                     "type": "string"
                 },
                 "id": {
+                    "description": "任务类型ID",
                     "type": "integer"
                 },
                 "name": {
+                    "description": "任务类型名称",
+                    "type": "string"
+                }
+            }
+        },
+        "dto.TimelineEventResponse": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "事件内容详情",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "事件发生时间",
+                    "type": "string"
+                },
+                "event_type": {
+                    "description": "事件类型（solution_submitted=方案提交, plan_submitted=计划提交, review_started=审核开始, status_changed=状态变更）",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "时间轴事件ID",
+                    "type": "integer"
+                },
+                "title": {
+                    "description": "事件标题",
+                    "type": "string"
+                },
+                "user_id": {
+                    "description": "事件发起人用户ID",
+                    "type": "integer"
+                },
+                "username": {
+                    "description": "事件发起人用户名",
                     "type": "string"
                 }
             }
@@ -2734,115 +4104,149 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "actual_end_date": {
+                    "description": "实际完成日期（可选）",
                     "type": "string"
                 },
                 "actual_start_date": {
+                    "description": "实际开始日期（可选）",
                     "type": "string"
                 },
                 "assignee": {
+                    "description": "分配人ID（可选）",
                     "type": "integer"
                 },
                 "attachments": {
+                    "description": "任务附件列表（可选）",
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
                 },
                 "child_sequence": {
+                    "description": "在父任务中的序号（可选）",
                     "type": "integer"
                 },
                 "completed_subtasks": {
+                    "description": "已完成的子任务数（可选）",
                     "type": "integer"
                 },
                 "created_at": {
+                    "description": "创建时间（可选）",
                     "type": "string"
                 },
                 "creator_id": {
+                    "description": "创建者用户ID（可选）",
                     "type": "integer"
                 },
                 "deleted_at": {
+                    "description": "删除时间（可选）",
                     "type": "string"
                 },
                 "department_id": {
+                    "description": "所属部门ID（可选）",
                     "type": "integer"
                 },
                 "description": {
+                    "description": "任务描述（可选）",
                     "type": "string"
                 },
                 "due_date": {
+                    "description": "到期日期（可选）",
                     "type": "string"
                 },
                 "executor_id": {
+                    "description": "执行人用户ID（可选）",
                     "type": "integer"
                 },
                 "expected_end_date": {
+                    "description": "期望完成日期（可选）",
                     "type": "string"
                 },
                 "expected_start_date": {
+                    "description": "期望开始日期（可选）",
                     "type": "string"
                 },
                 "is_cross_department": {
+                    "description": "是否跨部门（可选）",
                     "type": "boolean"
                 },
                 "is_in_pool": {
+                    "description": "是否在待领池（可选）",
                     "type": "boolean"
                 },
                 "is_template": {
+                    "description": "是否为模板任务（可选）",
                     "type": "boolean"
                 },
                 "parent_task_id": {
+                    "description": "父任务ID（可选）",
                     "type": "integer"
                 },
                 "priority": {
+                    "description": "任务优先级（可选）",
                     "type": "integer"
                 },
                 "progress": {
+                    "description": "任务进度百分比（0-100，可选）",
                     "type": "integer"
                 },
                 "reporter": {
+                    "description": "报告人ID（可选）",
                     "type": "integer"
                 },
                 "root_task_id": {
+                    "description": "根任务ID（可选）",
                     "type": "integer"
                 },
                 "solution_deadline": {
-                    "description": "思路方案截止时间（可选，仅需求类任务适用）",
+                    "description": "思路方案截止时间（仅需求类任务适用，可选）",
                     "type": "string"
                 },
                 "split_from_plan_id": {
+                    "description": "拆分来源的执行计划ID（可选）",
                     "type": "integer"
                 },
                 "status": {
+                    "description": "任务状态（可选）",
                     "type": "string"
                 },
                 "tags": {
+                    "description": "任务标签（可选）",
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
                 },
                 "task_level": {
+                    "description": "任务层级（可选）",
                     "type": "integer"
                 },
                 "task_no": {
+                    "description": "任务编号（可选）",
                     "type": "string"
                 },
                 "task_path": {
+                    "description": "任务路径（可选）",
                     "type": "string"
                 },
                 "task_status_code": {
+                    "description": "任务状态编码（可选）",
                     "type": "string"
                 },
                 "task_type_code": {
+                    "description": "任务类型编码（可选）",
                     "type": "string"
                 },
                 "title": {
+                    "description": "任务标题（可选）",
                     "type": "string"
                 },
                 "total_subtasks": {
+                    "description": "子任务总数（可选）",
                     "type": "integer"
                 },
                 "updated_at": {
+                    "description": "更新时间（可选）",
                     "type": "string"
                 }
             }
@@ -2851,15 +4255,398 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "email": {
+                    "description": "邮箱地址（唯一，格式必须为有效邮箱，可选）",
                     "type": "string"
                 },
                 "mobile": {
+                    "description": "手机号码（11位中国手机号，可选）",
                     "type": "string"
                 },
                 "nickname": {
+                    "description": "昵称（用于显示的用户名，可选）",
                     "type": "string"
                 },
                 "username": {
+                    "description": "用户名（唯一，字母数字组合，可选）",
+                    "type": "string"
+                }
+            }
+        },
+        "dto.UserResponse": {
+            "type": "object",
+            "properties": {
+                "department": {
+                    "description": "所属部门信息（可选）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.DepartmentResponse"
+                        }
+                    ]
+                },
+                "email": {
+                    "description": "邮箱地址",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "用户ID",
+                    "type": "integer"
+                },
+                "managed_departments": {
+                    "description": "管理的部门列表（用户作为负责人的部门，可选）",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.DepartmentResponse"
+                    }
+                },
+                "mobile": {
+                    "description": "手机号码",
+                    "type": "string"
+                },
+                "nickname": {
+                    "description": "用户昵称",
+                    "type": "string"
+                },
+                "roles": {
+                    "description": "用户拥有的角色列表（可选）",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.RoleResponse"
+                    }
+                },
+                "status": {
+                    "description": "用户状态（1=正常, 2=待审核, 3=禁用）",
+                    "type": "integer"
+                },
+                "username": {
+                    "description": "用户名",
+                    "type": "string"
+                }
+            }
+        },
+        "models.Department": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string"
+                },
+                "description": {
+                    "description": "部门描述",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "主键ID",
+                    "type": "integer"
+                },
+                "leaders": {
+                    "description": "部门负责人（多对多）",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.User"
+                    }
+                },
+                "name": {
+                    "description": "部门名称",
+                    "type": "string"
+                },
+                "parent_id": {
+                    "description": "父部门ID（可空）",
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "状态：1=正常，2=禁用",
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string"
+                }
+            }
+        },
+        "models.Permission": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string"
+                },
+                "description": {
+                    "description": "权限描述",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "主键ID",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "权限名称（唯一）",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string"
+                }
+            }
+        },
+        "models.Role": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string"
+                },
+                "description": {
+                    "description": "角色描述",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "主键ID",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "角色名称（唯一）",
+                    "type": "string"
+                },
+                "permissions": {
+                    "description": "该角色拥有的权限（多对多）",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Permission"
+                    }
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string"
+                }
+            }
+        },
+        "models.Task": {
+            "type": "object",
+            "properties": {
+                "actual_end_date": {
+                    "description": "实际结束日期（可空）",
+                    "type": "string"
+                },
+                "actual_start_date": {
+                    "description": "实际开始日期（可空）",
+                    "type": "string"
+                },
+                "child_sequence": {
+                    "description": "在父任务中的序号（排序用）",
+                    "type": "integer"
+                },
+                "completed_subtasks": {
+                    "description": "已完成的直接子任务数",
+                    "type": "integer"
+                },
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string"
+                },
+                "creator_id": {
+                    "description": "创建者用户ID",
+                    "type": "integer"
+                },
+                "department_id": {
+                    "description": "所属部门ID（可空）",
+                    "type": "integer"
+                },
+                "description": {
+                    "description": "描述（文本）",
+                    "type": "string"
+                },
+                "executor_id": {
+                    "description": "执行人用户ID（可空）",
+                    "type": "integer"
+                },
+                "expected_end_date": {
+                    "description": "期望结束日期（可空）",
+                    "type": "string"
+                },
+                "expected_start_date": {
+                    "description": "期望开始日期（可空）",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "主键ID",
+                    "type": "integer"
+                },
+                "is_cross_department": {
+                    "description": "是否跨部门",
+                    "type": "boolean"
+                },
+                "is_in_pool": {
+                    "description": "是否在待领池（未指派执行人）",
+                    "type": "boolean"
+                },
+                "is_template": {
+                    "description": "是否为模板任务",
+                    "type": "boolean"
+                },
+                "parent_task_id": {
+                    "description": "父任务ID（可空）",
+                    "type": "integer"
+                },
+                "priority": {
+                    "description": "优先级：1-低，2-中，3-高，4-紧急",
+                    "type": "integer"
+                },
+                "progress": {
+                    "description": "进度百分比 0-100",
+                    "type": "integer"
+                },
+                "root_task_id": {
+                    "description": "根任务ID（可空，用于快速定位顶层任务）",
+                    "type": "integer"
+                },
+                "solution_deadline": {
+                    "description": "思路方案截止时间（需求类任务创建时可设定，执行人需在此时间前提交方案）",
+                    "type": "string"
+                },
+                "split_at": {
+                    "description": "拆分时间（可空）",
+                    "type": "string"
+                },
+                "split_from_plan_id": {
+                    "description": "拆分来源的执行计划ID（可空）",
+                    "type": "integer"
+                },
+                "status_code": {
+                    "description": "状态编码（关联 task_statuses.code）",
+                    "type": "string"
+                },
+                "tags": {
+                    "description": "标签（多对多，关联 task_tag_rel 表）",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.TaskTag"
+                    }
+                },
+                "task_level": {
+                    "description": "任务层级：0=顶层，1=一级子任务...",
+                    "type": "integer"
+                },
+                "task_no": {
+                    "description": "任务编号，唯一（如 REQ-2024-001）",
+                    "type": "string"
+                },
+                "task_path": {
+                    "description": "任务路径（如 \"1/5/12\"），便于检索整个树",
+                    "type": "string"
+                },
+                "task_type_code": {
+                    "description": "任务类型编码（关联 task_types.code）",
+                    "type": "string"
+                },
+                "title": {
+                    "description": "标题",
+                    "type": "string"
+                },
+                "total_subtasks": {
+                    "description": "直接子任务总数（冗余，优化查询）",
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string"
+                }
+            }
+        },
+        "models.TaskTag": {
+            "type": "object",
+            "properties": {
+                "color": {
+                    "description": "颜色（前端显示）",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string"
+                },
+                "description": {
+                    "description": "描述",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "主键ID",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "标签名称（唯一）",
+                    "type": "string"
+                },
+                "tasks": {
+                    "description": "关联的任务（多对多，使用 task_tag_rel 作为 join 表）",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Task"
+                    }
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string"
+                }
+            }
+        },
+        "models.User": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string"
+                },
+                "department": {
+                    "description": "部门关联",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.Department"
+                        }
+                    ]
+                },
+                "department_id": {
+                    "description": "部门ID",
+                    "type": "integer"
+                },
+                "email": {
+                    "description": "邮箱（唯一）",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "主键ID",
+                    "type": "integer"
+                },
+                "managed_departments": {
+                    "description": "管理的部门（多对多，作为负责人）",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Department"
+                    }
+                },
+                "mobile": {
+                    "description": "手机号",
+                    "type": "string"
+                },
+                "nickname": {
+                    "description": "昵称（用于显示）",
+                    "type": "string"
+                },
+                "roles": {
+                    "description": "角色列表（多对多）",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Role"
+                    }
+                },
+                "status": {
+                    "description": "状态：1=正常，0=禁用",
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string"
+                },
+                "username": {
+                    "description": "用户名（唯一）",
                     "type": "string"
                 }
             }

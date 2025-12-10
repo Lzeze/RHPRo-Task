@@ -63,7 +63,7 @@ func (ctrl *TaskController) CreateTask(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} map[string]interface{} "获取成功"
+// @Success 200 {object} models.Task "获取成功"
 // @Failure 401 {object} map[string]interface{} "未授权"
 // @Failure 404 {object} map[string]interface{} "任务不存在"
 // @Router /tasks/current [get]

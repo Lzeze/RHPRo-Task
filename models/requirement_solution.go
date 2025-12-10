@@ -9,6 +9,8 @@ type RequirementSolution struct {
 	TaskID uint `gorm:"index;not null" json:"task_id"`
 	// 方案版本号
 	Version int `gorm:"default:1" json:"version"`
+	// 方案标题（用于在列表中快速识别）
+	Title string `gorm:"size:500;not null" json:"title"`
 	// 方案内容（文本）
 	Content string `gorm:"type:text" json:"content"`
 	// 脑图文件 URL
@@ -29,5 +31,3 @@ type RequirementSolution struct {
 func (RequirementSolution) TableName() string {
 	return "requirement_solutions"
 }
-
-

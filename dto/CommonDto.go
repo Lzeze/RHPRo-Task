@@ -2,7 +2,9 @@ package dto
 
 // PaginationRequest 分页请求
 type PaginationRequest struct {
-	Page     int `form:"page" binding:"omitempty,gte=1" example:"1"`
+	// 页码（从1开始，默认为1）
+	Page int `form:"page" binding:"omitempty,gte=1" example:"1"`
+	// 每页数量（1-100，默认为10）
 	PageSize int `form:"page_size" binding:"omitempty,gte=1,lte=100" example:"10"`
 }
 
@@ -27,9 +29,14 @@ func (p *PaginationRequest) GetPageSize() int {
 
 // PaginationResponse 分页响应
 type PaginationResponse struct {
-	Total      int64       `json:"total"`
-	Page       int         `json:"page"`
-	PageSize   int         `json:"page_size"`
-	TotalPages int         `json:"total_pages"`
-	Data       interface{} `json:"data"`
+	// 数据总数
+	Total int64 `json:"total"`
+	// 当前页码
+	Page int `json:"page"`
+	// 每页数量
+	PageSize int `json:"page_size"`
+	// 总页数
+	TotalPages int `json:"total_pages"`
+	// 分页数据列表
+	Data interface{} `json:"data"`
 }

@@ -58,7 +58,7 @@ func (ctrl *AuthController) Register(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param credentials body dto.LoginRequest true "登录凭证"
-// @Success 200 {object} map[string]interface{} "登录成功，返回token"
+// @Success 200 {object} dto.LoginResponse "登录成功，返回token"
 // @Failure 400 {object} map[string]interface{} "参数验证失败"
 // @Failure 401 {object} map[string]interface{} "用户名或密码错误"
 // @Router /auth/login [post]

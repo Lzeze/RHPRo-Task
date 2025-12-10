@@ -26,6 +26,7 @@ func SetupRoutes() *gin.Engine {
 	userController := controllers.NewUserController()
 	adminController := controllers.NewAdminController()
 	taskController := controllers.NewTaskController()
+	detailController := controllers.NewTaskDetailController()
 
 	// 公开路由
 	public := router.Group("/api/v1")
@@ -118,7 +119,8 @@ func SetupRoutes() *gin.Engine {
 		taskRoutes.GET("", taskController.GetTaskList)
 		// 我的任务列表（必须放在 /:id 之前，避免路径匹配冲突）
 		taskRoutes.GET("/my", taskController.GetMyTasks)
-		taskRoutes.GET("/:id", taskController.GetTaskByID)
+		// 任务详情（包含最新版本的方案和计划）
+		taskRoutes.GET("/:id", detailController.GetTaskDetail)
 		taskRoutes.PUT("/:id", taskController.UpdateTask)
 		taskRoutes.DELETE("/:id", taskController.DeleteTask)
 
@@ -130,6 +132,13 @@ func SetupRoutes() *gin.Engine {
 
 		// 任务专用访问 (Task Token)
 		taskRoutes.GET("/current", middlewares.TaskTokenMiddleware(), taskController.GetTaskInfo)
+
+		// 任务详情相关接口
+		taskRoutes.GET("/:id/solutions", detailController.GetTaskSolutions)
+		taskRoutes.GET("/:id/execution-plans", detailController.GetTaskExecutionPlans)
+		taskRoutes.GET("/:id/reviews", detailController.GetTaskReviewHistory)
+		taskRoutes.GET("/:id/change-logs", detailController.GetTaskChangeLogs)
+		taskRoutes.GET("/:id/timeline", detailController.GetTaskTimeline)
 	}
 
 	// 任务流程路由

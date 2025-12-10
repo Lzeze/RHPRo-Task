@@ -13,6 +13,8 @@ type ExecutionPlan struct {
 	TaskID uint `gorm:"index;not null" json:"task_id"`
 	// 计划版本号
 	Version int `gorm:"default:1" json:"version"`
+	// 执行计划标题（用于在列表中快速识别）
+	Title string `gorm:"size:500;not null" json:"title"`
 	// 技术栈说明（文本）
 	TechStack string `gorm:"type:text;not null" json:"tech_stack"`
 	// 实施步骤（JSONB）

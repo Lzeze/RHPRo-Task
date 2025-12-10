@@ -111,7 +111,7 @@ func (ctrl *DepartmentController) DeleteDepartment(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} map[string]interface{} "获取成功"
+// @Success 200 {object} models.Department "获取成功"
 // @Router /departments [get]
 func (ctrl *DepartmentController) GetDepartmentList(c *gin.Context) {
 	depts, err := ctrl.deptService.GetDepartmentList()
@@ -131,7 +131,7 @@ func (ctrl *DepartmentController) GetDepartmentList(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param id path int true "部门ID"
-// @Success 200 {object} map[string]interface{} "获取成功"
+// @Success 200 {object} dto.DepartmentDetailResponse "获取成功"
 // @Router /departments/{id} [get]
 func (ctrl *DepartmentController) GetDepartmentDetail(c *gin.Context) {
 	idStr := c.Param("id")

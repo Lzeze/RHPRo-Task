@@ -24,7 +24,7 @@ func NewAdminController() *AdminController {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} map[string]interface{} "获取成功"
+// @Success 200 {object} dto.RoleResponse "获取成功"
 // @Failure 401 {object} map[string]interface{} "未授权"
 // @Failure 500 {object} map[string]interface{} "查询失败"
 // @Router /admin/roles [get]
@@ -45,7 +45,7 @@ func (ctrl *AdminController) GetRoleList(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} map[string]interface{} "获取成功"
+// @Success 200 {object} dto.PermissionResponse "获取成功"
 // @Failure 401 {object} map[string]interface{} "未授权"
 // @Failure 500 {object} map[string]interface{} "查询失败"
 // @Router /admin/permissions [get]

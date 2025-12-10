@@ -231,8 +231,6 @@ func (ctrl *TaskFlowController) SubmitExecutionPlan(c *gin.Context) {
 	utils.Error(c, 400, "此接口已废弃，请使用 POST /tasks/{id}/execution-plan 同时提交执行计划和目标")
 }
 
-// ========== 以下方法保持不变 ==========
-
 // InitiateReview 发起审核
 // @Summary 发起审核
 // @Description 创建人发起方案或执行计划审核
@@ -359,7 +357,7 @@ func (ctrl *TaskFlowController) FinalizeReview(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param sessionId path int true "审核会话ID"
-// @Success 200 {object} map[string]interface{} "查询成功"
+// @Success 200 {object} dto.ReviewSessionResponse "查询成功"
 // @Router /review-sessions/{sessionId} [get]
 func (ctrl *TaskFlowController) GetReviewSession(c *gin.Context) {
 	sessionID, err := strconv.ParseUint(c.Param("sessionId"), 10, 32)

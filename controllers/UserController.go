@@ -26,10 +26,10 @@ func NewUserController() *UserController {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} map[string]interface{} "获取成功"
+// @Success 200 {object} dto.UserResponse "获取成功"
 // @Failure 401 {object} map[string]interface{} "未授权"
 // @Failure 404 {object} map[string]interface{} "用户不存在"
-// @Router /users/profile [get]
+// @Router /profile [get]
 func (ctrl *UserController) GetProfile(c *gin.Context) {
 	userID, _ := c.Get("userID")
 
@@ -81,7 +81,7 @@ func (ctrl *UserController) GetUserList(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param id path int true "用户ID"
-// @Success 200 {object} map[string]interface{} "获取成功"
+// @Success 200 {object} dto.UserResponse "获取成功"
 // @Failure 400 {object} map[string]interface{} "无效的用户ID"
 // @Failure 401 {object} map[string]interface{} "未授权"
 // @Failure 404 {object} map[string]interface{} "用户不存在"

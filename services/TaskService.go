@@ -145,7 +145,10 @@ func (s *TaskService) GetTaskList(req *dto.TaskQueryRequest) (*dto.PaginationRes
 	// 转换为响应格式
 	taskResponses := make([]dto.TaskResponse, len(tasks))
 	for i, task := range tasks {
-		taskResponses[i] = s.toTaskResponse(&task)
+		resp := s.toTaskResponse(&task)
+		// 加载子任务、方案和计划
+		s.loadTaskAssociations(&resp, task.ID)
+		taskResponses[i] = resp
 	}
 
 	// 计算总页数
@@ -259,6 +262,8 @@ func (s *TaskService) GetMyTasks(req *dto.TaskQueryRequest, userID uint) (*dto.P
 	taskResponses := make([]dto.TaskResponse, len(tasks))
 	for i, task := range tasks {
 		taskResponses[i] = s.toTaskResponse(&task)
+		// 加载子任务、方案和计划
+		s.loadTaskAssociations(&taskResponses[i], task.ID)
 		// 确定当前用户在该任务中的角色
 		if task.CreatorID == userID {
 			taskResponses[i].MyRole = "creator"
@@ -717,4 +722,77 @@ func (s *TaskService) toTaskResponse(task *models.Task) dto.TaskResponse {
 func (s *TaskService) toTaskResponsePtr(task *models.Task) *dto.TaskResponse {
 	resp := s.toTaskResponse(task)
 	return &resp
+}
+
+// loadTaskAssociations 加载任务的关联数据（子任务、方案、计划）
+// 支持递归加载子任务（可以多级拆分），仅获取最新版本的方案和计划
+func (s *TaskService) loadTaskAssociations(resp *dto.TaskResponse, taskID uint) {
+	// 递归加载直接子任务
+	if resp.TotalSubtasks > 0 {
+		s.loadSubtasksRecursive(resp, taskID)
+	}
+
+	// 加载最新版本的思路方案
+	var latestSolution models.RequirementSolution
+	if err := database.DB.Where("task_id = ?", taskID).
+		Order("version DESC").
+		First(&latestSolution).Error; err == nil {
+		item := &dto.SolutionListItemResponse{
+			ID:          latestSolution.ID,
+			Version:     fmt.Sprintf("v%d", latestSolution.Version),
+			Title:       latestSolution.Title,
+			Status:      latestSolution.Status,
+			SubmittedAt: latestSolution.SubmittedAt,
+		}
+		if latestSolution.SubmittedBy != nil {
+			item.SubmittedBy = *latestSolution.SubmittedBy
+			// 获取提交者用户名
+			var user models.User
+			if err := database.DB.Select("username").Where("id = ?", *latestSolution.SubmittedBy).First(&user).Error; err == nil {
+				item.SubmittedByUsername = user.Username
+			}
+		}
+		resp.LatestSolution = item
+	}
+
+	// 加载最新版本的执行计划
+	var latestPlan models.ExecutionPlan
+	if err := database.DB.Where("task_id = ?", taskID).
+		Order("version DESC").
+		First(&latestPlan).Error; err == nil {
+		item := &dto.ExecutionPlanListItemResponse{
+			ID:          latestPlan.ID,
+			Version:     fmt.Sprintf("v%d", latestPlan.Version),
+			Title:       latestPlan.Title,
+			Status:      latestPlan.Status,
+			SubmittedAt: latestPlan.SubmittedAt,
+		}
+		if latestPlan.SubmittedBy != nil {
+			item.SubmittedBy = *latestPlan.SubmittedBy
+			// 获取提交者用户名
+			var user models.User
+			if err := database.DB.Select("username").Where("id = ?", *latestPlan.SubmittedBy).First(&user).Error; err == nil {
+				item.SubmittedByUsername = user.Username
+			}
+		}
+		resp.LatestExecutionPlan = item
+	}
+}
+
+// loadSubtasksRecursive 递归加载子任务（支持多级拆分）
+func (s *TaskService) loadSubtasksRecursive(parentResp *dto.TaskResponse, parentTaskID uint) {
+	var subtasks []models.Task
+	if err := database.DB.Where("parent_task_id = ?", parentTaskID).
+		Order("child_sequence ASC").
+		Find(&subtasks).Error; err != nil || len(subtasks) == 0 {
+		return
+	}
+
+	parentResp.Subtasks = make([]*dto.TaskResponse, len(subtasks))
+	for i, st := range subtasks {
+		subResp := s.toTaskResponse(&st)
+		// 递归加载子任务的子任务、方案和计划
+		s.loadTaskAssociations(&subResp, st.ID)
+		parentResp.Subtasks[i] = &subResp
+	}
 }
