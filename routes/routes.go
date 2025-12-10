@@ -58,31 +58,35 @@ func SetupRoutes() *gin.Engine {
 	{
 		// 查看用户列表和详情（需要user:read权限）
 		userRoutes.GET("",
-			middlewares.PermissionMiddleware("user:read"),
+			// middlewares.PermissionMiddleware("user:read"),
 			userController.GetUserList)
 		userRoutes.GET("/:id",
-			middlewares.PermissionMiddleware("user:read"),
+			// middlewares.PermissionMiddleware("user:read"),
 			userController.GetUserByID)
 
 		// 更新用户（需要user:update权限）
 		userRoutes.PUT("/:id",
-			middlewares.PermissionMiddleware("user:update"),
+			// middlewares.PermissionMiddleware("user:update"),
 			userController.UpdateUser)
 
 		// 分配角色（需要role:manage权限）
 		userRoutes.POST("/:id/roles",
-			middlewares.PermissionMiddleware("role:manage"),
+			// middlewares.PermissionMiddleware("role:manage"),
 			userController.AssignRoles)
 
 		// 管理员创建用户（需要user:create权限）
 		userRoutes.POST("",
-			middlewares.PermissionMiddleware("user:create"),
+			// middlewares.PermissionMiddleware("user:create"),
 			userController.CreateUser)
 
 		// 审核用户（需要user:approve权限）
 		userRoutes.POST("/:id/approve",
-			middlewares.PermissionMiddleware("user:approve"),
+			// middlewares.PermissionMiddleware("user:approve"),
 			userController.ApproveUser)
+
+		// 获取可指派的执行人列表（用于任务分配，只需要当前用户有效即可）
+		userRoutes.GET("/assignable",
+			userController.GetAssignableUsers)
 	}
 
 	// 部门管理路由
@@ -93,16 +97,22 @@ func SetupRoutes() *gin.Engine {
 		// deptRoutes.POST("", middlewares.PermissionMiddleware("dept:create"), deptController.CreateDepartment)
 		// deptRoutes.PUT("/:id", middlewares.PermissionMiddleware("dept:update"), deptController.UpdateDepartment)
 		// deptRoutes.DELETE("/:id", middlewares.PermissionMiddleware("dept:delete"), deptController.DeleteDepartment)
+		//创建部门
 		deptRoutes.POST("", deptController.CreateDepartment)
+		//更新部门
 		deptRoutes.PUT("/:id", deptController.UpdateDepartment)
+		//删除部门
 		deptRoutes.DELETE("/:id", deptController.DeleteDepartment)
+		// 获取部门列表和详情
 		deptRoutes.GET("", deptController.GetDepartmentList)
 		deptRoutes.GET("/:id", deptController.GetDepartmentDetail)
 
 		// 负责人管理
 		// deptRoutes.POST("/:id/leaders", middlewares.PermissionMiddleware("dept:manage"), deptController.AddLeader)
 		// deptRoutes.DELETE("/:id/leaders/:userId", middlewares.PermissionMiddleware("dept:manage"), deptController.RemoveLeader)
+		//添加负责人
 		deptRoutes.POST("/:id/leaders", deptController.AddLeader)
+		//移除负责人
 		deptRoutes.DELETE("/:id/leaders/:userId", deptController.RemoveLeader)
 
 		// 人员分配
@@ -116,12 +126,15 @@ func SetupRoutes() *gin.Engine {
 	{
 		// 任务 CRUD
 		taskRoutes.POST("", taskController.CreateTask)
+		//所有任务列表
 		taskRoutes.GET("", taskController.GetTaskList)
 		// 我的任务列表（必须放在 /:id 之前，避免路径匹配冲突）
 		taskRoutes.GET("/my", taskController.GetMyTasks)
 		// 任务详情（包含最新版本的方案和计划）
 		taskRoutes.GET("/:id", detailController.GetTaskDetail)
+		// 更新任务
 		taskRoutes.PUT("/:id", taskController.UpdateTask)
+		//删除任务
 		taskRoutes.DELETE("/:id", taskController.DeleteTask)
 
 		// 任务状态转换
@@ -134,10 +147,15 @@ func SetupRoutes() *gin.Engine {
 		taskRoutes.GET("/current", middlewares.TaskTokenMiddleware(), taskController.GetTaskInfo)
 
 		// 任务详情相关接口
+		// 获取任务的所有方案版本
 		taskRoutes.GET("/:id/solutions", detailController.GetTaskSolutions)
+		// 获取任务的所有执行计划版本
 		taskRoutes.GET("/:id/execution-plans", detailController.GetTaskExecutionPlans)
+		// 获取任务的审核历史
 		taskRoutes.GET("/:id/reviews", detailController.GetTaskReviewHistory)
+		// 获取任务的变更日志
 		taskRoutes.GET("/:id/change-logs", detailController.GetTaskChangeLogs)
+		// 获取任务的时间轴
 		taskRoutes.GET("/:id/timeline", detailController.GetTaskTimeline)
 	}
 
@@ -146,9 +164,13 @@ func SetupRoutes() *gin.Engine {
 	flowRoutes := router.Group("/api/v1/tasks")
 	// flowRoutes.Use(middlewares.AuthMiddleware())
 	{
+		//认领任务、接受任务、
 		flowRoutes.POST("/:id/accept", flowController.AcceptTask)
+		//拒绝任务
 		flowRoutes.POST("/:id/reject", flowController.RejectTask)
+		//提交目标 (待用,目前目标和执行计划合并提交)
 		flowRoutes.POST("/:id/goals", flowController.SubmitGoals)
+		//发起审核(待用)
 		flowRoutes.POST("/:id/review", flowController.InitiateReview)
 		// 提交解决方案（第一步：方案审核）
 		flowRoutes.POST("/:id/solution", flowController.SubmitSolution)
@@ -160,10 +182,15 @@ func SetupRoutes() *gin.Engine {
 	reviewRoutes := router.Group("/api/v1/review-sessions")
 	// reviewRoutes.Use(middlewares.AuthMiddleware())
 	{
+		// 获取审核会话详情
 		reviewRoutes.GET("/:sessionId", flowController.GetReviewSession)
+		// 提交审核意见
 		reviewRoutes.POST("/:sessionId/opinion", flowController.SubmitReviewOpinion)
+		// 最终决策
 		reviewRoutes.POST("/:sessionId/finalize", flowController.FinalizeReview)
+		// 邀请陪审团成员
 		reviewRoutes.POST("/:sessionId/invite-jury", flowController.InviteJury)
+		// 移除陪审团成员
 		reviewRoutes.DELETE("/:sessionId/jury/:juryMemberId", flowController.RemoveJuryMember)
 	}
 

@@ -48,6 +48,30 @@ type DepartmentResponse struct {
 	Name string `json:"name"`
 }
 
+// ========== 指派执行人相关 ==========
+
+// AssignableUserResponse 可指派用户响应（用于指派执行人的用户列表）
+type AssignableUserResponse struct {
+	// 用户ID
+	ID uint `json:"id"`
+	// 用户昵称（用于显示）
+	Nickname string `json:"nickname"`
+	// 邮箱地址
+	Email string `json:"email"`
+	// 所属部门ID
+	DepartmentID uint `json:"department_id"`
+	// 所属部门名称
+	DepartmentName string `json:"department_name"`
+	//是否是负责人
+	IsDepartmentLeader bool `json:"is_department_leader"`
+}
+
+// GetAssignableUsersRequest 获取可指派用户列表请求
+type GetAssignableUsersRequest struct {
+	// 用户昵称或邮箱（模糊检索，可选）
+	Keyword string `form:"keyword"`
+}
+
 // RoleResponse 角色响应
 type RoleResponse struct {
 	// 角色ID

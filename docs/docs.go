@@ -2143,6 +2143,66 @@ const docTemplate = `{
                 }
             }
         },
+        "/users/assignable": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取可指派为任务执行人的用户列表，包括同部门成员和其他部门负责人，支持昵称和邮箱模糊检索",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户管理"
+                ],
+                "summary": "获取可指派的执行人列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "关键词（昵称或邮箱，模糊搜索）",
+                        "name": "keyword",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功，包含同部门成员和其他部门负责人",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.AssignableUserResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "服务器错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/users/{id}": {
             "get": {
                 "security": [
@@ -2440,6 +2500,35 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.AssignableUserResponse": {
+            "type": "object",
+            "properties": {
+                "department_id": {
+                    "description": "所属部门ID",
+                    "type": "integer"
+                },
+                "department_name": {
+                    "description": "所属部门名称",
+                    "type": "string"
+                },
+                "email": {
+                    "description": "邮箱地址",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "用户ID",
+                    "type": "integer"
+                },
+                "is_department_leader": {
+                    "description": "是否是负责人",
+                    "type": "boolean"
+                },
+                "nickname": {
+                    "description": "用户昵称（用于显示）",
+                    "type": "string"
+                }
+            }
+        },
         "dto.ChangeLogResponse": {
             "type": "object",
             "properties": {
@@ -2503,7 +2592,14 @@ const docTemplate = `{
                     "description": "部门负责人列表",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.DepartmentLeader"
+                        "$ref": "#/definitions/dto.DepartmentLeaderDetail"
+                    }
+                },
+                "members": {
+                    "description": "部门成员列表",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.DepartmentMemberDetail"
                     }
                 },
                 "name": {
@@ -2520,12 +2616,53 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.DepartmentLeader": {
+        "dto.DepartmentLeaderDetail": {
             "type": "object",
             "properties": {
+                "email": {
+                    "description": "邮箱",
+                    "type": "string"
+                },
                 "is_primary": {
                     "description": "是否为主负责人",
                     "type": "boolean"
+                },
+                "job_title": {
+                    "description": "职位",
+                    "type": "string"
+                },
+                "nickname": {
+                    "description": "用户昵称",
+                    "type": "string"
+                },
+                "user_id": {
+                    "description": "用户ID",
+                    "type": "integer"
+                },
+                "username": {
+                    "description": "用户名",
+                    "type": "string"
+                }
+            }
+        },
+        "dto.DepartmentMemberDetail": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "description": "邮箱",
+                    "type": "string"
+                },
+                "job_title": {
+                    "description": "职位",
+                    "type": "string"
+                },
+                "nickname": {
+                    "description": "用户昵称",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "用户状态（1=正常，3=禁用，2=待审核）",
+                    "type": "integer"
                 },
                 "user_id": {
                     "description": "用户ID",
@@ -3826,8 +3963,8 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "solution_deadline": {
-                    "description": "思路方案截止时间（仅需求类任务适用，执行人需在此时间前提交解决方案）",
-                    "type": "string"
+                    "description": "思路方案截止天数（仅需求类任务适用，表示执行人接受任务后需在N天内提交方案，0表示不限制）",
+                    "type": "integer"
                 },
                 "status_code": {
                     "description": "任务状态编码（关联 task_statuses.code，可选，默认为初始状态）",
@@ -4199,8 +4336,8 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "solution_deadline": {
-                    "description": "思路方案截止时间（仅需求类任务适用，可选）",
-                    "type": "string"
+                    "description": "思路方案截止天数（仅需求类任务适用，表示执行人接受任务后需在N天内提交方案，0表示不限制，可选）",
+                    "type": "integer"
                 },
                 "split_from_plan_id": {
                     "description": "拆分来源的执行计划ID（可选）",
@@ -4500,8 +4637,8 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "solution_deadline": {
-                    "description": "思路方案截止时间（需求类任务创建时可设定，执行人需在此时间前提交方案）",
-                    "type": "string"
+                    "description": "思路方案截止天数（需求类任务创建时可设定，表示执行人接受任务后需在N天内提交方案，0表示不限制）",
+                    "type": "integer"
                 },
                 "split_at": {
                     "description": "拆分时间（可空）",
@@ -4615,6 +4752,14 @@ const docTemplate = `{
                     "description": "主键ID",
                     "type": "integer"
                 },
+                "is_department_leader": {
+                    "description": "是否是部门负责人",
+                    "type": "boolean"
+                },
+                "job_title": {
+                    "description": "职位名称",
+                    "type": "string"
+                },
                 "managed_departments": {
                     "description": "管理的部门（多对多，作为负责人）",
                     "type": "array",
@@ -4638,7 +4783,7 @@ const docTemplate = `{
                     }
                 },
                 "status": {
-                    "description": "状态：1=正常，0=禁用",
+                    "description": "状态：1-正常，3-禁用，2-待审核",
                     "type": "integer"
                 },
                 "updated_at": {
@@ -4668,8 +4813,8 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "192.168.12.48:8888",
 	BasePath:         "/api/v1",
 	Schemes:          []string{},
-	Title:            "任务管理系统 API",
-	Description:      "企业级任务管理系统的 RESTful API 接口文档",
+	Title:            "北极星任务管理系统 API",
+	Description:      "北极星任务管理系统的 RESTful API 接口文档",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

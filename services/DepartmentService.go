@@ -81,13 +81,22 @@ func (s *DepartmentService) GetDepartmentList() ([]models.Department, error) {
 // GetDepartmentDetail 获取部门详情（包含负责人）
 func (s *DepartmentService) GetDepartmentDetail(id uint) (*dto.DepartmentDetailResponse, error) {
 	var dept models.Department
-	if err := database.DB.Preload("Leaders").First(&dept, id).Error; err != nil {
+	if err := database.DB.First(&dept, id).Error; err != nil {
 		return nil, err
 	}
 
-	// 获取负责人详情（包含 is_primary）
+	// 获取负责人详情
 	var leaders []models.DepartmentLeader
 	if err := database.DB.Preload("User").Where("department_id = ?", id).Find(&leaders).Error; err != nil {
+		return nil, err
+	}
+
+	// 获取部门成员（所有department_id为该部门且未被禁用的用户）
+	var members []models.User
+	if err := database.DB.
+		Where("department_id = ? AND status != ?", id, models.UserStatusDisabled).
+		Order("nickname ASC").
+		Find(&members).Error; err != nil {
 		return nil, err
 	}
 
@@ -97,13 +106,40 @@ func (s *DepartmentService) GetDepartmentDetail(id uint) (*dto.DepartmentDetailR
 		Description: dept.Description,
 		ParentID:    dept.ParentID,
 		Status:      dept.Status,
+		Leaders:     []dto.DepartmentLeaderDetail{},
+		Members:     []dto.DepartmentMemberDetail{},
 	}
 
+	// 组装负责人信息
 	for _, l := range leaders {
-		resp.Leaders = append(resp.Leaders, dto.DepartmentLeader{
+		resp.Leaders = append(resp.Leaders, dto.DepartmentLeaderDetail{
 			UserID:    l.UserID,
 			Username:  l.User.Username,
+			Nickname:  l.User.Nickname,
+			Email:     l.User.Email,
+			JobTitle:  l.User.JobTitle,
 			IsPrimary: l.IsPrimary,
+		})
+	}
+
+	// 组装成员信息（排除负责人，避免重复）
+	leaderIDs := make(map[uint]bool)
+	for _, l := range leaders {
+		leaderIDs[l.UserID] = true
+	}
+
+	for _, m := range members {
+		// 跳过已在负责人列表中的用户
+		if leaderIDs[m.ID] {
+			continue
+		}
+		resp.Members = append(resp.Members, dto.DepartmentMemberDetail{
+			UserID:   m.ID,
+			Username: m.Username,
+			Nickname: m.Nickname,
+			Email:    m.Email,
+			JobTitle: m.JobTitle,
+			Status:   m.Status,
 		})
 	}
 
@@ -112,13 +148,26 @@ func (s *DepartmentService) GetDepartmentDetail(id uint) (*dto.DepartmentDetailR
 
 // AddLeader 添加负责人
 func (s *DepartmentService) AddLeader(deptID uint, req *dto.AddLeaderRequest) error {
-	// 检查是否已存在
+	// 检查是否已存在（包括未被软删除的记录）
 	var count int64
-	database.DB.Model(&models.DepartmentLeader{}).Where("department_id = ? AND user_id = ?", deptID, req.UserID).Count(&count)
+	database.DB.Model(&models.DepartmentLeader{}).Where("department_id = ? AND user_id = ? AND deleted_at IS NULL", deptID, req.UserID).Count(&count)
 	if count > 0 {
 		return errors.New("该用户已是负责人")
 	}
 
+	// 检查是否存在被软删除的记录
+	var deletedLeader models.DepartmentLeader
+	result := database.DB.Unscoped().Where("department_id = ? AND user_id = ? AND deleted_at IS NOT NULL", deptID, req.UserID).First(&deletedLeader)
+
+	if result.RowsAffected > 0 {
+		// 恢复被软删除的记录
+		return database.DB.Model(&deletedLeader).Updates(map[string]interface{}{
+			"deleted_at": nil,
+			"is_primary": req.IsPrimary,
+		}).Error
+	}
+
+	// 创建新记录
 	leader := &models.DepartmentLeader{
 		DepartmentID: deptID,
 		UserID:       req.UserID,

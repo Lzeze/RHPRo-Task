@@ -32,8 +32,8 @@ type TaskRequest struct {
 	ExpectedEndDate *time.Time `json:"expected_end_date"`
 	// 是否在待领池（true=未指派执行人，需要其他人认领）
 	IsInPool bool `json:"is_in_pool"`
-	// 思路方案截止时间（仅需求类任务适用，执行人需在此时间前提交解决方案）
-	SolutionDeadline *time.Time `json:"solution_deadline"`
+	// 思路方案截止天数（仅需求类任务适用，表示执行人接受任务后需在N天内提交方案，0表示不限制）
+	SolutionDeadline *int `json:"solution_deadline"`
 }
 
 // UpdateTaskRequest 更新任务请求
@@ -72,8 +72,8 @@ type UpdateTaskRequest struct {
 	IsCrossDepartment bool `json:"is_cross_department" binding:"omitempty"`
 	// 是否在待领池（可选）
 	IsInPool bool `json:"is_in_pool" binding:"omitempty"`
-	// 思路方案截止时间（仅需求类任务适用，可选）
-	SolutionDeadline *time.Time `json:"solution_deadline" binding:"omitempty"`
+	// 思路方案截止天数（仅需求类任务适用，表示执行人接受任务后需在N天内提交方案，0表示不限制，可选）
+	SolutionDeadline *int `json:"solution_deadline" binding:"omitempty"`
 	// 是否为模板任务（可选）
 	IsTemplate bool `json:"is_template" binding:"omitempty"`
 	// 拆分来源的执行计划ID（可选）

@@ -8,25 +8,29 @@ const (
 	UserStatusPending  = 2 // 待审核
 )
 
-// User 用户模型
+// User 用户模型 - 对应 users 表
 type User struct {
 	BaseModel
 	// 用户名（唯一）
-	Username string `gorm:"uniqueIndex;size:50;not null" json:"username"`
+	Username string `gorm:"uniqueIndex:users_username_key;size:50;not null" json:"username"`
 	// 昵称（用于显示）
 	Nickname string `gorm:"size:50" json:"nickname"`
 	// 邮箱（唯一）
-	Email string `gorm:"uniqueIndex;size:100;not null" json:"email"`
+	Email string `gorm:"uniqueIndex:users_email_key;size:100;not null" json:"email"`
 	// 密码（加密存储，响应中不返回）
 	Password string `gorm:"size:255;not null" json:"-"`
 	// 手机号
 	Mobile string `gorm:"size:20" json:"mobile"`
+	// 状态：1-正常，3-禁用，2-待审核
+	Status int `gorm:"default:1" json:"status"`
+	// 职位名称
+	JobTitle string `gorm:"size:100" json:"job_title"`
 	// 部门ID
-	DepartmentID *uint `json:"department_id"`
+	DepartmentID *uint `gorm:"index:idx_users_department_id" json:"department_id"`
 	// 部门关联
 	Department *Department `json:"department,omitempty"`
-	// 状态：1=正常，0=禁用
-	Status int `gorm:"default:1" json:"status"`
+	// 是否是部门负责人
+	IsDepartmentLeader bool `gorm:"default:false" json:"is_department_leader"`
 	// 角色列表（多对多）
 	Roles []*Role `gorm:"many2many:user_roles;" json:"roles,omitempty"`
 	// 管理的部门（多对多，作为负责人）

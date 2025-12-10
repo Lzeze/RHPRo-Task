@@ -61,8 +61,8 @@ type Task struct {
 	SplitFromPlanID *uint `gorm:"index" json:"split_from_plan_id,omitempty"`
 	// 拆分时间（可空）
 	SplitAt *time.Time `json:"split_at,omitempty"`
-	// 思路方案截止时间（需求类任务创建时可设定，执行人需在此时间前提交方案）
-	SolutionDeadline *time.Time `json:"solution_deadline,omitempty"`
+	// 思路方案截止天数（需求类任务创建时可设定，表示执行人接受任务后需在N天内提交方案，0表示不限制）
+	SolutionDeadline *int `json:"solution_deadline,omitempty"`
 }
 
 // TableName 指定表名

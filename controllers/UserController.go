@@ -242,3 +242,34 @@ func (ctrl *UserController) ApproveUser(c *gin.Context) {
 
 	utils.SuccessWithMessage(c, "用户审核通过", nil)
 }
+
+// GetAssignableUsers 获取可指派的执行人列表
+// @Summary 获取可指派的执行人列表
+// @Description 获取可指派为任务执行人的用户列表，包括同部门成员和其他部门负责人，支持昵称和邮箱模糊检索
+// @Tags 用户管理
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param keyword query string false "关键词（昵称或邮箱，模糊搜索）"
+// @Success 200 {object} []dto.AssignableUserResponse "获取成功，包含同部门成员和其他部门负责人"
+// @Failure 400 {object} map[string]interface{} "参数错误"
+// @Failure 401 {object} map[string]interface{} "未授权"
+// @Failure 500 {object} map[string]interface{} "服务器错误"
+// @Router /users/assignable [get]
+func (ctrl *UserController) GetAssignableUsers(c *gin.Context) {
+	userID, _ := c.Get("userID")
+
+	var req dto.GetAssignableUsersRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		utils.BadRequest(c, err.Error())
+		return
+	}
+
+	result, err := ctrl.userService.GetAssignableUsers(userID.(uint), &req)
+	if err != nil {
+		utils.Error(c, 500, err.Error())
+		return
+	}
+
+	utils.Success(c, result)
+}

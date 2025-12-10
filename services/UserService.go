@@ -381,3 +381,93 @@ func (s *UserService) ApproveUser(id uint) error {
 	user.Status = models.UserStatusActive
 	return database.DB.Save(&user).Error
 }
+
+// GetAssignableUsers 获取可指派的执行人列表
+// 包括：1.同部门的所有成员 2.其他部门的负责人（如果负责多部门则产生多条记录）
+func (s *UserService) GetAssignableUsers(userID uint, req *dto.GetAssignableUsersRequest) ([]dto.AssignableUserResponse, error) {
+	// 获取当前用户信息（用于确定所在部门）
+	var currentUser models.User
+	if err := database.DB.First(&currentUser, userID).Error; err != nil {
+		return nil, errors.New("当前用户不存在")
+	}
+
+	if currentUser.DepartmentID == nil {
+		return nil, errors.New("当前用户未指派部门")
+	}
+
+	var results []dto.AssignableUserResponse
+
+	// ========== 1. 同部门的所有成员（不包括被禁用的用户） ==========
+	var sameDepUsers []models.User
+	query := database.DB.Where("department_id = ? AND status != ?", *currentUser.DepartmentID, models.UserStatusDisabled)
+
+	// 如果提供了关键词，则进行模糊搜索
+	if req.Keyword != "" {
+		query = query.Where("nickname LIKE ? OR email LIKE ?", "%"+req.Keyword+"%", "%"+req.Keyword+"%")
+	}
+
+	if err := query.Find(&sameDepUsers).Error; err != nil {
+		return nil, err
+	}
+
+	// 获取当前部门信息
+	var currentDep models.Department
+	if err := database.DB.First(&currentDep, *currentUser.DepartmentID).Error; err != nil {
+		return nil, errors.New("当前部门不存在")
+	}
+
+	// 添加同部门成员到结果
+	for _, user := range sameDepUsers {
+		results = append(results, dto.AssignableUserResponse{
+			ID:                 user.ID,
+			Nickname:           user.Nickname,
+			Email:              user.Email,
+			DepartmentID:       currentDep.ID,
+			DepartmentName:     currentDep.Name,
+			IsDepartmentLeader: user.IsDepartmentLeader,
+		})
+	}
+
+	// ========== 2. 其他部门的负责人（使用GORM关联查询） ==========
+	// 获取所有部门领导者的部门ID及对应用户信息
+	var leaders []struct {
+		UserID       uint
+		Nickname     string
+		Email        string
+		DepartmentID uint
+		DepName      string
+	}
+
+	// 使用GORM的Joins进行关联查询
+	query = database.DB.
+		Table("users u").
+		Select("DISTINCT u.id as user_id, u.nickname, u.email, d.id as department_id, d.name as dep_name").
+		Joins("INNER JOIN department_leaders dl ON u.id = dl.user_id").
+		Joins("INNER JOIN departments d ON dl.department_id = d.id").
+		Where("u.status != ? AND u.id != ? AND dl.department_id != ?",
+			models.UserStatusDisabled, userID, *currentUser.DepartmentID)
+
+	// 如果提供了关键词，则进行模糊搜索
+	if req.Keyword != "" {
+		query = query.Where("u.nickname LIKE ? OR u.email LIKE ?",
+			"%"+req.Keyword+"%", "%"+req.Keyword+"%")
+	}
+
+	if err := query.Scan(&leaders).Error; err != nil {
+		return nil, err
+	}
+
+	// 添加其他部门的负责人到结果
+	for _, leader := range leaders {
+		results = append(results, dto.AssignableUserResponse{
+			ID:                 leader.UserID,
+			Nickname:           leader.Nickname,
+			Email:              leader.Email,
+			DepartmentID:       leader.DepartmentID,
+			DepartmentName:     leader.DepName,
+			IsDepartmentLeader: true,
+		})
+	}
+
+	return results, nil
+}

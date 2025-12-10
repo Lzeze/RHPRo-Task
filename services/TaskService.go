@@ -26,11 +26,29 @@ func (s *TaskService) CreateTask(req *dto.TaskRequest, creatorID uint) (*models.
 		// 根据任务类型设置默认状态
 		switch req.TaskTypeCode {
 		case "requirement":
-			statusCode = "req_draft"
+			statusCode = "req_pending_assign"
 		case "unit_task":
-			statusCode = "unit_draft"
+			statusCode = "unit_pending_assign"
 		default:
-			statusCode = "draft"
+			statusCode = "unit_pending_assign"
+		}
+	}
+	//如果未指派执行人，任务进入任务池
+	isInPool := req.IsInPool
+	if req.ExecutorID == nil {
+		isInPool = true
+	}
+
+	// 判断是否跨部门（执行人部门与创建人部门是否不同）
+	isCrossDepartment := false
+	if req.ExecutorID != nil && req.DepartmentID != nil {
+		// 获取创建人信息以取得其部门ID
+		var creator models.User
+		if err := database.DB.First(&creator, creatorID).Error; err == nil {
+			// 比较执行人部门与创建人部门
+			if creator.DepartmentID != nil && *creator.DepartmentID != *req.DepartmentID {
+				isCrossDepartment = true
+			}
 		}
 	}
 
@@ -50,7 +68,9 @@ func (s *TaskService) CreateTask(req *dto.TaskRequest, creatorID uint) (*models.
 		Priority:          req.Priority,
 		ExpectedStartDate: req.ExpectedStartDate,
 		ExpectedEndDate:   req.ExpectedEndDate,
-		IsInPool:          req.IsInPool,
+		IsInPool:          isInPool,
+		IsCrossDepartment: isCrossDepartment,
+		SolutionDeadline:  req.SolutionDeadline,
 	}
 
 	// 如果有父任务，自动设置层级和根任务ID
@@ -58,6 +78,10 @@ func (s *TaskService) CreateTask(req *dto.TaskRequest, creatorID uint) (*models.
 		var parentTask models.Task
 		if err := database.DB.First(&parentTask, *req.ParentTaskID).Error; err != nil {
 			return nil, errors.New("父任务不存在")
+		}
+		//父任务的状态是需求类任务，状态必须计划审核通过后待开始状态eq_pending_start,才能创建子任务
+		if req.TaskTypeCode == "requirement" && parentTask.StatusCode != "eq_pending_start" {
+			return nil, errors.New("父任务状态不允许创建子任务")
 		}
 		task.TaskLevel = parentTask.TaskLevel + 1
 		if parentTask.RootTaskID != nil {
@@ -440,10 +464,6 @@ func (s *TaskService) UpdateTask(taskID uint, userID uint, req *dto.UpdateTaskRe
 		updates["priority"] = req.Priority
 		addChange("priority", task.Priority, req.Priority, "更新优先级")
 	}
-	if req.Progress != 0 && req.Progress != task.Progress {
-		updates["progress"] = req.Progress
-		addChange("progress", task.Progress, req.Progress, "更新进度")
-	}
 
 	// 时间字段处理
 	if !req.ExpectedStartDate.IsZero() {
@@ -472,9 +492,9 @@ func (s *TaskService) UpdateTask(taskID uint, userID uint, req *dto.UpdateTaskRe
 	}
 	// 新增：SolutionDeadline 处理
 	if req.SolutionDeadline != nil {
-		if task.SolutionDeadline == nil || !req.SolutionDeadline.Equal(*task.SolutionDeadline) {
+		if task.SolutionDeadline == nil || *req.SolutionDeadline != *task.SolutionDeadline {
 			updates["solution_deadline"] = req.SolutionDeadline
-			addChange("solution_deadline", task.SolutionDeadline, req.SolutionDeadline, "更新思路方案截止时间")
+			addChange("solution_deadline", task.SolutionDeadline, req.SolutionDeadline, "更新思路方案截止天数")
 		}
 	}
 

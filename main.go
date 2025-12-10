@@ -1,8 +1,8 @@
 package main
 
-// @title 任务管理系统 API
+// @title 北极星任务管理系统 API
 // @version 1.0
-// @description 企业级任务管理系统的 RESTful API 接口文档
+// @description 北极星任务管理系统的 RESTful API 接口文档
 // @termsOfService http://swagger.io/terms/
 
 // @contact.name API Support

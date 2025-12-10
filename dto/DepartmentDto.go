@@ -25,12 +25,46 @@ type DepartmentDetailResponse struct {
 	// 部门状态（1=正常, 2=禁用）
 	Status int `json:"status"`
 	// 部门负责人列表
-	Leaders []DepartmentLeader `json:"leaders"`
+	Leaders []DepartmentLeaderDetail `json:"leaders"`
+	// 部门成员列表
+	Members []DepartmentMemberDetail `json:"members"`
 	// 子部门列表（递归展示，可选）
 	Children []DepartmentResponse `json:"children,omitempty"`
 }
 
-// DepartmentLeader 部门负责人信息
+// DepartmentLeaderDetail 部门负责人详细信息
+type DepartmentLeaderDetail struct {
+	// 用户ID
+	UserID uint `json:"user_id"`
+	// 用户名
+	Username string `json:"username"`
+	// 用户昵称
+	Nickname string `json:"nickname"`
+	// 邮箱
+	Email string `json:"email"`
+	// 职位
+	JobTitle string `json:"job_title"`
+	// 是否为主负责人
+	IsPrimary bool `json:"is_primary"`
+}
+
+// DepartmentMemberDetail 部门成员详细信息
+type DepartmentMemberDetail struct {
+	// 用户ID
+	UserID uint `json:"user_id"`
+	// 用户名
+	Username string `json:"username"`
+	// 用户昵称
+	Nickname string `json:"nickname"`
+	// 邮箱
+	Email string `json:"email"`
+	// 职位
+	JobTitle string `json:"job_title"`
+	// 用户状态（1=正常，3=禁用，2=待审核）
+	Status int `json:"status"`
+}
+
+// DepartmentLeader 部门负责人信息（简化版，用于其他场景）
 type DepartmentLeader struct {
 	// 用户ID
 	UserID uint `json:"user_id"`
