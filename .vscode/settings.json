@@ -1,0 +1,14 @@
+{
+    "sqltools.connections": [
+        {
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "10.0.10.114",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "RHPRO_TASK",
+            "database": "rhpro_task",
+            "username": "postgres"
+        }
+    ]
+}

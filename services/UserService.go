@@ -26,8 +26,10 @@ func (s *UserService) Register(req *dto.RegisterRequest) (*models.User, error) {
 		return nil, errors.New("邮箱已被注册")
 	}
 	// 检查手机号是否存在
-	if err := database.DB.Where("mobile = ?", req.Mobile).First(&existingUser).Error; err == nil {
-		return nil, errors.New("手机号已被注册")
+	if req.Mobile != "" {
+		if err := database.DB.Where("mobile = ?", req.Mobile).First(&existingUser).Error; err == nil {
+			return nil, errors.New("手机号已被注册")
+		}
 	}
 
 	// 创建用户
