@@ -170,8 +170,8 @@ func TestAddLeader_Success(t *testing.T) {
 	router.POST("/api/v1/departments/:id/leaders", deptController.AddLeader)
 
 	reqBody := dto.AddLeaderRequest{
-		UserID:    1,
-		IsPrimary: true,
+		UserID: 1,
+		// IsPrimary: true,
 	}
 
 	w := testutils.HTTPRequest(router, "POST", "/api/v1/departments/1/leaders", reqBody)
@@ -189,8 +189,8 @@ func TestAddLeader_InvalidDeptID(t *testing.T) {
 	router.POST("/api/v1/departments/:id/leaders", deptController.AddLeader)
 
 	reqBody := dto.AddLeaderRequest{
-		UserID:    1,
-		IsPrimary: true,
+		UserID: 1,
+		// IsPrimary: true,
 	}
 
 	w := testutils.HTTPRequest(router, "POST", "/api/v1/departments/invalid/leaders", reqBody)

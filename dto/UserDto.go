@@ -40,14 +40,6 @@ type UserResponse struct {
 	Roles []RoleResponse `json:"roles,omitempty"`
 }
 
-// DepartmentResponse 部门响应
-type DepartmentResponse struct {
-	// 部门ID
-	ID uint `json:"id"`
-	// 部门名称
-	Name string `json:"name"`
-}
-
 // ========== 指派执行人相关 ==========
 
 // AssignableUserResponse 可指派用户响应（用于指派执行人的用户列表）

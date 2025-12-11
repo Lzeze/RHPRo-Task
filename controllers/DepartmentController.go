@@ -249,3 +249,73 @@ func (ctrl *DepartmentController) AssignUsers(c *gin.Context) {
 
 	utils.SuccessWithMessage(c, "人员分配成功", nil)
 }
+
+// SetDefaultDepartment 设置用户默认部门
+// @Summary 设置用户默认部门
+// @Description 用户可以在自己负责的部门中选择一个设置为默认部门（仅负责人可用）
+// @Tags 部门管理
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body dto.SetDefaultDepartmentRequest true "部门信息"
+// @Success 200 {object} map[string]interface{} "设置成功"
+// @Router /departments/default [put]
+func (ctrl *DepartmentController) SetDefaultDepartment(c *gin.Context) {
+	// 从上下文获取当前用户ID
+	userIDInterface, exists := c.Get("userID")
+	if !exists {
+		utils.Unauthorized(c, "未获取到用户信息")
+		return
+	}
+
+	userID, ok := userIDInterface.(float64)
+	if !ok {
+		utils.Error(c, 500, "用户ID类型错误")
+		return
+	}
+
+	var req dto.SetDefaultDepartmentRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.BadRequest(c, err.Error())
+		return
+	}
+
+	if err := ctrl.deptService.SetDefaultDepartment(uint(userID), req.DepartmentID); err != nil {
+		utils.Error(c, 400, err.Error())
+		return
+	}
+
+	utils.SuccessWithMessage(c, "默认部门设置成功", nil)
+}
+
+// GetUserDepartments 获取用户负责的部门列表
+// @Summary 获取用户负责的部门列表
+// @Description 获取当前用户负责的所有部门，包含默认部门标识
+// @Tags 部门管理
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {array} dto.UserDepartmentResponse "获取成功"
+// @Router /users/departments [get]
+func (ctrl *DepartmentController) GetUserDepartments(c *gin.Context) {
+	// 从上下文获取当前用户ID
+	userIDInterface, exists := c.Get("userID")
+	if !exists {
+		utils.Unauthorized(c, "未获取到用户信息")
+		return
+	}
+
+	userID, ok := userIDInterface.(float64)
+	if !ok {
+		utils.Error(c, 500, "用户ID类型错误")
+		return
+	}
+
+	departments, err := ctrl.deptService.GetUserDepartments(uint(userID))
+	if err != nil {
+		utils.Error(c, 400, err.Error())
+		return
+	}
+
+	utils.SuccessWithMessage(c, "获取成功", departments)
+}

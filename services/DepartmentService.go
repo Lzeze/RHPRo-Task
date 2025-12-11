@@ -52,7 +52,7 @@ func (s *DepartmentService) UpdateDepartment(id uint, req *dto.DepartmentRequest
 	return database.DB.Save(&dept).Error
 }
 
-// DeleteDepartment 删除部门
+// DeleteDepartment 删除部门（硬删除）
 func (s *DepartmentService) DeleteDepartment(id uint) error {
 	// 检查是否有子部门
 	var count int64
@@ -67,10 +67,11 @@ func (s *DepartmentService) DeleteDepartment(id uint) error {
 		return errors.New("部门下存在员工，无法删除")
 	}
 
-	return database.DB.Delete(&models.Department{}, id).Error
+	// 硬删除：使用 Unscoped().Delete() 进行硬删除
+	return database.DB.Unscoped().Delete(&models.Department{}, id).Error
 }
 
-// GetDepartmentList 获取部门列表（树形结构建议前端处理，这里返回扁平列表或根据 parent_id 过滤）
+// GetDepartmentList 获取部门列表
 func (s *DepartmentService) GetDepartmentList() ([]models.Department, error) {
 	var depts []models.Department
 	if err := database.DB.Find(&depts).Error; err != nil {
@@ -86,13 +87,13 @@ func (s *DepartmentService) GetDepartmentDetail(id uint) (*dto.DepartmentDetailR
 		return nil, err
 	}
 
-	// 获取负责人详情
+	// 获取负责人详情（去掉 is_primary 相关逻辑）
 	var leaders []models.DepartmentLeader
 	if err := database.DB.Preload("User").Where("department_id = ?", id).Find(&leaders).Error; err != nil {
 		return nil, err
 	}
 
-	// 获取部门成员（所有department_id为该部门且未被禁用的用户）
+	// 获取部门成员
 	var members []models.User
 	if err := database.DB.
 		Where("department_id = ? AND status != ?", id, models.UserStatusDisabled).
@@ -111,26 +112,25 @@ func (s *DepartmentService) GetDepartmentDetail(id uint) (*dto.DepartmentDetailR
 		Members:     []dto.DepartmentMemberDetail{},
 	}
 
-	// 组装负责人信息
+	// 组装负责人信息（去掉 IsPrimary 字段）
 	for _, l := range leaders {
 		resp.Leaders = append(resp.Leaders, dto.DepartmentLeaderDetail{
-			UserID:    l.UserID,
-			Username:  l.User.Username,
-			Nickname:  l.User.Nickname,
-			Email:     l.User.Email,
-			JobTitle:  l.User.JobTitle,
-			IsPrimary: l.IsPrimary,
+			UserID:   l.UserID,
+			Username: l.User.Username,
+			Nickname: l.User.Nickname,
+			Email:    l.User.Email,
+			JobTitle: l.User.JobTitle,
+			// IsPrimary 字段已移除
 		})
 	}
 
-	// 组装成员信息（排除负责人，避免重复）
+	// 组装成员信息（排除负责人）
 	leaderIDs := make(map[uint]bool)
 	for _, l := range leaders {
 		leaderIDs[l.UserID] = true
 	}
 
 	for _, m := range members {
-		// 跳过已在负责人列表中的用户
 		if leaderIDs[m.ID] {
 			continue
 		}
@@ -147,15 +147,13 @@ func (s *DepartmentService) GetDepartmentDetail(id uint) (*dto.DepartmentDetailR
 	return resp, nil
 }
 
-// AddLeader 添加负责人 - 将普通人员提升为部门负责人
+// AddLeader 添加负责人（调整后的逻辑）
 // 流程：
-// 1. 验证用户存在且部门存在
-// 2. 检查是否已是负责人（未删除的记录）
-// 3. 检查是否有删除记录 - 如果有，恢复记录
-// 4. 如果没有删除记录，创建新记录
-// 5. 处理主负责人冲突：如果本次设置为主负责人，需要取消其他部门的主负责人身份
-// 6. 更新用户表的 is_department_leader 字段为 true
-// 7. 更新 department_id：第一次晋升时总是更新；非第一次仅当 is_primary=true 时更新
+// 1. 验证用户和部门存在
+// 2. 检查是否已是该部门负责人（避免重复添加）
+// 3. 添加 leader 表记录（恢复软删除记录或创建新记录）
+// 4. 更新 user 表的 is_department_leader 为 true
+// 5. 如果用户的 department_id 为空，则设置为当前部门
 func (s *DepartmentService) AddLeader(deptID uint, req *dto.AddLeaderRequest) error {
 	// 1. 验证部门存在
 	var dept models.Department
@@ -169,101 +167,51 @@ func (s *DepartmentService) AddLeader(deptID uint, req *dto.AddLeaderRequest) er
 		return errors.New("用户不存在")
 	}
 
-	// 3. 检查是否已存在（未被软删除的记录）
-	var count int64
-	database.DB.Model(&models.DepartmentLeader{}).
-		Where("department_id = ? AND user_id = ? AND deleted_at IS NULL", deptID, req.UserID).
-		Count(&count)
-	if count > 0 {
-		return errors.New("该用户已是该部门的负责人")
+	// 3. 检查是否已存在
+	var existingLeader models.DepartmentLeader
+	err := database.DB.
+		Where("department_id = ? AND user_id = ?", deptID, req.UserID).
+		First(&existingLeader).Error
+
+	if err == nil {
+		// 记录已存在，提示成功（幂等操作）
+		return nil
 	}
 
-	// 4. 判断这是否是用户的第一次成为负责人
-	var existingLeaderCount int64
-	database.DB.Model(&models.DepartmentLeader{}).
-		Where("user_id = ? AND deleted_at IS NULL", req.UserID).
-		Count(&existingLeaderCount)
-	isFirstTime := existingLeaderCount == 0
+	// 记录不存在，创建新记录
+	leader := &models.DepartmentLeader{
+		DepartmentID: deptID,
+		UserID:       req.UserID,
+		AppointedAt:  time.Now(),
+		// IsPrimary 字段已移除
+	}
+	if err := database.DB.Create(leader).Error; err != nil {
+		return errors.New("创建负责人记录失败")
+	}
 
-	// 5. 开启事务，确保 leader 表和 user 表的数据一致性
-	tx := database.DB.Begin()
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-		}
-	}()
+	// 4. 更新用户表的 is_department_leader 为 true
+	if err := database.DB.Model(&user).Update("is_department_leader", true).Error; err != nil {
+		return errors.New("更新用户负责人标识失败")
+	}
 
-	// 6. 检查是否存在被软删除的记录
-	var deletedLeader models.DepartmentLeader
-	result := tx.Unscoped().
-		Where("department_id = ? AND user_id = ? AND deleted_at IS NOT NULL", deptID, req.UserID).
-		First(&deletedLeader)
-
-	if result.RowsAffected > 0 {
-		// 恢复被软删除的记录
-		if err := tx.Model(&deletedLeader).Updates(map[string]interface{}{
-			"deleted_at":   nil,
-			"is_primary":   req.IsPrimary,
-			"appointed_at": time.Now(),
-		}).Error; err != nil {
-			tx.Rollback()
-			return err
-		}
-	} else {
-		// 创建新记录
-		leader := &models.DepartmentLeader{
-			DepartmentID: deptID,
-			UserID:       req.UserID,
-			IsPrimary:    req.IsPrimary,
-			AppointedAt:  time.Now(),
-		}
-
-		if err := tx.Create(leader).Error; err != nil {
-			tx.Rollback()
-			return err
+	// 5. 如果用户的 department_id 为空，则设置为当前部门
+	if user.DepartmentID == nil {
+		if err := database.DB.Model(&user).Update("department_id", deptID).Error; err != nil {
+			return errors.New("更新用户默认部门失败")
 		}
 	}
 
-	// 7. 如果本次设置为主负责人，需要取消该用户在其他部门的主负责人身份
-	// 确保一个用户在多个部门中只有一个主负责人
-	if req.IsPrimary {
-		if err := tx.Model(&models.DepartmentLeader{}).
-			Where("user_id = ? AND department_id != ? AND deleted_at IS NULL", req.UserID, deptID).
-			Update("is_primary", false).Error; err != nil {
-			tx.Rollback()
-			return err
-		}
-	}
-
-	// 8. 更新用户表的 is_department_leader 字段为 true
-	// 该字段标记用户是否至少负责一个部门
-	if err := tx.Model(&user).Update("is_department_leader", true).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	// 9. 更新 department_id 的规则：
-	// - 如果这是用户第一次成为负责人：总是更新为本部门（无论是否主负责人）
-	// - 如果不是第一次：只有当 is_primary=true 时才更新为本部门（绑定主负责部门）
-	if isFirstTime || req.IsPrimary {
-		if err := tx.Model(&user).Update("department_id", deptID).Error; err != nil {
-			tx.Rollback()
-			return err
-		}
-	}
-
-	return tx.Commit().Error
+	return nil
 }
 
-// RemoveLeader 移除负责人 - 从部门中移除负责人
+// RemoveLeader 移除负责人（硬删除）
 // 流程：
-//  1. 验证用户存在且负责人关系存在
-//  2. 如果不是主负责人 → 只删除 DepartmentLeader 记录，不更新用户表
-//  3. 如果是主负责人：
-//     a. 检查用户还负责的其他部门是否已有主负责人
-//     b. 如果其他部门有主负责人 → 保持 department_id 不变，只删除记录
-//     c. 如果其他部门都没有主负责人 → 选择其中一个作为新的 department_id
-//  4. 如果用户不再负责任何部门 → 清空 is_department_leader 和 department_id
+// 1. 验证用户和负责人关系存在
+// 2. 硬删除 leader 表记录
+// 3. 检查用户是否还负责其他部门
+// 4. 如果不再负责任何部门：
+//   - 将 is_department_leader 设为 false
+//   - 清空 department_id
 func (s *DepartmentService) RemoveLeader(deptID uint, userID uint) error {
 	// 1. 验证用户存在
 	var user models.User
@@ -273,15 +221,12 @@ func (s *DepartmentService) RemoveLeader(deptID uint, userID uint) error {
 
 	// 2. 验证负责人关系存在
 	var leader models.DepartmentLeader
-	if err := database.DB.Where("department_id = ? AND user_id = ? AND deleted_at IS NULL", deptID, userID).
+	if err := database.DB.Where("department_id = ? AND user_id = ?", deptID, userID).
 		First(&leader).Error; err != nil {
 		return errors.New("该用户不是该部门的负责人")
 	}
 
-	// 3. 记录是否移除的是主负责人
-	isRemovingPrimary := leader.IsPrimary
-
-	// 4. 开启事务，确保数据一致性
+	// 3. 开启事务
 	tx := database.DB.Begin()
 	defer func() {
 		if r := recover(); r != nil {
@@ -289,66 +234,141 @@ func (s *DepartmentService) RemoveLeader(deptID uint, userID uint) error {
 		}
 	}()
 
-	// 5. 软删除负责人记录
-	if err := tx.Model(&leader).Update("deleted_at", time.Now()).Error; err != nil {
+	// 4. 硬删除负责人记录
+	if err := tx.Unscoped().Delete(&leader).Error; err != nil {
 		tx.Rollback()
-		return err
+		return errors.New("删除负责人记录失败")
 	}
 
-	// 6. 检查用户是否还负责其他部门（未删除的记录）
-	var remainingLeaderCount int64
+	// 5. 检查用户是否还负责其他部门
+	var otherLeaderCount int64
 	tx.Model(&models.DepartmentLeader{}).
-		Where("user_id = ? AND deleted_at IS NULL", userID).
-		Count(&remainingLeaderCount)
+		Where("user_id = ?", userID).
+		Count(&otherLeaderCount)
 
-	// 7. 如果用户不再负责任何部门，清空用户的负责人标记
-	if remainingLeaderCount == 0 {
-		// 将 is_department_leader 更新为 false
+	// 6. 如果用户不再负责任何部门，更新用户标识
+	if otherLeaderCount == 0 {
+		// 更新 is_department_leader 为 false,降为普通用户
 		if err := tx.Model(&user).Update("is_department_leader", false).Error; err != nil {
 			tx.Rollback()
-			return err
+			return errors.New("更新用户负责人标识失败")
 		}
-
-		// 清空用户的 department_id
-		if err := tx.Model(&user).Update("department_id", nil).Error; err != nil {
-			tx.Rollback()
-			return err
-		}
+		// // department_id
+		// if err := tx.Model(&user).Update("department_id", nil).Error; err != nil {
+		// 	tx.Rollback()
+		// 	return errors.New("清空用户部门失败")
+		// }
 
 		return tx.Commit().Error
 	}
 
-	// 8. 如果移除的不是主负责人，只删除记录，不更新用户表
-	if !isRemovingPrimary {
-		return tx.Commit().Error
-	}
+	// 7. 情况2：用户还负责其他部门
+	// is_department_leader 保持为 true，不需要更新
 
-	// // 9. 移除的是主负责人，检查用户在其他部门中是否已有主负责人
-	// var otherPrimaryCount int64
-	// tx.Model(&models.DepartmentLeader{}).
-	// 	Where("user_id = ? AND deleted_at IS NULL AND is_primary = true", userID).
-	// 	Count(&otherPrimaryCount)
-
-	// // 10. 如果其他部门已有主负责人，保持 department_id 不变，直接返回
-	// if otherPrimaryCount > 0 {
-	// 	return tx.Commit().Error
-	// }
-
-	// 11. 如果移除的是主负责人，选择其中一个部门绑定到 department_id
-	var otherLeader models.DepartmentLeader
-	if err := tx.Where("user_id = ? AND deleted_at IS NULL AND department_id != ?", userID, deptID).
-		First(&otherLeader).Error; err == nil {
-		// 更新用户的 department_id 为其他负责部门之一
-		if err := tx.Model(&user).Update("department_id", otherLeader.DepartmentID).Error; err != nil {
-			tx.Rollback()
-			return err
+	// 8. 如果 department_id 等于被移除的部门，需要重新指定默认部门
+	if user.DepartmentID != nil && *user.DepartmentID == deptID {
+		// 从其他负责的部门中选择一个
+		var otherLeader models.DepartmentLeader
+		if err := tx.Where("user_id = ?", userID).
+			First(&otherLeader).Error; err == nil {
+			// 更新为新的默认部门
+			if err := tx.Model(&user).Update("department_id", otherLeader.DepartmentID).Error; err != nil {
+				tx.Rollback()
+				return errors.New("更新用户默认部门失败")
+			}
 		}
 	}
 
 	return tx.Commit().Error
 }
 
-// AssignUser 分配人员到部门
+// AssignUser 分配人员到部门（给普通用户分配部门）
+// 逻辑：
+// - 将用户的 department_id 设置为指定部门
+// - is_department_leader 保持为 false（除非用户已经是负责人）
 func (s *DepartmentService) AssignUser(deptID uint, userIDs []uint) error {
-	return database.DB.Model(&models.User{}).Where("id IN ?", userIDs).Update("department_id", deptID).Error
+	// 只更新 department_id，不修改 is_department_leader
+	return database.DB.Model(&models.User{}).
+		Where("id IN ? AND is_department_leader = false", userIDs).
+		Update("department_id", deptID).Error
+}
+
+// SetDefaultDepartment 设置用户默认部门
+// 流程：
+// 1. 验证用户是负责人
+// 2. 验证要设置的部门是用户负责的部门
+// 3. 如果用户只负责一个部门，直接返回成功（不报错）
+// 4. 更新用户的 department_id
+func (s *DepartmentService) SetDefaultDepartment(userID uint, deptID uint) error {
+	// 1. 验证用户存在
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		return errors.New("用户不存在")
+	}
+
+	// 2. 验证用户是负责人
+	if !user.IsDepartmentLeader {
+		return errors.New("用户不是负责人，无法设置默认部门")
+	}
+
+	// 3. 检查用户负责的部门数量
+	var leaderCount int64
+	database.DB.Model(&models.DepartmentLeader{}).
+		Where("user_id = ?", userID).
+		Count(&leaderCount)
+
+	// 4. 如果用户只负责一个部门，直接返回成功（不报错）
+	if leaderCount <= 1 {
+		return nil
+	}
+
+	// 5. 验证要设置的部门是用户负责的部门
+	var leader models.DepartmentLeader
+	if err := database.DB.Where("department_id = ? AND user_id = ?", deptID, userID).
+		First(&leader).Error; err != nil {
+		return errors.New("用户未负责该部门，无法设置为默认部门")
+	}
+
+	// 6. 更新用户的 department_id
+	if err := database.DB.Model(&user).Update("department_id", deptID).Error; err != nil {
+		return errors.New("设置默认部门失败")
+	}
+
+	return nil
+}
+
+// GetUserDepartments 获取用户负责的部门列表
+// 返回用户负责的所有部门信息，包含是否为默认部门的标识
+func (s *DepartmentService) GetUserDepartments(userID uint) ([]dto.UserDepartmentResponse, error) {
+	// 1. 验证用户存在
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		return nil, errors.New("用户不存在")
+	}
+
+	// 2. 获取用户负责的部门
+	var leaders []models.DepartmentLeader
+	if err := database.DB.Preload("Department").
+		Where("user_id = ?", userID).
+		Find(&leaders).Error; err != nil {
+		return nil, err
+	}
+
+	// 3. 组装响应数据
+	var result []dto.UserDepartmentResponse
+	for _, leader := range leaders {
+		isDefault := false
+		if user.DepartmentID != nil && *user.DepartmentID == leader.DepartmentID {
+			isDefault = true
+		}
+
+		result = append(result, dto.UserDepartmentResponse{
+			ID:          leader.Department.ID,
+			Name:        leader.Department.Name,
+			Description: leader.Department.Description,
+			IsDefault:   isDefault,
+		})
+	}
+
+	return result, nil
 }

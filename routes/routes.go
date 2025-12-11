@@ -27,6 +27,7 @@ func SetupRoutes() *gin.Engine {
 	adminController := controllers.NewAdminController()
 	taskController := controllers.NewTaskController()
 	detailController := controllers.NewTaskDetailController()
+	deptController := controllers.NewDepartmentController()
 
 	// 公开路由
 	public := router.Group("/api/v1")
@@ -51,7 +52,6 @@ func SetupRoutes() *gin.Engine {
 		// 用户信息
 		auth.GET("/profile", userController.GetProfile)
 	}
-
 	// 用户管理路由（需要user:read权限）
 	userRoutes := router.Group("/api/v1/users")
 	userRoutes.Use(middlewares.AuthMiddleware())
@@ -90,13 +90,19 @@ func SetupRoutes() *gin.Engine {
 	}
 
 	// 部门管理路由
-	deptController := controllers.NewDepartmentController()
 	deptRoutes := router.Group("/api/v1/departments")
 	deptRoutes.Use(middlewares.AuthMiddleware())
 	{
 		// deptRoutes.POST("", middlewares.PermissionMiddleware("dept:create"), deptController.CreateDepartment)
 		// deptRoutes.PUT("/:id", middlewares.PermissionMiddleware("dept:update"), deptController.UpdateDepartment)
 		// deptRoutes.DELETE("/:id", middlewares.PermissionMiddleware("dept:delete"), deptController.DeleteDepartment)
+
+		// 获取当前用户负责的部门列表（必须放在 /:id 之前）
+		deptRoutes.GET("/my-departments", deptController.GetUserDepartments)
+
+		// 设置默认部门（必须放在 /:id 之前）
+		deptRoutes.PUT("/default", deptController.SetDefaultDepartment)
+
 		//创建部门
 		deptRoutes.POST("", deptController.CreateDepartment)
 		//更新部门

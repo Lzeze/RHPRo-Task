@@ -10,7 +10,7 @@ type DepartmentLeader struct {
 	// 负责人用户ID
 	UserID uint `gorm:"index;not null" json:"user_id"`
 	// 是否为主要负责人
-	IsPrimary bool `gorm:"default:false" json:"is_primary"`
+	// IsPrimary bool `gorm:"default:false" json:"is_primary"`
 	// 任命时间
 	AppointedAt time.Time `json:"appointed_at"`
 	// 任命人用户ID（可空）

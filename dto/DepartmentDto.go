@@ -24,7 +24,7 @@ type DepartmentDetailResponse struct {
 	ParentID *uint `json:"parent_id"`
 	// 部门状态（1=正常, 2=禁用）
 	Status int `json:"status"`
-	// 部门负责人列表
+	// 部门负责人列表（去掉 IsPrimary 标识）
 	Leaders []DepartmentLeaderDetail `json:"leaders"`
 	// 部门成员列表
 	Members []DepartmentMemberDetail `json:"members"`
@@ -32,7 +32,7 @@ type DepartmentDetailResponse struct {
 	Children []DepartmentResponse `json:"children,omitempty"`
 }
 
-// DepartmentLeaderDetail 部门负责人详细信息
+// DepartmentLeaderDetail 部门负责人详细信息（去掉 IsPrimary）
 type DepartmentLeaderDetail struct {
 	// 用户ID
 	UserID uint `json:"user_id"`
@@ -44,8 +44,7 @@ type DepartmentLeaderDetail struct {
 	Email string `json:"email"`
 	// 职位
 	JobTitle string `json:"job_title"`
-	// 是否为主负责人
-	IsPrimary bool `json:"is_primary"`
+	// IsPrimary 字段已移除
 }
 
 // DepartmentMemberDetail 部门成员详细信息
@@ -70,14 +69,38 @@ type DepartmentLeader struct {
 	UserID uint `json:"user_id"`
 	// 用户名
 	Username string `json:"username"`
-	// 是否为主负责人
-	IsPrimary bool `json:"is_primary"`
+	// IsPrimary 字段已移除
 }
 
-// AddLeaderRequest 添加负责人请求
+// AddLeaderRequest 添加负责人请求（去掉 IsPrimary）
 type AddLeaderRequest struct {
 	// 用户ID（要添加为负责人的用户）
 	UserID uint `json:"user_id" binding:"required"`
-	// 是否为主负责人（可选，默认为false）
-	IsPrimary bool `json:"is_primary"`
+	// IsPrimary 字段已移除
+}
+
+// DepartmentResponse 部门响应
+type DepartmentResponse struct {
+	// 部门ID
+	ID uint `json:"id"`
+	// 部门名称
+	Name string `json:"name"`
+}
+
+// SetDefaultDepartmentRequest 设置默认部门请求
+type SetDefaultDepartmentRequest struct {
+	// 部门ID（用户负责的部门中选择一个）
+	DepartmentID uint `json:"department_id" binding:"required"`
+}
+
+// UserDepartmentResponse 用户负责的部门响应
+type UserDepartmentResponse struct {
+	// 部门ID
+	ID uint `json:"id"`
+	// 部门名称
+	Name string `json:"name"`
+	// 部门描述
+	Description string `json:"description"`
+	// 是否为默认部门
+	IsDefault bool `json:"is_default"`
 }

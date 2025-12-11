@@ -2,9 +2,6 @@ basePath: /api/v1
 definitions:
   dto.AddLeaderRequest:
     properties:
-      is_primary:
-        description: 是否为主负责人（可选，默认为false）
-        type: boolean
       user_id:
         description: 用户ID（要添加为负责人的用户）
         type: integer
@@ -95,7 +92,7 @@ definitions:
         description: 部门ID
         type: integer
       leaders:
-        description: 部门负责人列表
+        description: 部门负责人列表（去掉 IsPrimary 标识）
         items:
           $ref: '#/definitions/dto.DepartmentLeaderDetail'
         type: array
@@ -119,9 +116,6 @@ definitions:
       email:
         description: 邮箱
         type: string
-      is_primary:
-        description: 是否为主负责人
-        type: boolean
       job_title:
         description: 职位
         type: string
@@ -581,6 +575,14 @@ definitions:
         items:
           $ref: '#/definitions/dto.PermissionResponse'
         type: array
+    type: object
+  dto.SetDefaultDepartmentRequest:
+    properties:
+      department_id:
+        description: 部门ID（用户负责的部门中选择一个）
+        type: integer
+    required:
+    - department_id
     type: object
   dto.SimpleUserResponse:
     properties:
@@ -1390,6 +1392,21 @@ definitions:
         description: 用户名（唯一，字母数字组合，可选）
         type: string
     type: object
+  dto.UserDepartmentResponse:
+    properties:
+      description:
+        description: 部门描述
+        type: string
+      id:
+        description: 部门ID
+        type: integer
+      is_default:
+        description: 是否为默认部门
+        type: boolean
+      name:
+        description: 部门名称
+        type: string
+    type: object
   dto.UserResponse:
     properties:
       department:
@@ -2001,6 +2018,31 @@ paths:
       security:
       - BearerAuth: []
       summary: 分配人员
+      tags:
+      - 部门管理
+  /departments/default:
+    put:
+      consumes:
+      - application/json
+      description: 用户可以在自己负责的部门中选择一个设置为默认部门（仅负责人可用）
+      parameters:
+      - description: 部门信息
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SetDefaultDepartmentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 设置成功
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 设置用户默认部门
       tags:
       - 部门管理
   /profile:
@@ -3263,6 +3305,25 @@ paths:
       summary: 获取可指派的执行人列表
       tags:
       - 用户管理
+  /users/departments:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前用户负责的所有部门，包含默认部门标识
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            items:
+              $ref: '#/definitions/dto.UserDepartmentResponse'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: 获取用户负责的部门列表
+      tags:
+      - 部门管理
 securityDefinitions:
   BearerAuth:
     description: Type "Bearer" followed by a space and JWT token.

@@ -263,6 +263,46 @@ const docTemplate = `{
                 }
             }
         },
+        "/departments/default": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "用户可以在自己负责的部门中选择一个设置为默认部门（仅负责人可用）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "部门管理"
+                ],
+                "summary": "设置用户默认部门",
+                "parameters": [
+                    {
+                        "description": "部门信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SetDefaultDepartmentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "设置成功",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/departments/{id}": {
             "get": {
                 "security": [
@@ -2203,6 +2243,37 @@ const docTemplate = `{
                 }
             }
         },
+        "/users/departments": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取当前用户负责的所有部门，包含默认部门标识",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "部门管理"
+                ],
+                "summary": "获取用户负责的部门列表",
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.UserDepartmentResponse"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/users/{id}": {
             "get": {
                 "security": [
@@ -2462,10 +2533,6 @@ const docTemplate = `{
                 "user_id"
             ],
             "properties": {
-                "is_primary": {
-                    "description": "是否为主负责人（可选，默认为false）",
-                    "type": "boolean"
-                },
                 "user_id": {
                     "description": "用户ID（要添加为负责人的用户）",
                     "type": "integer"
@@ -2589,7 +2656,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "leaders": {
-                    "description": "部门负责人列表",
+                    "description": "部门负责人列表（去掉 IsPrimary 标识）",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.DepartmentLeaderDetail"
@@ -2622,10 +2689,6 @@ const docTemplate = `{
                 "email": {
                     "description": "邮箱",
                     "type": "string"
-                },
-                "is_primary": {
-                    "description": "是否为主负责人",
-                    "type": "boolean"
                 },
                 "job_title": {
                     "description": "职位",
@@ -3257,6 +3320,18 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/dto.PermissionResponse"
                     }
+                }
+            }
+        },
+        "dto.SetDefaultDepartmentRequest": {
+            "type": "object",
+            "required": [
+                "department_id"
+            ],
+            "properties": {
+                "department_id": {
+                    "description": "部门ID（用户负责的部门中选择一个）",
+                    "type": "integer"
                 }
             }
         },
@@ -4405,6 +4480,27 @@ const docTemplate = `{
                 },
                 "username": {
                     "description": "用户名（唯一，字母数字组合，可选）",
+                    "type": "string"
+                }
+            }
+        },
+        "dto.UserDepartmentResponse": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "description": "部门描述",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "部门ID",
+                    "type": "integer"
+                },
+                "is_default": {
+                    "description": "是否为默认部门",
+                    "type": "boolean"
+                },
+                "name": {
+                    "description": "部门名称",
                     "type": "string"
                 }
             }
