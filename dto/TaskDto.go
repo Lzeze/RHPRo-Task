@@ -4,8 +4,8 @@ import "time"
 
 // TaskRequest 创建任务请求
 type TaskRequest struct {
-	// 任务编号（唯一，如 REQ-2024-001 格式）
-	TaskNo string `json:"task_no" binding:"required"`
+	// 任务编号（唯一，可选，如不提供则系统自动生成。格式为：任务类型前缀-6位随机字母数字）
+	TaskNo string `json:"task_no" binding:"omitempty"`
 	// 任务标题（简要描述任务内容）
 	Title string `json:"title" binding:"required"`
 	// 任务描述（详细的任务说明和需求）

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/rand"
 	"strings"
 	"time"
 )
@@ -15,10 +16,14 @@ type TaskService struct{}
 
 // CreateTask 创建任务，包含完整的层级管理、验证和统计更新
 func (s *TaskService) CreateTask(req *dto.TaskRequest, creatorID uint) (*models.Task, error) {
-	// 1. 检查任务编号是否已存在
-	var existingTask models.Task
-	if err := database.DB.Where("task_no = ?", req.TaskNo).First(&existingTask).Error; err == nil {
-		return nil, errors.New("任务编号已存在")
+	// 1. 自动生成任务编号（如果未提供）
+	taskNo := req.TaskNo
+	if taskNo == "" {
+		var err error
+		taskNo, err = s.generateTaskNo(req.TaskTypeCode)
+		if err != nil {
+			return nil, fmt.Errorf("自动生成任务编号失败: %v", err)
+		}
 	}
 
 	// 2. 设置默认状态码（如果未提供）
@@ -56,7 +61,7 @@ func (s *TaskService) CreateTask(req *dto.TaskRequest, creatorID uint) (*models.
 
 	// 5. 创建任务对象
 	task := &models.Task{
-		TaskNo:            req.TaskNo,
+		TaskNo:            taskNo,
 		Title:             req.Title,
 		Description:       req.Description,
 		TaskTypeCode:      req.TaskTypeCode,
@@ -1140,4 +1145,90 @@ func (s *TaskService) ValidateTaskHierarchy(taskID uint) (bool, string, error) {
 	}
 
 	return true, "验证通过", nil
+}
+
+// ========== 任务编号生成相关方法 ==========
+
+// generateTaskNo 生成全局唯一的任务编号
+// 格式：任务类型前缀 + 6位随机数字字母
+// 例如：REQ-aBc123, UNIT-Xyz789
+func (s *TaskService) generateTaskNo(taskTypeCode string) (string, error) {
+	// 获取任务类型的前缀
+	prefix := s.getTaskTypePrefix(taskTypeCode)
+
+	// 生成唯一的编号，重试最多10次
+	maxRetries := 10
+	for i := 0; i < maxRetries; i++ {
+		randomPart := s.generateRandomString(8)
+		taskNo := fmt.Sprintf("%s-%s", prefix, randomPart)
+
+		// 检查编号是否已存在
+		var count int64
+		if err := database.DB.Model(&models.Task{}).
+			Where("task_no = ?", taskNo).
+			Count(&count).Error; err != nil {
+			return "", err
+		}
+
+		if count == 0 {
+			return taskNo, nil
+		}
+	}
+
+	// 如果重试失败，返回错误
+	return "", fmt.Errorf("无法生成唯一的任务编号，请重试")
+}
+
+// getTaskTypePrefix 根据任务类型编码获取前缀
+func (s *TaskService) getTaskTypePrefix(taskTypeCode string) string {
+	// 查询任务类型，获取其前缀（或使用编码的前几个字母）
+	var taskType models.TaskType
+	if err := database.DB.Where("code = ?", taskTypeCode).First(&taskType).Error; err != nil {
+		// 如果查询失败，使用默认规则生成前缀
+		return s.generatePrefixFromCode(taskTypeCode)
+	}
+
+	// 如果任务类型有名称，使用名称的前3个字母（大写）
+	if taskType.Name != "" {
+		prefix := strings.ToUpper(taskType.Name[:3])
+		return prefix
+	}
+
+	// 否则使用编码的前几个字母
+	return s.generatePrefixFromCode(taskTypeCode)
+}
+
+// generatePrefixFromCode 从任务类型编码生成前缀
+// 例如：requirement -> REQ, unit_task -> UNIT
+func (s *TaskService) generatePrefixFromCode(code string) string {
+	prefixMap := map[string]string{
+		"requirement": "REQ",
+		"unit_task":   "UNIT",
+		"feature":     "FEA",
+		"bug":         "BUG",
+		"task":        "TASK",
+	}
+
+	if prefix, ok := prefixMap[code]; ok {
+		return prefix
+	}
+
+	// 如果没有映射，使用编码的前3个字母（大写）
+	if len(code) >= 3 {
+		return strings.ToUpper(code[:3])
+	}
+
+	return strings.ToUpper(code)
+}
+
+// generateRandomString 生成指定长度的随机字符串（数字和字母混合）
+// 包含大小写字母和数字：a-z, A-Z, 0-9
+func (s *TaskService) generateRandomString(length int) string {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	seededRand := rand.New(rand.NewSource(time.Now().UnixNano()))
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = charset[seededRand.Intn(len(charset))]
+	}
+	return string(b)
 }
