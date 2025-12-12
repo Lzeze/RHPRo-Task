@@ -16,14 +16,12 @@ type TaskService struct{}
 
 // CreateTask 创建任务，包含完整的层级管理、验证和统计更新
 func (s *TaskService) CreateTask(req *dto.TaskRequest, creatorID uint) (*models.Task, error) {
-	// 1. 自动生成任务编号（如果未提供）
-	taskNo := req.TaskNo
-	if taskNo == "" {
-		var err error
-		taskNo, err = s.generateTaskNo(req.TaskTypeCode)
-		if err != nil {
-			return nil, fmt.Errorf("自动生成任务编号失败: %v", err)
-		}
+	// 1. 自动生成任务编号(跳过传值）
+	// taskNo := req.TaskNo
+	// var err error
+	taskNo, err := s.generateTaskNo(req.TaskTypeCode)
+	if err != nil {
+		return nil, fmt.Errorf("自动生成任务编号失败: %v", err)
 	}
 
 	// 2. 设置默认状态码（如果未提供）
@@ -1150,7 +1148,7 @@ func (s *TaskService) ValidateTaskHierarchy(taskID uint) (bool, string, error) {
 // ========== 任务编号生成相关方法 ==========
 
 // generateTaskNo 生成全局唯一的任务编号
-// 格式：任务类型前缀 + 6位随机数字字母
+// 格式：任务类型前缀 + 8位随机数字字母
 // 例如：REQ-aBc123, UNIT-Xyz789
 func (s *TaskService) generateTaskNo(taskTypeCode string) (string, error) {
 	// 获取任务类型的前缀

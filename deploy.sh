@@ -2,13 +2,17 @@
 
 # 部署脚本 - 部署应用到远程服务器
 # 使用方式：./deploy.sh <username> <server_ip> <remote_path>
+#
+# 前置要求：
+# 1. 本地已通过 SSH 密钥认证到远程服务器（支持免密登录）
+# 2. 远程用户已配置免密 sudo（或在脚本中提供密码）
 
 set -e
 
 # 配置参数
 USERNAME=${1:-root}
 SERVER_IP=${2:-10.0.10.113}
-REMOTE_PATH=${3:-/opt/rhppro-task}
+REMOTE_PATH=${3:-/home/liuyz/rhppro-task}
 APP_NAME="rhppro-task"
 BINARY_PATH="bin/rhppro-task"
 
@@ -19,6 +23,11 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 echo -e "${YELLOW}🚀 开始部署应用到 ${SERVER_IP}...${NC}"
+echo ""
+echo -e "${YELLOW}⚠️  前置检查：${NC}"
+echo "  • 确保本地 SSH 密钥已配置，支持免密登录"
+echo "  • 确保远程用户已配置免密 sudo，或手动输入密码"
+echo ""
 
 # 1. 检查本地二进制文件
 if [ ! -f "$BINARY_PATH" ]; then
@@ -63,7 +72,11 @@ echo -e "${GREEN}✅ 远程环境已准备${NC}"
 # 4. 上传文件
 echo -e "${YELLOW}📤 上传应用文件...${NC}"
 scp -q "$BINARY_PATH" "${USERNAME}@${SERVER_IP}:${REMOTE_PATH}/"
-scp -q ".env.production" "${USERNAME}@${SERVER_IP}:${REMOTE_PATH}/.env"
+if [ -f ".env.production" ]; then
+    scp -q ".env.production" "${USERNAME}@${SERVER_IP}:${REMOTE_PATH}/.env"
+else
+    echo -e "${YELLOW}⚠️  警告：未找到 .env.production 文件，跳过上传${NC}"
+fi
 
 echo -e "${GREEN}✅ 文件上传完成${NC}"
 
@@ -75,39 +88,8 @@ ssh "${USERNAME}@${SERVER_IP}" << EOSSH
     # 设置二进制文件执行权限
     chmod +x "$REMOTE_PATH/$APP_NAME"
     
-    # 创建 systemd 服务文件（可选但推荐）
-    sudo tee /etc/systemd/system/${APP_NAME}.service > /dev/null << 'EOF'
-[Unit]
-Description=RHPPro Task Management System
-After=network.target
-
-[Service]
-Type=simple
-User=$USER
-WorkingDirectory=$REMOTE_PATH
-ExecStart=$REMOTE_PATH/$APP_NAME
-Restart=always
-RestartSec=10
-StandardOutput=append:$REMOTE_PATH/logs/app.log
-StandardError=append:$REMOTE_PATH/logs/error.log
-
-[Install]
-WantedBy=multi-user.target
-EOF
-    
     # 创建日志目录
     mkdir -p "$REMOTE_PATH/logs"
-    
-    # 启用并启动服务
-    sudo systemctl daemon-reload
-    sudo systemctl enable ${APP_NAME}.service
-    sudo systemctl start ${APP_NAME}.service
-    
-    echo "✅ 应用已启动"
-    
-    # 显示服务状态
-    sleep 2
-    sudo systemctl status ${APP_NAME}.service --no-pager || true
 EOSSH
 
 echo -e "${GREEN}✅ 部署完成！${NC}"
@@ -124,3 +106,10 @@ echo ""
 echo -e "${YELLOW}📝 查看日志：${NC}"
 echo "  ssh ${USERNAME}@${SERVER_IP}"
 echo "  tail -f ${REMOTE_PATH}/logs/app.log"
+echo ""
+echo -e "${YELLOW}💡 如果部署时遇到 sudo 密码问题，请在远程服务器配置免密 sudo：${NC}"
+echo "  ssh ${USERNAME}@${SERVER_IP}"
+echo "  sudo visudo"
+echo "  # 在文件末尾添加以下行（将 <username> 替换为实际用户名）："
+echo "  <username> ALL=(ALL) NOPASSWD: ALL"
+echo ""
