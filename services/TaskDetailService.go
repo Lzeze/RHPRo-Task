@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"time"
 )
 
 type TaskDetailService struct{}
@@ -30,8 +31,8 @@ func (s *TaskDetailService) GetTaskSolutions(taskID uint) ([]dto.SolutionVersion
 			FileName:    sol.FileName,
 			Status:      sol.Status,
 			SubmittedBy: *sol.SubmittedBy,
-			SubmittedAt: sol.SubmittedAt,
-			CreatedAt:   sol.CreatedAt,
+			SubmittedAt: dto.PtrToResponseTime(sol.SubmittedAt),
+			CreatedAt:   dto.ToResponseTime(sol.CreatedAt),
 		}
 	}
 
@@ -82,8 +83,8 @@ func (s *TaskDetailService) GetTaskExecutionPlans(taskID uint) ([]dto.ExecutionP
 			Status:               plan.Status,
 			Goals:                goalResponses,
 			SubmittedBy:          *plan.SubmittedBy,
-			SubmittedAt:          plan.SubmittedAt,
-			CreatedAt:            plan.CreatedAt,
+			SubmittedAt:          dto.PtrToResponseTime(plan.SubmittedAt),
+			CreatedAt:            dto.ToResponseTime(plan.CreatedAt),
 		})
 	}
 
@@ -154,8 +155,8 @@ func (s *TaskDetailService) GetTaskReviewHistory(taskID uint) ([]dto.ReviewHisto
 			FinalDecision:        session.FinalDecision,
 			FinalDecisionComment: session.FinalDecisionComment,
 			InitiatedBy:          session.InitiatedBy,
-			InitiatedAt:          session.InitiatedAt,
-			CompletedAt:          session.CompletedAt,
+			InitiatedAt:          dto.ToResponseTime(session.InitiatedAt),
+			CompletedAt:          dto.PtrToResponseTime(session.CompletedAt),
 			ReviewRecords:        recordResponses,
 			JuryMembers:          juryMembers,
 		})
@@ -187,7 +188,7 @@ func (s *TaskDetailService) GetTaskChangeLogs(taskID uint) ([]dto.ChangeLogRespo
 			OldValue:   log.OldValue,
 			NewValue:   log.NewValue,
 			Comment:    log.Comment,
-			CreatedAt:  log.CreatedAt,
+			CreatedAt:  dto.ToResponseTime(log.CreatedAt),
 		}
 	}
 
@@ -215,7 +216,7 @@ func (s *TaskDetailService) GetTaskTimeline(taskID uint) ([]dto.TimelineEventRes
 			Content:   "版本 " + versionStr,
 			UserID:    *sol.SubmittedBy,
 			Username:  user.Username,
-			CreatedAt: sol.CreatedAt,
+			CreatedAt: dto.ToResponseTime(sol.CreatedAt),
 		})
 	}
 
@@ -236,7 +237,7 @@ func (s *TaskDetailService) GetTaskTimeline(taskID uint) ([]dto.TimelineEventRes
 			Content:   "版本 " + versionStr,
 			UserID:    *plan.SubmittedBy,
 			Username:  user.Username,
-			CreatedAt: plan.CreatedAt,
+			CreatedAt: dto.ToResponseTime(plan.CreatedAt),
 		})
 	}
 
@@ -250,7 +251,6 @@ func (s *TaskDetailService) GetTaskTimeline(taskID uint) ([]dto.TimelineEventRes
 		title := "发起了审核"
 		content := review.ReviewType
 		eventType := "review_started"
-		createdAt := review.InitiatedAt
 
 		if review.FinalDecision != nil {
 			title = "审核完成"
@@ -260,20 +260,21 @@ func (s *TaskDetailService) GetTaskTimeline(taskID uint) ([]dto.TimelineEventRes
 			} else {
 				content = "审核驳回"
 			}
+			var timeToUse time.Time = review.InitiatedAt
 			if review.CompletedAt != nil {
-				createdAt = *review.CompletedAt
+				timeToUse = *review.CompletedAt
 			}
-		}
 
-		events = append(events, dto.TimelineEventResponse{
-			ID:        review.ID,
-			EventType: eventType,
-			Title:     title,
-			Content:   content,
-			UserID:    review.InitiatedBy,
-			Username:  user.Username,
-			CreatedAt: createdAt,
-		})
+			events = append(events, dto.TimelineEventResponse{
+				ID:        review.ID,
+				EventType: eventType,
+				Title:     title,
+				Content:   content,
+				UserID:    review.InitiatedBy,
+				Username:  user.Username,
+				CreatedAt: dto.ToResponseTime(timeToUse),
+			})
+		}
 	}
 
 	// 4. 获取状态变更事件
@@ -291,13 +292,13 @@ func (s *TaskDetailService) GetTaskTimeline(taskID uint) ([]dto.TimelineEventRes
 			Content:   log.OldValue + " → " + log.NewValue,
 			UserID:    log.UserID,
 			Username:  user.Username,
-			CreatedAt: log.CreatedAt,
+			CreatedAt: dto.ToResponseTime(log.CreatedAt),
 		})
 	}
 
 	// 按时间排序（从旧到新）
 	sort.Slice(events, func(i, j int) bool {
-		return events[i].CreatedAt.Before(events[j].CreatedAt)
+		return events[i].CreatedAt.Time.Before(events[j].CreatedAt.Time)
 	})
 
 	return events, nil
@@ -329,8 +330,8 @@ func (s *TaskDetailService) GetTaskDetailEnhanced(taskID uint) (*dto.TaskDetailE
 			FileName:    latestSolution.FileName,
 			Status:      latestSolution.Status,
 			SubmittedBy: *latestSolution.SubmittedBy,
-			SubmittedAt: latestSolution.SubmittedAt,
-			CreatedAt:   latestSolution.CreatedAt,
+			SubmittedAt: dto.PtrToResponseTime(latestSolution.SubmittedAt),
+			CreatedAt:   dto.ToResponseTime(latestSolution.CreatedAt),
 		}
 	}
 
@@ -371,8 +372,8 @@ func (s *TaskDetailService) GetTaskDetailEnhanced(taskID uint) (*dto.TaskDetailE
 			Status:               latestPlan.Status,
 			Goals:                goalResponses,
 			SubmittedBy:          *latestPlan.SubmittedBy,
-			SubmittedAt:          latestPlan.SubmittedAt,
-			CreatedAt:            latestPlan.CreatedAt,
+			SubmittedAt:          dto.PtrToResponseTime(latestPlan.SubmittedAt),
+			CreatedAt:            dto.ToResponseTime(latestPlan.CreatedAt),
 		}
 	}
 
@@ -415,8 +416,8 @@ func (s *TaskDetailService) GetTaskDetailEnhanced(taskID uint) (*dto.TaskDetailE
 			FinalDecision:        currentReview.FinalDecision,
 			FinalDecisionComment: currentReview.FinalDecisionComment,
 			InitiatedBy:          currentReview.InitiatedBy,
-			InitiatedAt:          currentReview.InitiatedAt,
-			CompletedAt:          currentReview.CompletedAt,
+			InitiatedAt:          dto.ToResponseTime(currentReview.InitiatedAt),
+			CompletedAt:          dto.PtrToResponseTime(currentReview.CompletedAt),
 			ReviewRecords:        recordResponses,
 		}
 	}

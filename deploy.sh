@@ -64,6 +64,26 @@ ssh "${USERNAME}@${SERVER_IP}" << EOSSH
         sleep 2
     fi
     
+    # 检查并修正系统时区（UTC+8 中国标准时间）
+    echo "检查系统时区..."
+    CURRENT_TZ=\$(cat /etc/timezone 2>/dev/null || echo "未配置")
+    if [ "\$CURRENT_TZ" != "Asia/Shanghai" ]; then
+        echo "⚠️  当前时区: \$CURRENT_TZ"
+        echo "正在修正时区为 Asia/Shanghai (UTC+8)..."
+        # 尝试使用 timedatectl（systemd 系统）
+        if command -v timedatectl &> /dev/null; then
+            timedatectl set-timezone Asia/Shanghai || echo "⚠️  timedatectl 修改失败，请手动配置"
+        # 备选方案：直接修改 /etc/timezone
+        elif [ -f /etc/timezone ]; then
+            echo "Asia/Shanghai" | tee /etc/timezone > /dev/null
+            # 更新时区文件软链接
+            ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+        fi
+        echo "✅ 时区已修正为 Asia/Shanghai"
+    else
+        echo "✅ 时区已正确配置: \$CURRENT_TZ"
+    fi
+    
     echo "远程环境准备完毕"
 EOSSH
 
@@ -85,11 +105,33 @@ echo -e "${YELLOW}🔧 配置权限并启动应用...${NC}"
 ssh "${USERNAME}@${SERVER_IP}" << EOSSH
     set -e
     
+    # 显示当前系统时区（验证时区修正）
+    CURRENT_TZ=\$(cat /etc/timezone 2>/dev/null || echo "未配置")
+    SYSTEM_TIME=\$(date '+%Y-%m-%d %H:%M:%S %Z')
+    echo "系统时区: \$CURRENT_TZ"
+    echo "系统时间: \$SYSTEM_TIME"
+    
     # 设置二进制文件执行权限
     chmod +x "$REMOTE_PATH/$APP_NAME"
     
     # 创建日志目录
     mkdir -p "$REMOTE_PATH/logs"
+    
+    # 启动应用（使用 nohup）
+    cd "$REMOTE_PATH"
+    nohup ./$APP_NAME > logs/app.log 2>&1 &
+    echo "应用已启动，PID: \$!"
+    
+    # 等待应用启动
+    sleep 2
+    
+    # 检查应用是否成功启动
+    if pgrep -f "$APP_NAME" > /dev/null 2>&1; then
+        echo "✅ 应用启动成功"
+        echo "日志文件: $REMOTE_PATH/logs/app.log"
+    else
+        echo "⚠️  应用启动检查失败，请查看日志: $REMOTE_PATH/logs/app.log"
+    fi
 EOSSH
 
 echo -e "${GREEN}✅ 部署完成！${NC}"
@@ -98,14 +140,24 @@ echo "  服务器：${USERNAME}@${SERVER_IP}"
 echo "  应用路径：${REMOTE_PATH}"
 echo "  应用名称：${APP_NAME}"
 echo "  配置文件：${REMOTE_PATH}/.env"
+echo "  启动方式：nohup"
 echo ""
-echo -e "${YELLOW}🔍 查看应用状态：${NC}"
+echo -e "${YELLOW}🔍 查看应用进程：${NC}"
 echo "  ssh ${USERNAME}@${SERVER_IP}"
-echo "  sudo systemctl status ${APP_NAME}.service"
+echo "  ps aux | grep ${APP_NAME}"
 echo ""
-echo -e "${YELLOW}📝 查看日志：${NC}"
+echo -e "${YELLOW}📝 查看应用日志：${NC}"
 echo "  ssh ${USERNAME}@${SERVER_IP}"
 echo "  tail -f ${REMOTE_PATH}/logs/app.log"
+echo ""
+echo -e "${YELLOW}🛑 停止应用：${NC}"
+echo "  ssh ${USERNAME}@${SERVER_IP}"
+echo "  pkill -f ${APP_NAME}"
+echo ""
+echo -e "${YELLOW}🔄 重启应用：${NC}"
+echo "  ssh ${USERNAME}@${SERVER_IP}"
+echo "  pkill -f ${APP_NAME}"
+echo "  cd ${REMOTE_PATH} && nohup ./${APP_NAME} > logs/app.log 2>&1 &"
 echo ""
 echo -e "${YELLOW}💡 如果部署时遇到 sudo 密码问题，请在远程服务器配置免密 sudo：${NC}"
 echo "  ssh ${USERNAME}@${SERVER_IP}"

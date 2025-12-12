@@ -168,7 +168,7 @@ func SetupRoutes() *gin.Engine {
 	// 任务流程路由
 	flowController := controllers.NewTaskFlowController()
 	flowRoutes := router.Group("/api/v1/tasks")
-	// flowRoutes.Use(middlewares.AuthMiddleware())
+	flowRoutes.Use(middlewares.AuthMiddleware())
 	{
 		//认领任务、接受任务、
 		flowRoutes.POST("/:id/accept", flowController.AcceptTask)
@@ -186,7 +186,7 @@ func SetupRoutes() *gin.Engine {
 
 	// 审核会话路由
 	reviewRoutes := router.Group("/api/v1/review-sessions")
-	// reviewRoutes.Use(middlewares.AuthMiddleware())
+	reviewRoutes.Use(middlewares.AuthMiddleware())
 	{
 		// 获取审核会话详情
 		reviewRoutes.GET("/:sessionId", flowController.GetReviewSession)

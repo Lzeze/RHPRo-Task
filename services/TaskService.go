@@ -24,15 +24,42 @@ func (s *TaskService) CreateTask(req *dto.TaskRequest, creatorID uint) (*models.
 		return nil, fmt.Errorf("自动生成任务编号失败: %v", err)
 	}
 
+	// 1.5 解析日期字段（将字符串转换为 time.Time）
+	var expectedStartDate, expectedEndDate *time.Time
+
+	if req.ExpectedStartDate != "" {
+		parsedDate, err := s.parseDateTime(req.ExpectedStartDate)
+		if err != nil {
+			return nil, fmt.Errorf("期望开始日期格式错误: %v", err)
+		}
+		expectedStartDate = parsedDate
+	}
+
+	if req.ExpectedEndDate != "" {
+		parsedDate, err := s.parseDateTime(req.ExpectedEndDate)
+		if err != nil {
+			return nil, fmt.Errorf("期望完成日期格式错误: %v", err)
+		}
+		expectedEndDate = parsedDate
+	}
+
 	// 2. 设置默认状态码（如果未提供）
 	statusCode := req.StatusCode
 	if statusCode == "" {
 		// 根据任务类型设置默认状态
 		switch req.TaskTypeCode {
 		case "requirement":
-			statusCode = "req_pending_assign"
+			if req.ExecutorID == nil {
+				statusCode = "req_pending_assign"
+			} else {
+				statusCode = "req_pending_accept"
+			}
 		case "unit_task":
-			statusCode = "unit_pending_assign"
+			if req.ExecutorID == nil {
+				statusCode = "unit_pending_assign"
+			} else {
+				statusCode = "unit_pending_accept"
+			}
 		default:
 			statusCode = "unit_pending_assign"
 		}
@@ -69,8 +96,8 @@ func (s *TaskService) CreateTask(req *dto.TaskRequest, creatorID uint) (*models.
 		DepartmentID:      req.DepartmentID,
 		ParentTaskID:      req.ParentTaskID,
 		Priority:          req.Priority,
-		ExpectedStartDate: req.ExpectedStartDate,
-		ExpectedEndDate:   req.ExpectedEndDate,
+		ExpectedStartDate: expectedStartDate,
+		ExpectedEndDate:   expectedEndDate,
 		IsInPool:          isInPool,
 		IsCrossDepartment: isCrossDepartment,
 		SolutionDeadline:  req.SolutionDeadline,
@@ -426,6 +453,42 @@ func (s *TaskService) UpdateTask(taskID uint, userID uint, req *dto.UpdateTaskRe
 		return errors.New("任务不存在")
 	}
 
+	// 解析所有字符串日期字段为 time.Time
+	var expectedStartDate, expectedEndDate *time.Time
+	var actualStartDate, actualEndDate *time.Time
+
+	if req.ExpectedStartDate != "" {
+		parsed, err := s.parseDateTime(req.ExpectedStartDate)
+		if err != nil {
+			return fmt.Errorf("期望开始日期格式错误: %v", err)
+		}
+		expectedStartDate = parsed
+	}
+
+	if req.ExpectedEndDate != "" {
+		parsed, err := s.parseDateTime(req.ExpectedEndDate)
+		if err != nil {
+			return fmt.Errorf("期望完成日期格式错误: %v", err)
+		}
+		expectedEndDate = parsed
+	}
+
+	if req.ActualStartDate != "" {
+		parsed, err := s.parseDateTime(req.ActualStartDate)
+		if err != nil {
+			return fmt.Errorf("实际开始日期格式错误: %v", err)
+		}
+		actualStartDate = parsed
+	}
+
+	if req.ActualEndDate != "" {
+		parsed, err := s.parseDateTime(req.ActualEndDate)
+		if err != nil {
+			return fmt.Errorf("实际完成日期格式错误: %v", err)
+		}
+		actualEndDate = parsed
+	}
+
 	// 权限验证：只有创建者或执行人可以更新任务
 	isCreator := task.CreatorID == userID
 	isExecutor := task.ExecutorID != nil && *task.ExecutorID == userID
@@ -501,30 +564,53 @@ func (s *TaskService) UpdateTask(taskID uint, userID uint, req *dto.UpdateTaskRe
 		updates["priority"] = req.Priority
 		addChange("priority", task.Priority, req.Priority, "更新优先级")
 	}
+	//新增更改执行人处理
+	if req.ExecutorID != 0 && (task.ExecutorID == nil || *task.ExecutorID != req.ExecutorID) {
+		//如果执行人发生变化，则更新任务状态
+		if task.TaskTypeCode == "requirement" {
+			updates["status_code"] = "req_pending_accept"
+		} else {
+			updates["status_code"] = "unit_pending_accept"
+		}
 
-	// 时间字段处理
-	if !req.ExpectedStartDate.IsZero() {
-		if task.ExpectedStartDate == nil || !req.ExpectedStartDate.Equal(*task.ExpectedStartDate) {
-			updates["expected_start_date"] = req.ExpectedStartDate
-			addChange("expected_start_date", task.ExpectedStartDate, req.ExpectedStartDate, "更新期望开始时间")
+		updates["executor_id"] = req.ExecutorID
+		addChange("executor_id", task.ExecutorID, req.ExecutorID, "更新执行人")
+	} else {
+		//取消了执行人，则更新任务状态
+		if task.ExecutorID != nil && req.ExecutorID == 0 {
+			if task.TaskTypeCode == "requirement" {
+				updates["status_code"] = "req_pending_assign"
+			} else {
+				updates["status_code"] = "unit_pending_assign"
+			}
+			updates["executor_id"] = nil
+			addChange("executor_id", task.ExecutorID, nil, "取消执行人")
 		}
 	}
-	if !req.ExpectedEndDate.IsZero() {
-		if task.ExpectedEndDate == nil || !req.ExpectedEndDate.Equal(*task.ExpectedEndDate) {
-			updates["expected_end_date"] = req.ExpectedEndDate
-			addChange("expected_end_date", task.ExpectedEndDate, req.ExpectedEndDate, "更新期望结束时间")
+
+	// 时间字段处理 - 使用解析后的日期
+	if expectedStartDate != nil {
+		if task.ExpectedStartDate == nil || !expectedStartDate.Equal(*task.ExpectedStartDate) {
+			updates["expected_start_date"] = expectedStartDate
+			addChange("expected_start_date", task.ExpectedStartDate, expectedStartDate, "更新期望开始时间")
 		}
 	}
-	if !req.ActualStartDate.IsZero() {
-		if task.ActualStartDate == nil || !req.ActualStartDate.Equal(*task.ActualStartDate) {
-			updates["actual_start_date"] = req.ActualStartDate
-			addChange("actual_start_date", task.ActualStartDate, req.ActualStartDate, "更新实际开始时间")
+	if expectedEndDate != nil {
+		if task.ExpectedEndDate == nil || !expectedEndDate.Equal(*task.ExpectedEndDate) {
+			updates["expected_end_date"] = expectedEndDate
+			addChange("expected_end_date", task.ExpectedEndDate, expectedEndDate, "更新期望结束时间")
 		}
 	}
-	if !req.ActualEndDate.IsZero() {
-		if task.ActualEndDate == nil || !req.ActualEndDate.Equal(*task.ActualEndDate) {
-			updates["actual_end_date"] = req.ActualEndDate
-			addChange("actual_end_date", task.ActualEndDate, req.ActualEndDate, "更新实际结束时间")
+	if actualStartDate != nil {
+		if task.ActualStartDate == nil || !actualStartDate.Equal(*task.ActualStartDate) {
+			updates["actual_start_date"] = actualStartDate
+			addChange("actual_start_date", task.ActualStartDate, actualStartDate, "更新实际开始时间")
+		}
+	}
+	if actualEndDate != nil {
+		if task.ActualEndDate == nil || !actualEndDate.Equal(*task.ActualEndDate) {
+			updates["actual_end_date"] = actualEndDate
+			addChange("actual_end_date", task.ActualEndDate, actualEndDate, "更新实际结束时间")
 		}
 	}
 	// 新增：SolutionDeadline 处理
@@ -645,6 +731,12 @@ func (s *TaskService) validateTaskHierarchyFieldsForUpdate(req *dto.UpdateTaskRe
 	if req.ChildSequence != 0 {
 		blockedFields = append(blockedFields, "child_sequence")
 	}
+	// 6. status_code - 由系统自动维护
+	// 禁止理由：修改会导致任务状态不准确
+	// 正确值应该是：由状态转换服务维护
+	if req.StatusCode != "" {
+		blockedFields = append(blockedFields, "status_code")
+	}
 
 	// 检查是否有被阻止的字段被修改
 	if len(blockedFields) > 0 {
@@ -654,11 +746,11 @@ func (s *TaskService) validateTaskHierarchyFieldsForUpdate(req *dto.UpdateTaskRe
 		if len(blockedFields) == 1 {
 			// 单个错误时，提供简洁明快的错误信息
 			errorBuilder.WriteString(fmt.Sprintf(
-				"不支持修改字段 '%s'：该字段由系统自动维护\n\n",
+				"不支持修改字段 '%s'：该字段由系统自动维护或由状态转换服务维护\n\n",
 				blockedFields[0]))
 		} else {
 			// 多个错误时，列出所有错误字段
-			errorBuilder.WriteString("不支持修改以下字段（由系统自动维护）:\n")
+			errorBuilder.WriteString("不支持修改以下字段（由系统自动维护或由状态转换服务维护）:\n")
 			for i, field := range blockedFields {
 				errorBuilder.WriteString(fmt.Sprintf("  %d. %s\n", i+1, field))
 			}
@@ -855,7 +947,7 @@ func (s *TaskService) toTaskResponse(task *models.Task) dto.TaskResponse {
 		Title:             task.Title,
 		Description:       task.Description,
 		TaskTypeCode:      task.TaskTypeCode,
-		TaskStatusCode:    task.StatusCode,
+		StatusCode:        task.StatusCode,
 		CreatorID:         task.CreatorID,
 		Priority:          task.Priority,
 		Progress:          task.Progress,
@@ -887,16 +979,16 @@ func (s *TaskService) toTaskResponse(task *models.Task) dto.TaskResponse {
 
 	// 处理时间指针字段
 	if task.ExpectedStartDate != nil {
-		response.ExpectedStartDate = *task.ExpectedStartDate
+		response.ExpectedStartDate = dto.ToResponseTime(*task.ExpectedStartDate)
 	}
 	if task.ExpectedEndDate != nil {
-		response.ExpectedEndDate = *task.ExpectedEndDate
+		response.ExpectedEndDate = dto.ToResponseTime(*task.ExpectedEndDate)
 	}
 	if task.ActualStartDate != nil {
-		response.ActualStartDate = *task.ActualStartDate
+		response.ActualStartDate = dto.ToResponseTime(*task.ActualStartDate)
 	}
 	if task.ActualEndDate != nil {
-		response.ActualEndDate = *task.ActualEndDate
+		response.ActualEndDate = dto.ToResponseTime(*task.ActualEndDate)
 	}
 
 	return response
@@ -926,7 +1018,7 @@ func (s *TaskService) loadTaskAssociations(resp *dto.TaskResponse, taskID uint) 
 			Version:     fmt.Sprintf("v%d", latestSolution.Version),
 			Title:       latestSolution.Title,
 			Status:      latestSolution.Status,
-			SubmittedAt: latestSolution.SubmittedAt,
+			SubmittedAt: dto.PtrToResponseTime(latestSolution.SubmittedAt),
 		}
 		if latestSolution.SubmittedBy != nil {
 			item.SubmittedBy = *latestSolution.SubmittedBy
@@ -949,7 +1041,7 @@ func (s *TaskService) loadTaskAssociations(resp *dto.TaskResponse, taskID uint) 
 			Version:     fmt.Sprintf("v%d", latestPlan.Version),
 			Title:       latestPlan.Title,
 			Status:      latestPlan.Status,
-			SubmittedAt: latestPlan.SubmittedAt,
+			SubmittedAt: dto.PtrToResponseTime(latestPlan.SubmittedAt),
 		}
 		if latestPlan.SubmittedBy != nil {
 			item.SubmittedBy = *latestPlan.SubmittedBy
@@ -1229,4 +1321,38 @@ func (s *TaskService) generateRandomString(length int) string {
 		b[i] = charset[seededRand.Intn(len(charset))]
 	}
 	return string(b)
+}
+
+// ========== 日期时间处理相关方法 ==========
+
+// parseDateTime 解析日期时间字符串，支持多种格式
+// 支持的格式：
+// - 2006-01-02 (日期格式)
+// - 2006-01-02T15:04:05Z (RFC3339 UTC)
+// - 2006-01-02T15:04:05Z07:00 (RFC3339 with timezone)
+// - 2006-01-02T15:04:05 (ISO8601 without timezone)
+// - 2006-01-02 15:04:05 (标准格式)
+func (s *TaskService) parseDateTime(dateStr string) (*time.Time, error) {
+	if dateStr == "" {
+		return nil, nil
+	}
+
+	formats := []string{
+		"2006-01-02",           // YYYY-MM-DD
+		time.RFC3339,           // 2006-01-02T15:04:05Z07:00
+		"2006-01-02T15:04:05Z", // 2006-01-02T15:04:05Z
+		"2006-01-02T15:04:05",  // 2006-01-02T15:04:05
+		"2006-01-02 15:04:05",  // YYYY-MM-DD HH:MM:SS
+	}
+
+	var t time.Time
+	var err error
+
+	for _, format := range formats {
+		if t, err = time.Parse(format, dateStr); err == nil {
+			return &t, nil
+		}
+	}
+
+	return nil, fmt.Errorf("无法解析日期格式 '%s'，支持的格式有：2006-01-02, RFC3339, 等", dateStr)
 }

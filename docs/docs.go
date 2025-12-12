@@ -2608,8 +2608,12 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "created_at": {
-                    "description": "变更发生时间",
-                    "type": "string"
+                    "description": "变更发生时间（RFC3339 格式）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ResponseTime"
+                        }
+                    ]
                 },
                 "field_name": {
                     "description": "被修改的字段名",
@@ -2791,8 +2795,12 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "submitted_at": {
-                    "description": "提交时间",
-                    "type": "string"
+                    "description": "提交时间（RFC3339 格式）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ResponseTime"
+                        }
+                    ]
                 },
                 "submitted_by": {
                     "description": "提交人用户ID",
@@ -2816,8 +2824,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "created_at": {
-                    "description": "创建时间",
-                    "type": "string"
+                    "description": "创建时间（RFC3339 格式）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ResponseTime"
+                        }
+                    ]
                 },
                 "goals": {
                     "description": "关联的目标列表（此执行计划关联的所有目标）",
@@ -2848,8 +2860,12 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "submitted_at": {
-                    "description": "提交时间（可选）",
-                    "type": "string"
+                    "description": "提交时间（可选，RFC3339 格式）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ResponseTime"
+                        }
+                    ]
                 },
                 "submitted_by": {
                     "description": "提交人用户ID",
@@ -3143,12 +3159,24 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.ResponseTime": {
+            "type": "object",
+            "properties": {
+                "time.Time": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.ReviewHistoryResponse": {
             "type": "object",
             "properties": {
                 "completed_at": {
-                    "description": "完成时间（可选）",
-                    "type": "string"
+                    "description": "完成时间（可选，RFC3339 格式）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ResponseTime"
+                        }
+                    ]
                 },
                 "final_decision": {
                     "description": "最终决议（可选，如果审核已完成）",
@@ -3163,8 +3191,12 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "initiated_at": {
-                    "description": "发起时间",
-                    "type": "string"
+                    "description": "发起时间（RFC3339 格式）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ResponseTime"
+                        }
+                    ]
                 },
                 "initiated_by": {
                     "description": "发起人用户ID",
@@ -3384,8 +3416,12 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "submitted_at": {
-                    "description": "提交时间",
-                    "type": "string"
+                    "description": "提交时间（RFC3339 格式）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ResponseTime"
+                        }
+                    ]
                 },
                 "submitted_by": {
                     "description": "提交人用户ID",
@@ -3413,8 +3449,12 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "created_at": {
-                    "description": "创建时间",
-                    "type": "string"
+                    "description": "创建时间（RFC3339 格式）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ResponseTime"
+                        }
+                    ]
                 },
                 "file_name": {
                     "description": "关联的文件名（可选）",
@@ -3433,8 +3473,12 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "submitted_at": {
-                    "description": "提交时间（可选）",
-                    "type": "string"
+                    "description": "提交时间（可选，RFC3339 格式）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ResponseTime"
+                        }
+                    ]
                 },
                 "submitted_by": {
                     "description": "提交人用户ID（谁提交的这个方案版本）",
@@ -3577,12 +3621,20 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "actual_end_date": {
-                    "description": "实际完成日期",
-                    "type": "string"
+                    "description": "实际完成日期（RFC3339 格式）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ResponseTime"
+                        }
+                    ]
                 },
                 "actual_start_date": {
-                    "description": "实际开始日期",
-                    "type": "string"
+                    "description": "实际开始日期（RFC3339 格式）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ResponseTime"
+                        }
+                    ]
                 },
                 "assignee": {
                     "description": "分配人用户ID",
@@ -3664,12 +3716,20 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "expected_end_date": {
-                    "description": "期望完成日期",
-                    "type": "string"
+                    "description": "期望完成日期（RFC3339 格式）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ResponseTime"
+                        }
+                    ]
                 },
                 "expected_start_date": {
-                    "description": "期望开始日期",
-                    "type": "string"
+                    "description": "期望开始日期（RFC3339 格式）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ResponseTime"
+                        }
+                    ]
                 },
                 "id": {
                     "description": "任务ID",
@@ -3731,8 +3791,8 @@ const docTemplate = `{
                     "description": "拆分来源的执行计划ID",
                     "type": "integer"
                 },
-                "status": {
-                    "description": "任务状态",
+                "status_code": {
+                    "description": "任务状态编码",
                     "type": "string"
                 },
                 "subtasks": {
@@ -3769,10 +3829,6 @@ const docTemplate = `{
                         }
                     ]
                 },
-                "task_status_code": {
-                    "description": "任务状态编码",
-                    "type": "string"
-                },
                 "task_type": {
                     "description": "任务类型信息（可选）",
                     "allOf": [
@@ -3799,12 +3855,20 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "actual_end_date": {
-                    "description": "实际完成日期",
-                    "type": "string"
+                    "description": "实际完成日期（RFC3339 格式）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ResponseTime"
+                        }
+                    ]
                 },
                 "actual_start_date": {
-                    "description": "实际开始日期",
-                    "type": "string"
+                    "description": "实际开始日期（RFC3339 格式）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ResponseTime"
+                        }
+                    ]
                 },
                 "assignee": {
                     "description": "分配人用户ID",
@@ -3862,12 +3926,20 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "expected_end_date": {
-                    "description": "期望完成日期",
-                    "type": "string"
+                    "description": "期望完成日期（RFC3339 格式）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ResponseTime"
+                        }
+                    ]
                 },
                 "expected_start_date": {
-                    "description": "期望开始日期",
-                    "type": "string"
+                    "description": "期望开始日期（RFC3339 格式）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ResponseTime"
+                        }
+                    ]
                 },
                 "id": {
                     "description": "任务ID",
@@ -3929,8 +4001,8 @@ const docTemplate = `{
                     "description": "拆分来源的执行计划ID",
                     "type": "integer"
                 },
-                "status": {
-                    "description": "任务状态",
+                "status_code": {
+                    "description": "任务状态编码",
                     "type": "string"
                 },
                 "subtasks": {
@@ -3967,10 +4039,6 @@ const docTemplate = `{
                         }
                     ]
                 },
-                "task_status_code": {
-                    "description": "任务状态编码",
-                    "type": "string"
-                },
                 "task_type": {
                     "description": "任务类型信息（可选）",
                     "allOf": [
@@ -3996,7 +4064,6 @@ const docTemplate = `{
         "dto.TaskRequest": {
             "type": "object",
             "required": [
-                "task_no",
                 "task_type_code",
                 "title"
             ],
@@ -4014,11 +4081,11 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "expected_end_date": {
-                    "description": "期望完成日期（任务预计何时完成，可选）",
+                    "description": "期望完成日期（任务预计何时完成，可选，支持格式：2006-01-02 或 RFC3339 格式）",
                     "type": "string"
                 },
                 "expected_start_date": {
-                    "description": "期望开始日期（任务预计何时开始，可选）",
+                    "description": "期望开始日期（任务预计何时开始，可选，支持格式：2006-01-02 或 RFC3339 格式）",
                     "type": "string"
                 },
                 "is_in_pool": {
@@ -4050,7 +4117,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "task_no": {
-                    "description": "任务编号（唯一，如 REQ-2024-001 格式）",
+                    "description": "任务编号（唯一，可选，如不提供则系统自动生成。格式为：任务类型前缀-6位随机字母数字）",
                     "type": "string"
                 },
                 "task_type_code": {
@@ -4067,12 +4134,20 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "actual_end_date": {
-                    "description": "实际完成日期",
-                    "type": "string"
+                    "description": "实际完成日期（RFC3339 格式）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ResponseTime"
+                        }
+                    ]
                 },
                 "actual_start_date": {
-                    "description": "实际开始日期",
-                    "type": "string"
+                    "description": "实际开始日期（RFC3339 格式）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ResponseTime"
+                        }
+                    ]
                 },
                 "assignee": {
                     "description": "分配人用户ID",
@@ -4114,12 +4189,20 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "expected_end_date": {
-                    "description": "期望完成日期",
-                    "type": "string"
+                    "description": "期望完成日期（RFC3339 格式）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ResponseTime"
+                        }
+                    ]
                 },
                 "expected_start_date": {
-                    "description": "期望开始日期",
-                    "type": "string"
+                    "description": "期望开始日期（RFC3339 格式）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ResponseTime"
+                        }
+                    ]
                 },
                 "id": {
                     "description": "任务ID",
@@ -4181,8 +4264,8 @@ const docTemplate = `{
                     "description": "拆分来源的执行计划ID",
                     "type": "integer"
                 },
-                "status": {
-                    "description": "任务状态",
+                "status_code": {
+                    "description": "任务状态编码",
                     "type": "string"
                 },
                 "subtasks": {
@@ -4209,10 +4292,6 @@ const docTemplate = `{
                 },
                 "task_path": {
                     "description": "任务路径（如 \"1/5/12\"）",
-                    "type": "string"
-                },
-                "task_status_code": {
-                    "description": "任务状态编码",
                     "type": "string"
                 },
                 "task_type_code": {
@@ -4287,8 +4366,12 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "created_at": {
-                    "description": "事件发生时间",
-                    "type": "string"
+                    "description": "事件发生时间（RFC3339 格式）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ResponseTime"
+                        }
+                    ]
                 },
                 "event_type": {
                     "description": "事件类型（solution_submitted=方案提交, plan_submitted=计划提交, review_started=审核开始, status_changed=状态变更）",
@@ -4316,11 +4399,11 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "actual_end_date": {
-                    "description": "实际完成日期（可选）",
+                    "description": "实际完成日期（可选，支持多种日期格式）",
                     "type": "string"
                 },
                 "actual_start_date": {
-                    "description": "实际开始日期（可选）",
+                    "description": "实际开始日期（可选，支持多种日期格式）",
                     "type": "string"
                 },
                 "assignee": {
@@ -4363,7 +4446,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "due_date": {
-                    "description": "到期日期（可选）",
+                    "description": "到期日期（可选，支持多种日期格式）",
                     "type": "string"
                 },
                 "executor_id": {
@@ -4371,11 +4454,11 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "expected_end_date": {
-                    "description": "期望完成日期（可选）",
+                    "description": "期望完成日期（可选，支持多种日期格式）",
                     "type": "string"
                 },
                 "expected_start_date": {
-                    "description": "期望开始日期（可选）",
+                    "description": "期望开始日期（可选，支持多种日期格式）",
                     "type": "string"
                 },
                 "is_cross_department": {
@@ -4422,6 +4505,10 @@ const docTemplate = `{
                     "description": "任务状态（可选）",
                     "type": "string"
                 },
+                "status_code": {
+                    "description": "任务状态编码（可选）",
+                    "type": "string"
+                },
                 "tags": {
                     "description": "任务标签（可选）",
                     "type": "array",
@@ -4439,10 +4526,6 @@ const docTemplate = `{
                 },
                 "task_path": {
                     "description": "任务路径（可选）",
-                    "type": "string"
-                },
-                "task_status_code": {
-                    "description": "任务状态编码（可选）",
                     "type": "string"
                 },
                 "task_type_code": {

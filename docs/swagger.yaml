@@ -57,8 +57,9 @@ definitions:
         description: 变更备注
         type: string
       created_at:
-        description: 变更发生时间
-        type: string
+        allOf:
+        - $ref: '#/definitions/dto.ResponseTime'
+        description: 变更发生时间（RFC3339 格式）
       field_name:
         description: 被修改的字段名
         type: string
@@ -189,8 +190,9 @@ definitions:
         description: 执行计划状态（pending=待审核, approved=已批准, rejected=已拒绝）
         type: string
       submitted_at:
-        description: 提交时间
-        type: string
+        allOf:
+        - $ref: '#/definitions/dto.ResponseTime'
+        description: 提交时间（RFC3339 格式）
       submitted_by:
         description: 提交人用户ID
         type: integer
@@ -207,8 +209,9 @@ definitions:
   dto.ExecutionPlanVersionResponse:
     properties:
       created_at:
-        description: 创建时间
-        type: string
+        allOf:
+        - $ref: '#/definitions/dto.ResponseTime'
+        description: 创建时间（RFC3339 格式）
       goals:
         description: 关联的目标列表（此执行计划关联的所有目标）
         items:
@@ -231,8 +234,9 @@ definitions:
         description: 执行计划状态（pending=待审核, approved=已批准, rejected=已拒绝）
         type: string
       submitted_at:
-        description: 提交时间（可选）
-        type: string
+        allOf:
+        - $ref: '#/definitions/dto.ResponseTime'
+        description: 提交时间（可选，RFC3339 格式）
       submitted_by:
         description: 提交人用户ID
         type: integer
@@ -445,11 +449,17 @@ definitions:
     required:
     - reason
     type: object
+  dto.ResponseTime:
+    properties:
+      time.Time:
+        type: string
+    type: object
   dto.ReviewHistoryResponse:
     properties:
       completed_at:
-        description: 完成时间（可选）
-        type: string
+        allOf:
+        - $ref: '#/definitions/dto.ResponseTime'
+        description: 完成时间（可选，RFC3339 格式）
       final_decision:
         description: 最终决议（可选，如果审核已完成）
         type: string
@@ -460,8 +470,9 @@ definitions:
         description: 审核记录ID
         type: integer
       initiated_at:
-        description: 发起时间
-        type: string
+        allOf:
+        - $ref: '#/definitions/dto.ResponseTime'
+        description: 发起时间（RFC3339 格式）
       initiated_by:
         description: 发起人用户ID
         type: integer
@@ -619,8 +630,9 @@ definitions:
         description: 方案状态（pending=待审核, approved=已批准, rejected=已拒绝）
         type: string
       submitted_at:
-        description: 提交时间
-        type: string
+        allOf:
+        - $ref: '#/definitions/dto.ResponseTime'
+        description: 提交时间（RFC3339 格式）
       submitted_by:
         description: 提交人用户ID
         type: integer
@@ -640,8 +652,9 @@ definitions:
         description: 方案内容（具体的方案说明）
         type: string
       created_at:
-        description: 创建时间
-        type: string
+        allOf:
+        - $ref: '#/definitions/dto.ResponseTime'
+        description: 创建时间（RFC3339 格式）
       file_name:
         description: 关联的文件名（可选）
         type: string
@@ -655,8 +668,9 @@ definitions:
         description: 方案状态（pending=待审核, approved=已批准, rejected=已拒绝）
         type: string
       submitted_at:
-        description: 提交时间（可选）
-        type: string
+        allOf:
+        - $ref: '#/definitions/dto.ResponseTime'
+        description: 提交时间（可选，RFC3339 格式）
       submitted_by:
         description: 提交人用户ID（谁提交的这个方案版本）
         type: integer
@@ -755,11 +769,13 @@ definitions:
   dto.TaskDetailEnhancedResponse:
     properties:
       actual_end_date:
-        description: 实际完成日期
-        type: string
+        allOf:
+        - $ref: '#/definitions/dto.ResponseTime'
+        description: 实际完成日期（RFC3339 格式）
       actual_start_date:
-        description: 实际开始日期
-        type: string
+        allOf:
+        - $ref: '#/definitions/dto.ResponseTime'
+        description: 实际开始日期（RFC3339 格式）
       assignee:
         description: 分配人用户ID
         type: integer
@@ -810,11 +826,13 @@ definitions:
         description: 执行人用户ID
         type: integer
       expected_end_date:
-        description: 期望完成日期
-        type: string
+        allOf:
+        - $ref: '#/definitions/dto.ResponseTime'
+        description: 期望完成日期（RFC3339 格式）
       expected_start_date:
-        description: 期望开始日期
-        type: string
+        allOf:
+        - $ref: '#/definitions/dto.ResponseTime'
+        description: 期望开始日期（RFC3339 格式）
       id:
         description: 任务ID
         type: integer
@@ -856,8 +874,8 @@ definitions:
       split_from_plan_id:
         description: 拆分来源的执行计划ID
         type: integer
-      status:
-        description: 任务状态
+      status_code:
+        description: 任务状态编码
         type: string
       subtasks:
         description: 子任务列表（与思路方案、执行计划同级展示，支持递归）
@@ -882,9 +900,6 @@ definitions:
         allOf:
         - $ref: '#/definitions/dto.TaskStatusResponse'
         description: 任务状态信息（可选）
-      task_status_code:
-        description: 任务状态编码
-        type: string
       task_type:
         allOf:
         - $ref: '#/definitions/dto.TaskTypeResponse'
@@ -902,11 +917,13 @@ definitions:
   dto.TaskDetailResponse:
     properties:
       actual_end_date:
-        description: 实际完成日期
-        type: string
+        allOf:
+        - $ref: '#/definitions/dto.ResponseTime'
+        description: 实际完成日期（RFC3339 格式）
       actual_start_date:
-        description: 实际开始日期
-        type: string
+        allOf:
+        - $ref: '#/definitions/dto.ResponseTime'
+        description: 实际开始日期（RFC3339 格式）
       assignee:
         description: 分配人用户ID
         type: integer
@@ -945,11 +962,13 @@ definitions:
         description: 执行人用户ID
         type: integer
       expected_end_date:
-        description: 期望完成日期
-        type: string
+        allOf:
+        - $ref: '#/definitions/dto.ResponseTime'
+        description: 期望完成日期（RFC3339 格式）
       expected_start_date:
-        description: 期望开始日期
-        type: string
+        allOf:
+        - $ref: '#/definitions/dto.ResponseTime'
+        description: 期望开始日期（RFC3339 格式）
       id:
         description: 任务ID
         type: integer
@@ -991,8 +1010,8 @@ definitions:
       split_from_plan_id:
         description: 拆分来源的执行计划ID
         type: integer
-      status:
-        description: 任务状态
+      status_code:
+        description: 任务状态编码
         type: string
       subtasks:
         description: 子任务列表（与思路方案、执行计划同级展示，支持递归）
@@ -1017,9 +1036,6 @@ definitions:
         allOf:
         - $ref: '#/definitions/dto.TaskStatusResponse'
         description: 任务状态信息（可选）
-      task_status_code:
-        description: 任务状态编码
-        type: string
       task_type:
         allOf:
         - $ref: '#/definitions/dto.TaskTypeResponse'
@@ -1046,10 +1062,10 @@ definitions:
         description: 执行人用户ID（任务的具体执行者，可选）
         type: integer
       expected_end_date:
-        description: 期望完成日期（任务预计何时完成，可选）
+        description: 期望完成日期（任务预计何时完成，可选，支持格式：2006-01-02 或 RFC3339 格式）
         type: string
       expected_start_date:
-        description: 期望开始日期（任务预计何时开始，可选）
+        description: 期望开始日期（任务预计何时开始，可选，支持格式：2006-01-02 或 RFC3339 格式）
         type: string
       is_in_pool:
         description: 是否在待领池（true=未指派执行人，需要其他人认领）
@@ -1073,7 +1089,7 @@ definitions:
         description: 任务层级（0=顶层任务，1=一级子任务，以此类推）
         type: integer
       task_no:
-        description: 任务编号（唯一，如 REQ-2024-001 格式）
+        description: 任务编号（唯一，可选，如不提供则系统自动生成。格式为：任务类型前缀-6位随机字母数字）
         type: string
       task_type_code:
         description: 任务类型编码（如：需求、缺陷、功能等，关联 task_types.code）
@@ -1082,18 +1098,19 @@ definitions:
         description: 任务标题（简要描述任务内容）
         type: string
     required:
-    - task_no
     - task_type_code
     - title
     type: object
   dto.TaskResponse:
     properties:
       actual_end_date:
-        description: 实际完成日期
-        type: string
+        allOf:
+        - $ref: '#/definitions/dto.ResponseTime'
+        description: 实际完成日期（RFC3339 格式）
       actual_start_date:
-        description: 实际开始日期
-        type: string
+        allOf:
+        - $ref: '#/definitions/dto.ResponseTime'
+        description: 实际开始日期（RFC3339 格式）
       assignee:
         description: 分配人用户ID
         type: integer
@@ -1124,11 +1141,13 @@ definitions:
         description: 执行人用户ID
         type: integer
       expected_end_date:
-        description: 期望完成日期
-        type: string
+        allOf:
+        - $ref: '#/definitions/dto.ResponseTime'
+        description: 期望完成日期（RFC3339 格式）
       expected_start_date:
-        description: 期望开始日期
-        type: string
+        allOf:
+        - $ref: '#/definitions/dto.ResponseTime'
+        description: 期望开始日期（RFC3339 格式）
       id:
         description: 任务ID
         type: integer
@@ -1170,8 +1189,8 @@ definitions:
       split_from_plan_id:
         description: 拆分来源的执行计划ID
         type: integer
-      status:
-        description: 任务状态
+      status_code:
+        description: 任务状态编码
         type: string
       subtasks:
         description: 子任务列表（与思路方案、执行计划同级展示，支持递归）
@@ -1191,9 +1210,6 @@ definitions:
         type: string
       task_path:
         description: 任务路径（如 "1/5/12"）
-        type: string
-      task_status_code:
-        description: 任务状态编码
         type: string
       task_type_code:
         description: 任务类型编码
@@ -1246,8 +1262,9 @@ definitions:
         description: 事件内容详情
         type: string
       created_at:
-        description: 事件发生时间
-        type: string
+        allOf:
+        - $ref: '#/definitions/dto.ResponseTime'
+        description: 事件发生时间（RFC3339 格式）
       event_type:
         description: 事件类型（solution_submitted=方案提交, plan_submitted=计划提交, review_started=审核开始,
           status_changed=状态变更）
@@ -1268,10 +1285,10 @@ definitions:
   dto.UpdateTaskRequest:
     properties:
       actual_end_date:
-        description: 实际完成日期（可选）
+        description: 实际完成日期（可选，支持多种日期格式）
         type: string
       actual_start_date:
-        description: 实际开始日期（可选）
+        description: 实际开始日期（可选，支持多种日期格式）
         type: string
       assignee:
         description: 分配人ID（可选）
@@ -1303,16 +1320,16 @@ definitions:
         description: 任务描述（可选）
         type: string
       due_date:
-        description: 到期日期（可选）
+        description: 到期日期（可选，支持多种日期格式）
         type: string
       executor_id:
         description: 执行人用户ID（可选）
         type: integer
       expected_end_date:
-        description: 期望完成日期（可选）
+        description: 期望完成日期（可选，支持多种日期格式）
         type: string
       expected_start_date:
-        description: 期望开始日期（可选）
+        description: 期望开始日期（可选，支持多种日期格式）
         type: string
       is_cross_department:
         description: 是否跨部门（可选）
@@ -1347,6 +1364,9 @@ definitions:
       status:
         description: 任务状态（可选）
         type: string
+      status_code:
+        description: 任务状态编码（可选）
+        type: string
       tags:
         description: 任务标签（可选）
         items:
@@ -1360,9 +1380,6 @@ definitions:
         type: string
       task_path:
         description: 任务路径（可选）
-        type: string
-      task_status_code:
-        description: 任务状态编码（可选）
         type: string
       task_type_code:
         description: 任务类型编码（可选）

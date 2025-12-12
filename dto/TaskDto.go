@@ -1,6 +1,50 @@
 package dto
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
+
+// CustomDate 自定义日期类型，支持多种日期格式解析
+// 支持格式：2006-01-02, 2006-01-02T15:04:05Z, 2006-01-02T15:04:05+08:00
+type CustomDate struct {
+	*time.Time
+}
+
+// UnmarshalJSON 自定义 JSON 解析方法，支持多种日期格式
+func (cd *CustomDate) UnmarshalJSON(data []byte) error {
+	var dateStr string
+	if err := json.Unmarshal(data, &dateStr); err != nil {
+		return err
+	}
+
+	if dateStr == "" {
+		cd.Time = nil
+		return nil
+	}
+
+	// 尝试多种日期格式
+	formats := []string{
+		"2006-01-02",           // YYYY-MM-DD
+		time.RFC3339,           // 2006-01-02T15:04:05Z07:00
+		"2006-01-02T15:04:05Z", // 2006-01-02T15:04:05Z
+		"2006-01-02T15:04:05",  // 2006-01-02T15:04:05
+		"2006-01-02 15:04:05",  // YYYY-MM-DD HH:MM:SS
+	}
+
+	var t time.Time
+	var err error
+
+	for _, format := range formats {
+		if t, err = time.Parse(format, dateStr); err == nil {
+			cd.Time = &t
+			return nil
+		}
+	}
+
+	// 如果所有格式都失败，返回最后一个错误
+	return err
+}
 
 // TaskRequest 创建任务请求
 type TaskRequest struct {
@@ -26,10 +70,10 @@ type TaskRequest struct {
 	TaskLevel int `json:"task_level"`
 	// 任务优先级（1=低，2=中，3=高，4=紧急）
 	Priority int `json:"priority"`
-	// 期望开始日期（任务预计何时开始，可选）
-	ExpectedStartDate *time.Time `json:"expected_start_date"`
-	// 期望完成日期（任务预计何时完成，可选）
-	ExpectedEndDate *time.Time `json:"expected_end_date"`
+	// 期望开始日期（任务预计何时开始，可选，支持格式：2006-01-02 或 RFC3339 格式）
+	ExpectedStartDate string `json:"expected_start_date" binding:"omitempty,datetime=2006-01-02|datetime=2006-01-02T15:04:05Z|datetime=2006-01-02T15:04:05"`
+	// 期望完成日期（任务预计何时完成，可选，支持格式：2006-01-02 或 RFC3339 格式）
+	ExpectedEndDate string `json:"expected_end_date" binding:"omitempty,datetime=2006-01-02|datetime=2006-01-02T15:04:05Z|datetime=2006-01-02T15:04:05"`
 	// 是否在待领池（true=未指派执行人，需要其他人认领）
 	IsInPool bool `json:"is_in_pool"`
 	// 思路方案截止天数（仅需求类任务适用，表示执行人接受任务后需在N天内提交方案，0表示不限制）
@@ -44,12 +88,10 @@ type UpdateTaskRequest struct {
 	Title string `json:"title" binding:"omitempty"`
 	// 任务描述（可选）
 	Description string `json:"description" binding:"omitempty"`
-	// 任务状态（可选）
-	Status string `json:"status" binding:"omitempty"`
 	// 任务优先级（可选）
 	Priority int `json:"priority" binding:"omitempty"`
-	// 到期日期（可选）
-	DueDate time.Time `json:"due_date" binding:"omitempty"`
+	// 到期日期（可选，支持多种日期格式）
+	DueDate string `json:"due_date" binding:"omitempty"`
 	// 分配人ID（可选）
 	Assignee uint `json:"assignee" binding:"omitempty"`
 	// 报告人ID（可选）
@@ -58,14 +100,14 @@ type UpdateTaskRequest struct {
 	Tags []string `json:"tags" binding:"omitempty"`
 	// 任务附件列表（可选）
 	Attachments []string `json:"attachments" binding:"omitempty"`
-	// 期望开始日期（可选）
-	ExpectedStartDate time.Time `json:"expected_start_date" binding:"omitempty"`
-	// 期望完成日期（可选）
-	ExpectedEndDate time.Time `json:"expected_end_date" binding:"omitempty"`
-	// 实际开始日期（可选）
-	ActualStartDate time.Time `json:"actual_start_date" binding:"omitempty"`
-	// 实际完成日期（可选）
-	ActualEndDate time.Time `json:"actual_end_date" binding:"omitempty"`
+	// 期望开始日期（可选，支持多种日期格式）
+	ExpectedStartDate string `json:"expected_start_date" binding:"omitempty"`
+	// 期望完成日期（可选，支持多种日期格式）
+	ExpectedEndDate string `json:"expected_end_date" binding:"omitempty"`
+	// 实际开始日期（可选，支持多种日期格式）
+	ActualStartDate string `json:"actual_start_date" binding:"omitempty"`
+	// 实际完成日期（可选，支持多种日期格式）
+	ActualEndDate string `json:"actual_end_date" binding:"omitempty"`
 	// 任务进度百分比（0-100，可选）
 	Progress int `json:"progress" binding:"omitempty"`
 	// 是否跨部门（可选）
@@ -81,7 +123,7 @@ type UpdateTaskRequest struct {
 	// 任务类型编码（可选）
 	TaskTypeCode string `json:"task_type_code" binding:"omitempty"`
 	// 任务状态编码（可选）
-	TaskStatusCode string `json:"task_status_code" binding:"omitempty"`
+	StatusCode string `json:"status_code" binding:"omitempty"`
 	// 创建者用户ID（可选）
 	CreatorID uint `json:"creator_id" binding:"omitempty"`
 	// 执行人用户ID（可选）
@@ -126,8 +168,6 @@ type TaskResponse struct {
 	Title string `json:"title"`
 	// 任务描述
 	Description string `json:"description"`
-	// 任务状态
-	Status string `json:"status"`
 	// 任务优先级（1=低，2=中，3=高，4=紧急）
 	Priority int `json:"priority"`
 	// 到期日期
@@ -140,14 +180,14 @@ type TaskResponse struct {
 	Tags []string `json:"tags"`
 	// 任务附件列表
 	Attachments []string `json:"attachments"`
-	// 期望开始日期
-	ExpectedStartDate time.Time `json:"expected_start_date"`
-	// 期望完成日期
-	ExpectedEndDate time.Time `json:"expected_end_date"`
-	// 实际开始日期
-	ActualStartDate time.Time `json:"actual_start_date"`
-	// 实际完成日期
-	ActualEndDate time.Time `json:"actual_end_date"`
+	// 期望开始日期（RFC3339 格式）
+	ExpectedStartDate ResponseTime `json:"expected_start_date"`
+	// 期望完成日期（RFC3339 格式）
+	ExpectedEndDate ResponseTime `json:"expected_end_date"`
+	// 实际开始日期（RFC3339 格式）
+	ActualStartDate ResponseTime `json:"actual_start_date"`
+	// 实际完成日期（RFC3339 格式）
+	ActualEndDate ResponseTime `json:"actual_end_date"`
 	// 任务进度百分比（0-100）
 	Progress int `json:"progress"`
 	// 是否跨部门任务
@@ -161,7 +201,7 @@ type TaskResponse struct {
 	// 任务类型编码
 	TaskTypeCode string `json:"task_type_code"`
 	// 任务状态编码
-	TaskStatusCode string `json:"task_status_code"`
+	StatusCode string `json:"status_code"`
 	// 创建者用户ID
 	CreatorID uint `json:"creator_id"`
 	// 执行人用户ID

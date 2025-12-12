@@ -1,7 +1,5 @@
 package dto
 
-import "time"
-
 // ========== 思路方案相关 ==========
 
 // SolutionVersionResponse 方案版本响应
@@ -20,10 +18,10 @@ type SolutionVersionResponse struct {
 	Status string `json:"status"`
 	// 提交人用户ID（谁提交的这个方案版本）
 	SubmittedBy uint `json:"submitted_by"`
-	// 提交时间（可选）
-	SubmittedAt *time.Time `json:"submitted_at,omitempty"`
-	// 创建时间
-	CreatedAt time.Time `json:"created_at"`
+	// 提交时间（可选，RFC3339 格式）
+	SubmittedAt *ResponseTime `json:"submitted_at,omitempty"`
+	// 创建时间（RFC3339 格式）
+	CreatedAt ResponseTime `json:"created_at"`
 }
 
 // ========== 执行计划相关 ==========
@@ -48,10 +46,10 @@ type ExecutionPlanVersionResponse struct {
 	Goals []GoalItemResponse `json:"goals"`
 	// 提交人用户ID
 	SubmittedBy uint `json:"submitted_by"`
-	// 提交时间（可选）
-	SubmittedAt *time.Time `json:"submitted_at,omitempty"`
-	// 创建时间
-	CreatedAt time.Time `json:"created_at"`
+	// 提交时间（可选，RFC3339 格式）
+	SubmittedAt *ResponseTime `json:"submitted_at,omitempty"`
+	// 创建时间（RFC3339 格式）
+	CreatedAt ResponseTime `json:"created_at"`
 }
 
 // GoalItemResponse 目标条目响应
@@ -96,10 +94,10 @@ type ReviewHistoryResponse struct {
 	FinalDecisionComment string `json:"final_decision_comment,omitempty"`
 	// 发起人用户ID
 	InitiatedBy uint `json:"initiated_by"`
-	// 发起时间
-	InitiatedAt time.Time `json:"initiated_at"`
-	// 完成时间（可选）
-	CompletedAt *time.Time `json:"completed_at,omitempty"`
+	// 发起时间（RFC3339 格式）
+	InitiatedAt ResponseTime `json:"initiated_at"`
+	// 完成时间（可选，RFC3339 格式）
+	CompletedAt *ResponseTime `json:"completed_at,omitempty"`
 	// 审核记录列表（各个审核人的意见）
 	ReviewRecords []ReviewRecordResponse `json:"review_records"`
 	// 陪审团成员列表（陪审团模式下的成员，可选）
@@ -136,8 +134,8 @@ type ChangeLogResponse struct {
 	NewValue string `json:"new_value"`
 	// 变更备注
 	Comment string `json:"comment"`
-	// 变更发生时间
-	CreatedAt time.Time `json:"created_at"`
+	// 变更发生时间（RFC3339 格式）
+	CreatedAt ResponseTime `json:"created_at"`
 }
 
 // ========== 时间轴相关 ==========
@@ -156,8 +154,8 @@ type TimelineEventResponse struct {
 	UserID uint `json:"user_id"`
 	// 事件发起人用户名
 	Username string `json:"username"`
-	// 事件发生时间
-	CreatedAt time.Time `json:"created_at"`
+	// 事件发生时间（RFC3339 格式）
+	CreatedAt ResponseTime `json:"created_at"`
 }
 
 // ========== 增强的任务详情响应 ==========
@@ -185,8 +183,8 @@ type SolutionListItemResponse struct {
 	Title string `json:"title"`
 	// 方案状态（pending=待审核, approved=已批准, rejected=已拒绝）
 	Status string `json:"status"`
-	// 提交时间
-	SubmittedAt *time.Time `json:"submitted_at,omitempty"`
+	// 提交时间（RFC3339 格式）
+	SubmittedAt *ResponseTime `json:"submitted_at,omitempty"`
 	// 提交人用户ID
 	SubmittedBy uint `json:"submitted_by"`
 	// 提交人用户名
@@ -203,8 +201,8 @@ type ExecutionPlanListItemResponse struct {
 	Title string `json:"title"`
 	// 执行计划状态（pending=待审核, approved=已批准, rejected=已拒绝）
 	Status string `json:"status"`
-	// 提交时间
-	SubmittedAt *time.Time `json:"submitted_at,omitempty"`
+	// 提交时间（RFC3339 格式）
+	SubmittedAt *ResponseTime `json:"submitted_at,omitempty"`
 	// 提交人用户ID
 	SubmittedBy uint `json:"submitted_by"`
 	// 提交人用户名
