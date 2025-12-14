@@ -101,6 +101,81 @@
                 }
             }
         },
+        "/api/task-flow/statuses": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "根据任务类型获取该类型的所有状态列表（按排序顺序）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "任务流程"
+                ],
+                "summary": "获取任务状态列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "任务类型编码（如 requirement, unit_task）",
+                        "name": "task_type_code",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/task-flow/tasks/{task_id}/allowed-transitions": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "根据任务ID和当前用户，获取该任务当前允许的所有状态转换",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "任务流程"
+                ],
+                "summary": "获取任务允许的状态转换",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "任务ID",
+                        "name": "task_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "description": "用户使用用户名/邮箱/手机号和密码登录，返回JWT令牌",
@@ -3372,6 +3447,10 @@
                     "description": "用户ID",
                     "type": "integer"
                 },
+                "nickname": {
+                    "description": "昵称",
+                    "type": "string"
+                },
                 "username": {
                     "description": "用户名",
                     "type": "string"
@@ -4494,10 +4573,6 @@
                 "split_from_plan_id": {
                     "description": "拆分来源的执行计划ID（可选）",
                     "type": "integer"
-                },
-                "status": {
-                    "description": "任务状态（可选）",
-                    "type": "string"
                 },
                 "status_code": {
                     "description": "任务状态编码（可选）",

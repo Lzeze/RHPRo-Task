@@ -184,6 +184,16 @@ func SetupRoutes() *gin.Engine {
 		flowRoutes.POST("/:id/execution-plan", flowController.SubmitExecutionPlanWithGoals)
 	}
 
+	// 任务状态查询路由
+	taskFlowQueryRoutes := router.Group("/api/v1/task-flow")
+	taskFlowQueryRoutes.Use(middlewares.AuthMiddleware())
+	{
+		// 获取任务状态列表
+		taskFlowQueryRoutes.GET("/statuses", flowController.GetTaskStatuses)
+		// 获取任务允许的状态转换
+		taskFlowQueryRoutes.GET("/tasks/:task_id/allowed-transitions", flowController.GetTaskAllowedTransitions)
+	}
+
 	// 审核会话路由
 	reviewRoutes := router.Group("/api/v1/review-sessions")
 	reviewRoutes.Use(middlewares.AuthMiddleware())

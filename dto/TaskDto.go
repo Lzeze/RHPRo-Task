@@ -316,4 +316,6 @@ type SimpleUserResponse struct {
 	Username string `json:"username"`
 	// 邮箱地址
 	Email string `json:"email"`
+	//昵称
+	Nickname string `json:"nickname"`
 }

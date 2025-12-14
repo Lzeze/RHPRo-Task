@@ -1,8 +1,13 @@
 package models
 
+import "time"
+
 // TaskType 任务类型
 type TaskType struct {
-	BaseModel
+	// 主键ID
+	ID uint `gorm:"primarykey" json:"id"`
+	// 创建时间
+	CreatedAt time.Time `json:"created_at"`
 	// 类型编码（唯一，如 requirement/unit_task）
 	Code string `gorm:"size:50;uniqueIndex;not null" json:"code"`
 	// 类型名称
@@ -15,5 +20,3 @@ type TaskType struct {
 func (TaskType) TableName() string {
 	return "task_types"
 }
-
-

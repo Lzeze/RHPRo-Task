@@ -395,6 +395,7 @@ func (s *TaskService) GetTaskByID(taskID uint) (*dto.TaskDetailResponse, error) 
 				ID:       creator.ID,
 				Username: creator.Username,
 				Email:    creator.Email,
+				Nickname: creator.Nickname,
 			}
 		}
 	}
@@ -407,6 +408,7 @@ func (s *TaskService) GetTaskByID(taskID uint) (*dto.TaskDetailResponse, error) 
 				ID:       executor.ID,
 				Username: executor.Username,
 				Email:    executor.Email,
+				Nickname: executor.Nickname,
 			}
 		}
 	}
@@ -819,7 +821,11 @@ func (s *TaskService) DeleteTask(taskID uint) error {
 	return nil
 }
 
-// TransitStatus 执行任务状态转换，并自动更新完成统计
+// TransitStatus 执行任务状态转换，并自动更新完成统计和父任务状态
+// 父任务状态更新规则：
+// 1. 如果所有子任务都是完成状态，父任务状态更新为已完成
+// 2. 如果子任务有阻碍状态，父任务更新为阻碍
+// 3. 如果没有阻碍状态但有未完成的任务，父任务状态应是进行中
 func (s *TaskService) TransitStatus(taskID uint, userID uint, req *dto.TaskStatusTransitionRequest) error {
 	// 创建状态转换服务
 	statusTransition := &StatusTransitionService{}
@@ -871,14 +877,20 @@ func (s *TaskService) TransitStatus(taskID uint, userID uint, req *dto.TaskStatu
 		return fmt.Errorf("记录状态变更日志失败: %v", err)
 	}
 
-	// 检测完成状态转换，并更新父任务统计
+	// 检测状态变化是否涉及完成或阻碍状态
 	isOldCompleted := oldStatusCode == "req_completed" || oldStatusCode == "unit_completed"
 	isNewCompleted := req.ToStatusCode == "req_completed" || req.ToStatusCode == "unit_completed"
+	isOldBlocked := oldStatusCode == "req_blocked" || oldStatusCode == "unit_blocked"
+	isNewBlocked := req.ToStatusCode == "req_blocked" || req.ToStatusCode == "unit_blocked"
 
-	// 如果状态转换涉及完成状态变化，更新父任务的完成统计
-	if isOldCompleted != isNewCompleted && task.ParentTaskID != nil {
+	// 如果状态转换涉及完成或阻碍状态变化，更新父任务的统计和状态
+	if (isOldCompleted != isNewCompleted || isOldBlocked != isNewBlocked) && task.ParentTaskID != nil {
 		if err := s.recalculateTaskStats(*task.ParentTaskID); err != nil {
 			return fmt.Errorf("更新父任务统计失败: %v", err)
+		}
+		// 更新父任务状态
+		if err := s.updateParentTaskStatus(*task.ParentTaskID, userID); err != nil {
+			return fmt.Errorf("更新父任务状态失败: %v", err)
 		}
 	}
 
@@ -1140,6 +1152,107 @@ func (s *TaskService) recalculateTaskStats(taskID uint) error {
 		}).Error
 }
 
+// updateParentTaskStatus 根据子任务状态更新父任务状态
+// 规则：
+// 1. 如果所有子任务都是完成状态，父任务状态更新为已完成
+// 2. 如果子任务有阻碍状态，父任务更新为阻碍
+// 3. 如果没有阻碍状态但有未完成的任务，父任务状态应是进行中
+func (s *TaskService) updateParentTaskStatus(parentTaskID uint, userID uint) error {
+	// 获取父任务信息
+	var parentTask models.Task
+	if err := database.DB.First(&parentTask, parentTaskID).Error; err != nil {
+		return errors.New("父任务不存在")
+	}
+
+	// 统计直接子任务总数（未删除的）
+	var totalCount int64
+	database.DB.Model(&models.Task{}).
+		Where("parent_task_id = ? AND deleted_at IS NULL", parentTaskID).
+		Count(&totalCount)
+
+	// 如果没有子任务，不更新父任务状态
+	if totalCount == 0 {
+		return nil
+	}
+
+	// 统计已完成的子任务数
+	var completedCount int64
+	database.DB.Model(&models.Task{}).
+		Where("parent_task_id = ? AND deleted_at IS NULL AND (status_code = ? OR status_code = ?)",
+			parentTaskID, "req_completed", "unit_completed").
+		Count(&completedCount)
+
+	// 统计阻碍状态的子任务数
+	var blockedCount int64
+	database.DB.Model(&models.Task{}).
+		Where("parent_task_id = ? AND deleted_at IS NULL AND (status_code = ? OR status_code = ?)",
+			parentTaskID, "req_blocked", "unit_blocked").
+		Count(&blockedCount)
+
+	// 确定父任务的新状态
+	var newStatusCode string
+	oldStatusCode := parentTask.StatusCode
+
+	if completedCount == totalCount {
+		// 所有子任务都完成，父任务状态更新为已完成
+		if parentTask.TaskTypeCode == "requirement" {
+			newStatusCode = "req_completed"
+		} else {
+			newStatusCode = "unit_completed"
+		}
+	} else if blockedCount > 0 {
+		// 有阻碍状态的子任务，父任务更新为阻碍
+		if parentTask.TaskTypeCode == "requirement" {
+			newStatusCode = "req_blocked"
+		} else {
+			newStatusCode = "unit_blocked"
+		}
+	} else {
+		// 没有阻碍状态但有未完成的任务，父任务状态应是进行中
+		if parentTask.TaskTypeCode == "requirement" {
+			newStatusCode = "req_in_progress"
+		} else {
+			newStatusCode = "unit_in_progress"
+		}
+	}
+
+	// 如果状态没有变化，不更新
+	if newStatusCode == oldStatusCode {
+		return nil
+	}
+
+	// 更新父任务状态
+	if err := database.DB.Model(&parentTask).Update("status_code", newStatusCode).Error; err != nil {
+		return err
+	}
+
+	// 记录状态变更日志
+	changeLog := &models.TaskChangeLog{
+		TaskID:     parentTaskID,
+		UserID:     userID,
+		ChangeType: "status_change",
+		FieldName:  "status_code",
+		OldValue:   oldStatusCode,
+		NewValue:   newStatusCode,
+		Comment:    "系统自动更新：根据子任务状态变化",
+	}
+	if err := database.DB.Create(changeLog).Error; err != nil {
+		return fmt.Errorf("记录父任务状态变更日志失败: %v", err)
+	}
+
+	// 递归更新祖先任务状态（如果父任务也有父任务）
+	if parentTask.ParentTaskID != nil {
+		if err := s.recalculateTaskStats(*parentTask.ParentTaskID); err != nil {
+			return fmt.Errorf("更新祖先任务统计失败: %v", err)
+		}
+		if err := s.updateParentTaskStatus(*parentTask.ParentTaskID, userID); err != nil {
+			return fmt.Errorf("更新祖先任务状态失败: %v", err)
+		}
+	}
+
+	return nil
+}
+
 // GetTaskAncestors 获取任务的所有祖先任务（父任务、祖父任务等）
 // 用于追溯任务的来源链条
 func (s *TaskService) GetTaskAncestors(taskID uint) ([]models.Task, error) {
@@ -1355,4 +1468,29 @@ func (s *TaskService) parseDateTime(dateStr string) (*time.Time, error) {
 	}
 
 	return nil, fmt.Errorf("无法解析日期格式 '%s'，支持的格式有：2006-01-02, RFC3339, 等", dateStr)
+}
+
+// ========== 任务上下文相关方法 ==========
+
+// GetTaskContext 获取任务的上下文信息（类型、状态、创建人、执行人）
+// 用于状态转换时判断用户权限和任务状态
+func (s *TaskService) GetTaskContext(taskID uint) (*dto.TaskContext, error) {
+	var task models.Task
+	if err := database.DB.First(&task, taskID).Error; err != nil {
+		return nil, errors.New("任务不存在")
+	}
+
+	context := &dto.TaskContext{
+		TaskID:       task.ID,
+		TaskTypeCode: task.TaskTypeCode,
+		StatusCode:   task.StatusCode,
+		CreatorID:    task.CreatorID,
+	}
+
+	// 执行人可能为空
+	if task.ExecutorID != nil {
+		context.ExecutorID = *task.ExecutorID
+	}
+
+	return context, nil
 }

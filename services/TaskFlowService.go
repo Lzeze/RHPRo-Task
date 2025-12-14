@@ -35,7 +35,7 @@ func (s *TaskFlowService) AcceptTask(taskID uint, userID uint) error {
 	switch task.TaskTypeCode {
 	case "requirement":
 		if task.StatusCode == "req_pending_accept" {
-			newStatus = "req_pending_goal"
+			newStatus = "req_pending_solution"
 		}
 	case "unit_task":
 		if task.StatusCode == "unit_pending_accept" {

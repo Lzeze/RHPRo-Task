@@ -4,7 +4,10 @@ import "time"
 
 // RequirementSolution 需求方案/思路
 type RequirementSolution struct {
-	BaseModel
+	// 主键ID
+	ID uint `gorm:"primarykey" json:"id"`
+	// 创建时间
+	CreatedAt time.Time `json:"created_at"`
 	// 关联任务ID
 	TaskID uint `gorm:"index;not null" json:"task_id"`
 	// 方案版本号

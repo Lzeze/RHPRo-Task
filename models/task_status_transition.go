@@ -4,7 +4,8 @@ import "time"
 
 // TaskStatusTransition 任务状态转换规则（task_status_transitions 表）
 type TaskStatusTransition struct {
-	BaseModel
+	// 主键ID
+	ID uint `gorm:"primarykey" json:"id"`
 	// 任务类型编码（如 requirement/unit_task）
 	TaskTypeCode string `gorm:"size:50;not null" json:"task_type_code"`
 	// 源状态编码
@@ -27,5 +28,3 @@ type TaskStatusTransition struct {
 func (TaskStatusTransition) TableName() string {
 	return "task_status_transitions"
 }
-
-

@@ -8,7 +8,10 @@ import (
 
 // ExecutionPlan 执行计划（对应 execution_plans 表）
 type ExecutionPlan struct {
-	BaseModel
+	// 主键ID
+	ID uint `gorm:"primarykey" json:"id"`
+	// 创建时间
+	CreatedAt time.Time `json:"created_at"`
 	// 关联的任务ID
 	TaskID uint `gorm:"index;not null" json:"task_id"`
 	// 计划版本号

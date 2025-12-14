@@ -10,12 +10,16 @@ import (
 )
 
 type TaskFlowController struct {
-	flowService *services.TaskFlowService
+	flowService         *services.TaskFlowService
+	taskService         *services.TaskService
+	statusTransitionSvc *services.StatusTransitionService
 }
 
 func NewTaskFlowController() *TaskFlowController {
 	return &TaskFlowController{
-		flowService: &services.TaskFlowService{},
+		flowService:         &services.TaskFlowService{},
+		taskService:         &services.TaskService{},
+		statusTransitionSvc: &services.StatusTransitionService{},
 	}
 }
 
@@ -451,4 +455,101 @@ func (ctrl *TaskFlowController) RemoveJuryMember(c *gin.Context) {
 	}
 
 	utils.SuccessWithMessage(c, "陪审团成员已移除", nil)
+}
+
+// ========== 任务状态查询相关接口 ==========
+
+// GetTaskStatuses 获取任务状态列表
+// @Summary 获取任务状态列表
+// @Description 根据任务类型获取该类型的所有状态列表（按排序顺序）
+// @Tags 任务流程
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param task_type_code query string false "任务类型编码（如 requirement, unit_task）"
+// @Success 200 {object} map[string]interface{} "查询成功"
+// @Router /api/task-flow/statuses [get]
+func (ctrl *TaskFlowController) GetTaskStatuses(c *gin.Context) {
+	taskTypeCode := c.Query("task_type_code")
+
+	// 调用StatusTransitionService获取状态列表
+	statuses, err := ctrl.statusTransitionSvc.GetStatusesByTaskType(taskTypeCode)
+	if err != nil {
+		utils.Error(c, 400, err.Error())
+		return
+	}
+
+	utils.SuccessWithMessage(c, "获取状态列表成功", statuses)
+}
+
+// GetTaskAllowedTransitions 获取任务允许的状态转换
+// @Summary 获取任务允许的状态转换
+// @Description 根据任务ID和当前用户，获取该任务当前允许的所有状态转换
+// @Tags 任务流程
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param task_id path int true "任务ID"
+// @Success 200 {object} map[string]interface{} "查询成功"
+// @Router /api/task-flow/tasks/{task_id}/allowed-transitions [get]
+func (ctrl *TaskFlowController) GetTaskAllowedTransitions(c *gin.Context) {
+	// 解析任务ID
+	taskID, err := strconv.ParseUint(c.Param("task_id"), 10, 32)
+	if err != nil {
+		utils.BadRequest(c, "无效的任务ID")
+		return
+	}
+
+	// 从JWT token中提取当前用户ID
+	userIDValue, exists := c.Get("userID")
+	if !exists {
+		utils.Unauthorized(c, "未授权")
+		return
+	}
+	userID := userIDValue.(uint)
+
+	// 获取任务上下文
+	taskContext, err := ctrl.taskService.GetTaskContext(uint(taskID))
+	if err != nil {
+		utils.Error(c, 404, err.Error())
+		return
+	}
+
+	// 确定用户在任务中的角色
+	userRoles := ctrl.determineUserRoles(taskContext, userID)
+
+	// 获取允许的状态转换
+	transitions, err := ctrl.statusTransitionSvc.GetTaskAllowedTransitions(
+		taskContext.TaskTypeCode,
+		taskContext.StatusCode,
+		userRoles,
+	)
+	if err != nil {
+		utils.Error(c, 400, err.Error())
+		return
+	}
+
+	utils.SuccessWithMessage(c, "获取允许的状态转换成功", transitions)
+}
+
+// determineUserRoles 确定用户在任务中的角色
+func (ctrl *TaskFlowController) determineUserRoles(taskContext *dto.TaskContext, userID uint) []string {
+	roles := []string{}
+
+	// 检查是否为创建者
+	if taskContext.CreatorID == userID {
+		roles = append(roles, "creator")
+	}
+
+	// 检查是否为执行人
+	if taskContext.ExecutorID != 0 && taskContext.ExecutorID == userID {
+		roles = append(roles, "executor")
+	}
+
+	// 如果没有任何角色，返回观察者角色
+	if len(roles) == 0 {
+		roles = append(roles, "observer")
+	}
+
+	return roles
 }

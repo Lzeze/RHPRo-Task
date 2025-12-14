@@ -1,8 +1,13 @@
 package models
 
+import "time"
+
 // TaskStatus 任务状态
 type TaskStatus struct {
-	BaseModel
+	// 主键ID
+	ID uint `gorm:"primarykey" json:"id"`
+	// 创建时间
+	CreatedAt time.Time `json:"created_at"`
 	// 状态编码（唯一）
 	Code string `gorm:"size:50;uniqueIndex;not null" json:"code"`
 	// 状态名称
@@ -19,5 +24,3 @@ type TaskStatus struct {
 func (TaskStatus) TableName() string {
 	return "task_statuses"
 }
-
-

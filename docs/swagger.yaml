@@ -603,6 +603,9 @@ definitions:
       id:
         description: 用户ID
         type: integer
+      nickname:
+        description: 昵称
+        type: string
       username:
         description: 用户名
         type: string
@@ -1361,9 +1364,6 @@ definitions:
       split_from_plan_id:
         description: 拆分来源的执行计划ID（可选）
         type: integer
-      status:
-        description: 任务状态（可选）
-        type: string
       status_code:
         description: 任务状态编码（可选）
         type: string
@@ -1770,6 +1770,53 @@ paths:
       summary: 获取角色列表
       tags:
       - 系统管理
+  /api/task-flow/statuses:
+    get:
+      consumes:
+      - application/json
+      description: 根据任务类型获取该类型的所有状态列表（按排序顺序）
+      parameters:
+      - description: 任务类型编码（如 requirement, unit_task）
+        in: query
+        name: task_type_code
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 查询成功
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 获取任务状态列表
+      tags:
+      - 任务流程
+  /api/task-flow/tasks/{task_id}/allowed-transitions:
+    get:
+      consumes:
+      - application/json
+      description: 根据任务ID和当前用户，获取该任务当前允许的所有状态转换
+      parameters:
+      - description: 任务ID
+        in: path
+        name: task_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 查询成功
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 获取任务允许的状态转换
+      tags:
+      - 任务流程
   /auth/login:
     post:
       consumes:

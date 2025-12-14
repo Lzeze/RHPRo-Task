@@ -164,3 +164,31 @@ type InviteJuryRequest struct {
 	// 所需批准数（陪审团审核需要的最少批准数）
 	RequiredApprovals int `json:"required_approvals" binding:"required,min=1"`
 }
+
+// ========== 任务状态和转换相关DTO ==========
+
+// TaskContext 任务上下文（内部数据传递）
+type TaskContext struct {
+	// 任务ID
+	TaskID uint `json:"task_id"`
+	// 任务类型编码
+	TaskTypeCode string `json:"task_type_code"`
+	// 当前状态编码
+	StatusCode string `json:"status_code"`
+	// 创建人ID
+	CreatorID uint `json:"creator_id"`
+	// 执行人ID（可能为0表示未分配）
+	ExecutorID uint `json:"executor_id"`
+}
+
+// AllowedTransitionDto 允许的状态转换DTO
+type AllowedTransitionDto struct {
+	// 目标状态编码
+	ToStatusCode string `json:"to_status_code"`
+	// 目标状态名称
+	ToStatusName string `json:"to_status_name"`
+	// 转换描述（说明这个转换的含义）
+	Description string `json:"description"`
+	// 是否需要额外参数（如拒绝原因等）
+	RequiresParams bool `json:"requires_params"`
+}
