@@ -1,8 +1,14 @@
 package models
 
+import "time"
+
 // RequirementGoal 需求目标（调整后关联执行计划）
 type RequirementGoal struct {
-	BaseModel
+	ID uint `gorm:"primarykey" json:"id"`
+	// 创建时间
+	CreatedAt time.Time `json:"created_at"`
+	// 更新时间
+	UpdatedAt time.Time `json:"updated_at"`
 	// 关联执行计划ID（原来是 TaskID）
 	ExecutionPlanID uint `gorm:"index;not null" json:"execution_plan_id"`
 	// 目标编号（同一执行计划内的序号）

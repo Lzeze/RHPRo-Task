@@ -4,7 +4,10 @@ import "time"
 
 // TaskParticipant 任务参与者
 type TaskParticipant struct {
-	BaseModel
+	// 主键ID
+	ID uint `gorm:"primarykey" json:"id"`
+	// 创建时间
+	CreatedAt time.Time `json:"created_at"`
 	// 关联任务ID
 	TaskID uint `gorm:"index;not null" json:"task_id"`
 	// 用户ID
@@ -25,5 +28,3 @@ type TaskParticipant struct {
 func (TaskParticipant) TableName() string {
 	return "task_participants"
 }
-
-

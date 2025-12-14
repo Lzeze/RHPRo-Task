@@ -33,11 +33,11 @@ type ReviewSession struct {
 	FinalDecisionComment string `gorm:"type:text" json:"final_decision_comment"`
 	// 完成时间（可空）
 	CompletedAt *time.Time `json:"completed_at,omitempty"`
+	// 关联的审核记录
+	ReviewRecords []ReviewRecord `gorm:"foreignKey:ReviewSessionID" json:"review_records,omitempty"`
 }
 
 // TableName 指定表名
 func (ReviewSession) TableName() string {
 	return "review_sessions"
 }
-
-

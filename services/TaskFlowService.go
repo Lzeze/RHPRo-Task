@@ -421,8 +421,10 @@ func (s *TaskFlowService) FinalizeReview(sessionID uint, userID uint, req *dto.F
 	// 更新审核会话
 	now := time.Now()
 	decision := "approved"
+	opinion := "approve"
 	if !req.Approved {
 		decision = "rejected"
+		opinion = "reject"
 	}
 
 	updates := map[string]interface{}{
@@ -438,20 +440,35 @@ func (s *TaskFlowService) FinalizeReview(sessionID uint, userID uint, req *dto.F
 		return err
 	}
 
+	// 添加最终决策的审核记录到 ReviewRecords 表
+	finalReviewRecord := &models.ReviewRecord{
+		ReviewSessionID: sessionID,
+		ReviewerID:      userID,
+		ReviewerRole:    "creator",
+		Opinion:         opinion,
+		Comment:         req.Comment,
+		VoteWeight:      1.0,
+		ReviewedAt:      now,
+	}
+	if err := tx.Create(finalReviewRecord).Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("记录最终审核意见失败: %v", err)
+	}
+
 	// 根据审核结果更新任务状态
 	var newStatus string
 	if req.Approved {
 		switch session.ReviewType {
-		case "goal_review", "goal_solution_review":
+		case "solution_review":
 			newStatus = "req_pending_plan"
 		case "plan_review", "execution_plan_review":
 			newStatus = "req_pending_start" // 执行计划审核通过后进入待开始状态
 		}
 	} else {
 		switch session.ReviewType {
-		case "goal_review", "goal_solution_review":
-			newStatus = "req_goal_rejected"
-		case "plan_review":
+		case "solution_review":
+			newStatus = "req_solution_rejected" // 思路方案审核被驳回
+		case "plan_review", "execution_plan_review":
 			newStatus = "req_plan_rejected"
 		}
 	}
