@@ -20,13 +20,13 @@ func NewTaskDetailController() *TaskDetailController {
 
 // GetTaskDetail 获取任务基础详情
 // @Summary 获取任务详情（包含最新版本的方案和计划）
-// @Description 获取任务基本信息和当前最新版本的方案、执行计划、以及当前进行中的审核会话
+// @Description 获取任务基本信息和当前最新版本的方案、执行计划、以及当前进行中的审核会话，包含当前用户角色
 // @Tags 任务详情
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Param id path int true "任务ID"
-// @Success 200 {object} dto.TaskDetailEnhancedResponse "获取成功"
+// @Success 200 {object} dto.TaskDetailEnhancedResponse "获取成功，包含 my_role 字段标识当前用户角色"
 // @Failure 400 {object} map[string]interface{} "参数错误"
 // @Failure 401 {object} map[string]interface{} "未授权"
 // @Failure 404 {object} map[string]interface{} "任务不存在"
@@ -38,7 +38,15 @@ func (ctrl *TaskDetailController) GetTaskDetail(c *gin.Context) {
 		return
 	}
 
-	detail, err := ctrl.detailService.GetTaskDetailEnhanced(uint(taskID))
+	// 获取当前用户ID
+	userIDValue, exists := c.Get("userID")
+	if !exists {
+		utils.Unauthorized(c, "未授权")
+		return
+	}
+	userID := userIDValue.(uint)
+
+	detail, err := ctrl.detailService.GetTaskDetailEnhanced(uint(taskID), userID)
 	if err != nil {
 		utils.Error(c, 404, "任务不存在")
 		return

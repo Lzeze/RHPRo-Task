@@ -376,7 +376,7 @@ func (s *TaskService) GetMyTasks(req *dto.TaskQueryRequest, userID uint) (*dto.P
 }
 
 // GetTaskByID 查询任务详情
-func (s *TaskService) GetTaskByID(taskID uint) (*dto.TaskDetailResponse, error) {
+func (s *TaskService) GetTaskByID(taskID uint, userID uint) (*dto.TaskDetailResponse, error) {
 	var task models.Task
 	if err := database.DB.Preload("Tags").First(&task, taskID).Error; err != nil {
 		return nil, errors.New("任务不存在")
@@ -384,7 +384,7 @@ func (s *TaskService) GetTaskByID(taskID uint) (*dto.TaskDetailResponse, error) 
 
 	// 查询关联数据
 	response := &dto.TaskDetailResponse{
-		TaskResponse: s.toTaskResponsePtr(&task),
+		TaskResponse: s.toTaskResponsePtr(&task, userID),
 	}
 
 	// 查询创建者信息
@@ -916,7 +916,7 @@ func (s *TaskService) determineUserRoles(task models.Task, userID uint) []string
 	var participant models.TaskParticipant
 	if err := database.DB.Where("task_id = ? AND user_id = ? AND role = ?",
 		task.ID, userID, "jury").First(&participant).Error; err == nil {
-		roles = append(roles, "reviewer")
+		roles = append(roles, "jury")
 	}
 
 	// 如果没有任何角色，返回观察者角色
@@ -1007,8 +1007,10 @@ func (s *TaskService) toTaskResponse(task *models.Task) dto.TaskResponse {
 }
 
 // 辅助方法：返回指针
-func (s *TaskService) toTaskResponsePtr(task *models.Task) *dto.TaskResponse {
+func (s *TaskService) toTaskResponsePtr(task *models.Task, UserID uint) *dto.TaskResponse {
 	resp := s.toTaskResponse(task)
+	resp.MyRole = strings.Join(s.determineUserRoles(*task, UserID), ",")
+
 	return &resp
 }
 

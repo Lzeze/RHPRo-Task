@@ -166,13 +166,13 @@ func (ctrl *TaskController) GetMyTasks(c *gin.Context) {
 
 // GetTaskByID 根据ID获取任务详情
 // @Summary 获取任务详情
-// @Description 根据任务ID获取任务详细信息，包含关联数据
+// @Description 根据任务ID获取任务详细信息，包含关联数据和当前用户角色
 // @Tags 任务管理
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Param id path int true "任务ID"
-// @Success 200 {object} dto.TaskDetailResponse "查询成功"
+// @Success 200 {object} dto.TaskDetailResponse "查询成功，包含 my_role 字段标识当前用户角色"
 // @Failure 400 {object} map[string]interface{} "无效的任务ID"
 // @Failure 401 {object} map[string]interface{} "未授权"
 // @Failure 404 {object} map[string]interface{} "任务不存在"
@@ -185,7 +185,15 @@ func (ctrl *TaskController) GetTaskByID(c *gin.Context) {
 		return
 	}
 
-	task, err := ctrl.taskService.GetTaskByID(uint(id))
+	// 获取当前用户ID
+	userIDValue, exists := c.Get("userID")
+	if !exists {
+		utils.Unauthorized(c, "未授权")
+		return
+	}
+	userID := userIDValue.(uint)
+
+	task, err := ctrl.taskService.GetTaskByID(uint(id), userID)
 	if err != nil {
 		utils.Error(c, 404, "任务不存在")
 		return

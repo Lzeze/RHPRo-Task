@@ -305,10 +305,10 @@ func (s *TaskDetailService) GetTaskTimeline(taskID uint) ([]dto.TimelineEventRes
 }
 
 // GetTaskDetailEnhanced 获取增强版任务详情(包含最新版本信息)
-func (s *TaskDetailService) GetTaskDetailEnhanced(taskID uint) (*dto.TaskDetailEnhancedResponse, error) {
+func (s *TaskDetailService) GetTaskDetailEnhanced(taskID uint, userID uint) (*dto.TaskDetailEnhancedResponse, error) {
 	// 获取基础任务详情
 	taskService := &TaskService{}
-	basicDetail, err := taskService.GetTaskByID(taskID)
+	basicDetail, err := taskService.GetTaskByID(taskID, userID)
 	if err != nil {
 		return nil, err
 	}
