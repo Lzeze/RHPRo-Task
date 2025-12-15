@@ -197,6 +197,7 @@ func (s *TaskFlowService) SubmitSolution(taskID uint, userID uint, req *dto.Subm
 	// 创建方案记录
 	now := time.Now()
 	solution := &models.RequirementSolution{
+		Title:       req.Solution.Title,
 		TaskID:      taskID,
 		Version:     newVersion,
 		Content:     req.Solution.Content,
@@ -835,6 +836,7 @@ func (s *TaskFlowService) SubmitExecutionPlanWithGoals(taskID uint, userID uint,
 	plan := &models.ExecutionPlan{
 		TaskID:               taskID,
 		Version:              newVersion,
+		Title:                req.Title,
 		TechStack:            req.TechStack,
 		ImplementationSteps:  stepsJSON,
 		ResourceRequirements: req.ResourceRequirements,

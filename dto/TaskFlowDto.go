@@ -25,6 +25,7 @@ type GoalItem struct {
 
 // SolutionItem 方案条目
 type SolutionItem struct {
+	Title string `json:"title" binding:"required"`
 	// 方案内容（具体的方案说明）
 	Content string `json:"content" binding:"required"`
 	// 思维导图URL（可选，用于可视化展示方案）
@@ -43,6 +44,8 @@ type SubmitSolutionRequest struct {
 type SubmitExecutionPlanWithGoalsRequest struct {
 	// 目标列表（至少一个目标）
 	Goals []GoalItem `json:"goals" binding:"required,min=1,dive"`
+	//计划标题
+	Title string `json:"title" binding:"required"`
 	// 技术栈（使用的技术和工具）
 	TechStack string `json:"tech_stack" binding:"required"`
 	// 实施步骤（具体的实现步骤，JSON格式）
