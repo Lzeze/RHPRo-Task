@@ -9,12 +9,14 @@ import (
 )
 
 type AuthController struct {
-	userService *services.UserService
+	userService   *services.UserService
+	wechatService *services.WechatService
 }
 
 func NewAuthController() *AuthController {
 	return &AuthController{
-		userService: &services.UserService{},
+		userService:   &services.UserService{},
+		wechatService: &services.WechatService{},
 	}
 }
 
@@ -76,4 +78,62 @@ func (ctrl *AuthController) Login(c *gin.Context) {
 	}
 
 	utils.SuccessWithMessage(c, "登录成功", response)
+}
+
+// WechatLogin 微信登录
+// @Summary 微信登录
+// @Description 使用微信授权码登录，支持扫码登录、小程序登录、公众号H5登录
+// @Tags 认证
+// @Accept json
+// @Produce json
+// @Param request body dto.WechatLoginRequest true "微信登录请求"
+// @Success 200 {object} dto.WechatLoginResponse "登录结果"
+// @Failure 400 {object} map[string]interface{} "参数验证失败"
+// @Router /auth/wechat/login [post]
+func (ctrl *AuthController) WechatLogin(c *gin.Context) {
+	var req dto.WechatLoginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		validationErrors := utils.TranslateValidationErrors(err)
+		utils.ErrorWithData(c, 400, "参数验证失败", validationErrors)
+		return
+	}
+
+	response, err := ctrl.wechatService.Login(&req)
+	if err != nil {
+		utils.Error(c, 400, err.Error())
+		return
+	}
+
+	if response.NeedBind {
+		utils.SuccessWithMessage(c, "请补充手机号和密码完成注册", response)
+	} else {
+		utils.SuccessWithMessage(c, "登录成功", response)
+	}
+}
+
+// WechatBind 微信绑定手机号
+// @Summary 微信绑定手机号
+// @Description 微信新用户绑定手机号并设置密码完成注册
+// @Tags 认证
+// @Accept json
+// @Produce json
+// @Param request body dto.WechatBindRequest true "绑定请求"
+// @Success 200 {object} dto.LoginResponse "注册成功"
+// @Failure 400 {object} map[string]interface{} "参数验证失败"
+// @Router /auth/wechat/bind [post]
+func (ctrl *AuthController) WechatBind(c *gin.Context) {
+	var req dto.WechatBindRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		validationErrors := utils.TranslateValidationErrors(err)
+		utils.ErrorWithData(c, 400, "参数验证失败", validationErrors)
+		return
+	}
+
+	response, err := ctrl.wechatService.BindMobile(&req)
+	if err != nil {
+		utils.Error(c, 400, err.Error())
+		return
+	}
+
+	utils.SuccessWithMessage(c, "绑定成功", response)
 }

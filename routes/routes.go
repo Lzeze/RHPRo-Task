@@ -35,6 +35,9 @@ func SetupRoutes() *gin.Engine {
 		// 认证相关
 		public.POST("/auth/register", authController.Register)
 		public.POST("/auth/login", authController.Login)
+		// 微信登录
+		public.POST("/auth/wechat/login", authController.WechatLogin)
+		public.POST("/auth/wechat/bind", authController.WechatBind)
 
 		// 健康检查
 		public.GET("/health", func(c *gin.Context) {

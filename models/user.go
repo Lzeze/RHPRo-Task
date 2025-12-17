@@ -21,6 +21,12 @@ type User struct {
 	Password string `gorm:"size:255;not null" json:"-"`
 	// 邮箱（选填，唯一）
 	Email string `gorm:"uniqueIndex:users_email_key;size:100" json:"email"`
+	// 微信UnionID（跨应用唯一）
+	WechatUnionID string `gorm:"size:64" json:"wechat_unionid,omitempty"`
+	// 微信OpenID（单应用内唯一）
+	WechatOpenID string `gorm:"size:64" json:"wechat_openid,omitempty"`
+	// 用户头像URL
+	Avatar string `gorm:"size:500" json:"avatar,omitempty"`
 	// 状态：1-正常，3-禁用，2-待审核
 	Status int `gorm:"default:1" json:"status"`
 	// 职位名称

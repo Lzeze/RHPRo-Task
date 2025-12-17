@@ -12,6 +12,20 @@ type Config struct {
 	Redis    RedisConfig
 	JWT      JWTConfig
 	Task     TaskConfig
+	Wechat   WechatConfig
+}
+
+// WechatConfig 微信登录配置
+type WechatConfig struct {
+	// 开放平台（扫码登录）
+	OpenAppID     string
+	OpenAppSecret string
+	// 小程序
+	MpAppID     string
+	MpAppSecret string
+	// 公众号H5
+	H5AppID     string
+	H5AppSecret string
 }
 
 type ServerConfig struct {
@@ -46,7 +60,23 @@ type TaskConfig struct {
 	ExecutionPlanDeadlineHours int
 }
 
+var globalConfig *Config
+
+// GetConfig 获取全局配置
+func GetConfig() *Config {
+	if globalConfig == nil {
+		globalConfig = LoadConfig()
+	}
+	return globalConfig
+}
+
 func LoadConfig() *Config {
+	cfg := loadConfigFromEnv()
+	globalConfig = cfg
+	return cfg
+}
+
+func loadConfigFromEnv() *Config {
 	return &Config{
 		Server: ServerConfig{
 			Port: getEnvAsInt("SERVER_PORT", 8989),
@@ -73,7 +103,20 @@ func LoadConfig() *Config {
 		Task: TaskConfig{
 			ExecutionPlanDeadlineHours: getEnvAsInt("EXECUTION_PLAN_DEADLINE_HOURS", 72),
 		},
+		Wechat: WechatConfig{
+			OpenAppID:     getEnv("WECHAT_OPEN_APPID", ""),
+			OpenAppSecret: getEnv("WECHAT_OPEN_SECRET", ""),
+			MpAppID:       getEnv("WECHAT_MP_APPID", ""),
+			MpAppSecret:   getEnv("WECHAT_MP_SECRET", ""),
+			H5AppID:       getEnv("WECHAT_H5_APPID", ""),
+			H5AppSecret:   getEnv("WECHAT_H5_SECRET", ""),
+		},
 	}
+}
+
+// SetConfig 设置全局配置（用于测试）
+func SetConfig(cfg *Config) {
+	globalConfig = cfg
 }
 
 func getEnv(key, defaultValue string) string {
