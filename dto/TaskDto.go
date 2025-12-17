@@ -126,8 +126,8 @@ type UpdateTaskRequest struct {
 	StatusCode string `json:"status_code" binding:"omitempty"`
 	// 创建者用户ID（可选）
 	CreatorID uint `json:"creator_id" binding:"omitempty"`
-	// 执行人用户ID（可选）
-	ExecutorID uint `json:"executor_id" binding:"omitempty"`
+	// 执行人用户ID（可选，传负值如-1表示清空执行人）
+	ExecutorID int `json:"executor_id" binding:"omitempty"`
 	// 所属部门ID（可选）
 	DepartmentID uint `json:"department_id" binding:"omitempty"`
 	// 父任务ID（可选）

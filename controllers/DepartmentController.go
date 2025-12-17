@@ -268,7 +268,7 @@ func (ctrl *DepartmentController) SetDefaultDepartment(c *gin.Context) {
 		return
 	}
 
-	userID, ok := userIDInterface.(float64)
+	userID, ok := userIDInterface.(uint)
 	if !ok {
 		utils.Error(c, 500, "用户ID类型错误")
 		return
@@ -296,7 +296,7 @@ func (ctrl *DepartmentController) SetDefaultDepartment(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {array} dto.UserDepartmentResponse "获取成功"
-// @Router /users/departments [get]
+// @Router /departments/my-departments [get]
 func (ctrl *DepartmentController) GetUserDepartments(c *gin.Context) {
 	// 从上下文获取当前用户ID
 	userIDInterface, exists := c.Get("userID")
@@ -305,7 +305,7 @@ func (ctrl *DepartmentController) GetUserDepartments(c *gin.Context) {
 		return
 	}
 
-	userID, ok := userIDInterface.(float64)
+	userID, ok := userIDInterface.(uint)
 	if !ok {
 		utils.Error(c, 500, "用户ID类型错误")
 		return

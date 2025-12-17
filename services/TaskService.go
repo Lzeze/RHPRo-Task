@@ -121,9 +121,29 @@ func (s *TaskService) CreateTask(req *dto.TaskRequest, creatorID uint) (*models.
 		}
 
 		// 验证父任务状态允许创建子任务
-		if parentTask.TaskTypeCode == "requirement" && parentTask.StatusCode != "eq_pending_start" {
-			return nil, errors.New("父任务状态不允许创建子任务（需求类需要审核通过后才能拆分）")
+		// // 需求类任务：只有在 req_pending_start 及之后的状态才能创建子任务
+		// if parentTask.TaskTypeCode == "requirement" {
+		// 定义 req_pending_start 之前的状态（不允许创建子任务）
+		forbiddenStatuses := []string{
+			"req_pending_assign",    // 待指派
+			"req_pending_accept",    // 待接受
+			"req_pending_solution",  // 待提交方案
+			"req_solution_review",   // 方案审核中
+			"req_solution_rejected", // 方案被驳回
+			"req_pending_plan",      // 待提交计划
+			"req_plan_review",       // 计划审核中
+			"req_plan_rejected",     // 计划被驳回
+			"unit_completed",        // 已完成
+			"unit_cancelled",        // 已取消
+			"req_completed",         // 已完成
+			"req_cancelled",         // 已取消
 		}
+		for _, status := range forbiddenStatuses {
+			if parentTask.StatusCode == status {
+				return nil, errors.New("父任务状态不允许创建子任务")
+			}
+		}
+		// }
 
 		// 防止循环引用
 		if err := s.validateNoCircularReference(*req.ParentTaskID, 0); err != nil {
@@ -390,7 +410,7 @@ func (s *TaskService) GetTaskByID(taskID uint, userID uint) (*dto.TaskDetailResp
 	// 查询创建者信息
 	if task.CreatorID > 0 {
 		var creator models.User
-		if err := database.DB.Select("id, username, email").First(&creator, task.CreatorID).Error; err == nil {
+		if err := database.DB.Select("id, username,nickname, email").First(&creator, task.CreatorID).Error; err == nil {
 			response.Creator = &dto.SimpleUserResponse{
 				ID:       creator.ID,
 				Username: creator.Username,
@@ -403,7 +423,7 @@ func (s *TaskService) GetTaskByID(taskID uint, userID uint) (*dto.TaskDetailResp
 	// 查询执行人信息
 	if task.ExecutorID != nil && *task.ExecutorID > 0 {
 		var executor models.User
-		if err := database.DB.Select("id, username, email").First(&executor, *task.ExecutorID).Error; err == nil {
+		if err := database.DB.Select("id, username,nickname, email").First(&executor, *task.ExecutorID).Error; err == nil {
 			response.Executor = &dto.SimpleUserResponse{
 				ID:       executor.ID,
 				Username: executor.Username,
@@ -566,20 +586,25 @@ func (s *TaskService) UpdateTask(taskID uint, userID uint, req *dto.UpdateTaskRe
 		updates["priority"] = req.Priority
 		addChange("priority", task.Priority, req.Priority, "更新优先级")
 	}
-	//新增更改执行人处理
-	if req.ExecutorID != 0 && (task.ExecutorID == nil || *task.ExecutorID != req.ExecutorID) {
-		//如果执行人发生变化，则更新任务状态
-		if task.TaskTypeCode == "requirement" {
-			updates["status_code"] = "req_pending_accept"
-		} else {
-			updates["status_code"] = "unit_pending_accept"
+	// 更改执行人处理
+	// ExecutorID > 0: 设置新执行人
+	// ExecutorID < 0 (如-1): 清空执行人
+	// ExecutorID == 0: 不修改
+	if req.ExecutorID > 0 {
+		newExecutorID := uint(req.ExecutorID)
+		if task.ExecutorID == nil || *task.ExecutorID != newExecutorID {
+			// 如果执行人发生变化，则更新任务状态
+			if task.TaskTypeCode == "requirement" {
+				updates["status_code"] = "req_pending_accept"
+			} else {
+				updates["status_code"] = "unit_pending_accept"
+			}
+			updates["executor_id"] = newExecutorID
+			addChange("executor_id", task.ExecutorID, newExecutorID, "更新执行人")
 		}
-
-		updates["executor_id"] = req.ExecutorID
-		addChange("executor_id", task.ExecutorID, req.ExecutorID, "更新执行人")
-	} else {
-		//取消了执行人，则更新任务状态
-		if task.ExecutorID != nil && req.ExecutorID == 0 {
+	} else if req.ExecutorID < 0 {
+		// 传负值表示清空执行人
+		if task.ExecutorID != nil {
 			if task.TaskTypeCode == "requirement" {
 				updates["status_code"] = "req_pending_assign"
 			} else {
@@ -1393,11 +1418,11 @@ func (s *TaskService) getTaskTypePrefix(taskTypeCode string) string {
 		return s.generatePrefixFromCode(taskTypeCode)
 	}
 
-	// 如果任务类型有名称，使用名称的前3个字母（大写）
-	if taskType.Name != "" {
-		prefix := strings.ToUpper(taskType.Name[:3])
-		return prefix
-	}
+	// // 如果任务类型有名称，使用名称的前3个字母（大写）
+	// if taskType.Name != "" {
+	// 	prefix := strings.ToUpper(taskType.Name[:3])
+	// 	return prefix
+	// }
 
 	// 否则使用编码的前几个字母
 	return s.generatePrefixFromCode(taskTypeCode)

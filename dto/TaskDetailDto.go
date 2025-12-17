@@ -110,6 +110,10 @@ type JuryMemberResponse struct {
 	UserID uint `json:"user_id"`
 	// 陪审团成员用户名
 	Username string `json:"username"`
+	//昵称
+	Nickname string `json:"nickname"`
+	//手机号
+	Mobile string `json:"mobile"`
 	// 陪审团成员状态（pending=待回复, accepted=已接受, rejected=已拒绝）
 	Status string `json:"status"`
 }

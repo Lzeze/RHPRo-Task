@@ -47,6 +47,9 @@ definitions:
       nickname:
         description: 用户昵称（用于显示）
         type: string
+      username:
+        description: 用户真实姓名
+        type: string
     type: object
   dto.ChangeLogResponse:
     properties:
@@ -351,6 +354,12 @@ definitions:
     type: object
   dto.JuryMemberResponse:
     properties:
+      mobile:
+        description: 手机号
+        type: string
+      nickname:
+        description: 昵称
+        type: string
       status:
         description: 陪审团成员状态（pending=待回复, accepted=已接受, rejected=已拒绝）
         type: string
@@ -363,17 +372,17 @@ definitions:
     type: object
   dto.LoginRequest:
     properties:
+      mobile:
+        description: 手机号码（用于登录）
+        example: "13800138000"
+        type: string
       password:
         description: 密码（用户登录密码）
         example: password123
         type: string
-      username:
-        description: 用户名或邮箱（用户在系统中注册的用户名或邮箱）
-        example: johndoe
-        type: string
     required:
+    - mobile
     - password
-    - username
     type: object
   dto.LoginResponse:
     properties:
@@ -415,29 +424,27 @@ definitions:
   dto.RegisterRequest:
     properties:
       email:
-        description: 邮箱地址（唯一，格式必须为有效邮箱）
+        description: 邮箱地址（选填，格式必须为有效邮箱）
         example: user@example.com
         type: string
       mobile:
-        description: 手机号码（可选，格式为11位中国手机号）
+        description: 手机号码（必填，格式为11位中国手机号，用于登录）
         example: "13800138000"
         type: string
-      nickname:
-        description: 昵称（用户昵称，用于显示，可选）
-        example: John
-        type: string
       password:
-        description: 密码（6-20个字符，需要包含字母和数字）
+        description: 密码（6-20个字符）
         example: password123
         maxLength: 20
         minLength: 6
         type: string
       username:
-        description: 用户名（唯一，字母数字组合，5-50个字符）
-        example: johndoe
+        description: 用户名/真实姓名（必填，支持中文，2-50个字符）
+        example: 张三
+        maxLength: 50
+        minLength: 2
         type: string
     required:
-    - email
+    - mobile
     - password
     - username
     type: object
@@ -621,8 +628,11 @@ definitions:
       mindmap_url:
         description: 思维导图URL（可选，用于可视化展示方案）
         type: string
+      title:
+        type: string
     required:
     - content
+    - title
     type: object
   dto.SolutionListItemResponse:
     properties:
@@ -721,10 +731,14 @@ definitions:
       tech_stack:
         description: 技术栈（使用的技术和工具）
         type: string
+      title:
+        description: 计划标题
+        type: string
     required:
     - goals
     - implementation_steps
     - tech_stack
+    - title
     type: object
   dto.SubmitGoalsAndSolutionRequest:
     properties:
@@ -1326,7 +1340,7 @@ definitions:
         description: 到期日期（可选，支持多种日期格式）
         type: string
       executor_id:
-        description: 执行人用户ID（可选）
+        description: 执行人用户ID（可选，传负值如-1表示清空执行人）
         type: integer
       expected_end_date:
         description: 期望完成日期（可选，支持多种日期格式）
@@ -1666,7 +1680,7 @@ definitions:
         description: 部门ID
         type: integer
       email:
-        description: 邮箱（唯一）
+        description: 邮箱（选填，唯一）
         type: string
       id:
         description: 主键ID
@@ -1683,7 +1697,7 @@ definitions:
           $ref: '#/definitions/models.Department'
         type: array
       mobile:
-        description: 手机号
+        description: 手机号（唯一，用于登录）
         type: string
       nickname:
         description: 昵称（用于显示）
@@ -1700,7 +1714,7 @@ definitions:
         description: 更新时间
         type: string
       username:
-        description: 用户名（唯一）
+        description: 用户名/真实姓名（支持中文）
         type: string
     type: object
 host: 192.168.12.48:8888
@@ -1770,58 +1784,11 @@ paths:
       summary: 获取角色列表
       tags:
       - 系统管理
-  /api/task-flow/statuses:
-    get:
-      consumes:
-      - application/json
-      description: 根据任务类型获取该类型的所有状态列表（按排序顺序）
-      parameters:
-      - description: 任务类型编码（如 requirement, unit_task）
-        in: query
-        name: task_type_code
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 查询成功
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - BearerAuth: []
-      summary: 获取任务状态列表
-      tags:
-      - 任务流程
-  /api/task-flow/tasks/{task_id}/allowed-transitions:
-    get:
-      consumes:
-      - application/json
-      description: 根据任务ID和当前用户，获取该任务当前允许的所有状态转换
-      parameters:
-      - description: 任务ID
-        in: path
-        name: task_id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 查询成功
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - BearerAuth: []
-      summary: 获取任务允许的状态转换
-      tags:
-      - 任务流程
   /auth/login:
     post:
       consumes:
       - application/json
-      description: 用户使用用户名/邮箱/手机号和密码登录，返回JWT令牌
+      description: 用户使用手机号和密码登录，返回JWT令牌
       parameters:
       - description: 登录凭证
         in: body
@@ -1842,7 +1809,7 @@ paths:
             additionalProperties: true
             type: object
         "401":
-          description: 用户名或密码错误
+          description: 手机号或密码错误
           schema:
             additionalProperties: true
             type: object
@@ -2109,6 +2076,25 @@ paths:
       summary: 设置用户默认部门
       tags:
       - 部门管理
+  /departments/my-departments:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前用户负责的所有部门，包含默认部门标识
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            items:
+              $ref: '#/definitions/dto.UserDepartmentResponse'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: 获取用户负责的部门列表
+      tags:
+      - 部门管理
   /profile:
     get:
       consumes:
@@ -2276,6 +2262,53 @@ paths:
       security:
       - BearerAuth: []
       summary: 提交审核意见
+      tags:
+      - 任务流程
+  /task-flow/statuses:
+    get:
+      consumes:
+      - application/json
+      description: 根据任务类型获取该类型的所有状态列表（按排序顺序）
+      parameters:
+      - description: 任务类型编码（如 requirement, unit_task）
+        in: query
+        name: task_type_code
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 查询成功
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 获取任务状态列表
+      tags:
+      - 任务流程
+  /task-flow/tasks/{task_id}/allowed-transitions:
+    get:
+      consumes:
+      - application/json
+      description: 根据任务ID和当前用户，获取该任务当前允许的所有状态转换
+      parameters:
+      - description: 任务ID
+        in: path
+        name: task_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 查询成功
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 获取任务允许的状态转换
       tags:
       - 任务流程
   /tasks:
@@ -3369,25 +3402,6 @@ paths:
       summary: 获取可指派的执行人列表
       tags:
       - 用户管理
-  /users/departments:
-    get:
-      consumes:
-      - application/json
-      description: 获取当前用户负责的所有部门，包含默认部门标识
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 获取成功
-          schema:
-            items:
-              $ref: '#/definitions/dto.UserDepartmentResponse'
-            type: array
-      security:
-      - BearerAuth: []
-      summary: 获取用户负责的部门列表
-      tags:
-      - 部门管理
 securityDefinitions:
   BearerAuth:
     description: Type "Bearer" followed by a space and JWT token.

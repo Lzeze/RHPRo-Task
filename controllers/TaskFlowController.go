@@ -468,7 +468,7 @@ func (ctrl *TaskFlowController) RemoveJuryMember(c *gin.Context) {
 // @Security BearerAuth
 // @Param task_type_code query string false "任务类型编码（如 requirement, unit_task）"
 // @Success 200 {object} map[string]interface{} "查询成功"
-// @Router /api/task-flow/statuses [get]
+// @Router /task-flow/statuses [get]
 func (ctrl *TaskFlowController) GetTaskStatuses(c *gin.Context) {
 	taskTypeCode := c.Query("task_type_code")
 
@@ -491,7 +491,7 @@ func (ctrl *TaskFlowController) GetTaskStatuses(c *gin.Context) {
 // @Security BearerAuth
 // @Param task_id path int true "任务ID"
 // @Success 200 {object} map[string]interface{} "查询成功"
-// @Router /api/task-flow/tasks/{task_id}/allowed-transitions [get]
+// @Router  /task-flow/tasks/{task_id}/allowed-transitions [get]
 func (ctrl *TaskFlowController) GetTaskAllowedTransitions(c *gin.Context) {
 	// 解析任务ID
 	taskID, err := strconv.ParseUint(c.Param("task_id"), 10, 32)

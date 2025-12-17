@@ -137,7 +137,7 @@ func MockAuthMiddleware(userID uint, username string) gin.HandlerFunc {
 
 // GenerateTestToken 生成测试用 JWT Token
 func GenerateTestToken(userID uint, username string) (string, error) {
-	return utils.GenerateToken(userID, username, "13800138000", 1, "测试部门", false, nil, 24)
+	return utils.GenerateToken(userID, username, "13800138000", 24)
 }
 
 // HTTPRequest 发送 HTTP 请求

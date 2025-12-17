@@ -107,84 +107,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/task-flow/statuses": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "根据任务类型获取该类型的所有状态列表（按排序顺序）",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "任务流程"
-                ],
-                "summary": "获取任务状态列表",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "任务类型编码（如 requirement, unit_task）",
-                        "name": "task_type_code",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "查询成功",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/api/task-flow/tasks/{task_id}/allowed-transitions": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "根据任务ID和当前用户，获取该任务当前允许的所有状态转换",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "任务流程"
-                ],
-                "summary": "获取任务允许的状态转换",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "任务ID",
-                        "name": "task_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "查询成功",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
         "/auth/login": {
             "post": {
-                "description": "用户使用用户名/邮箱/手机号和密码登录，返回JWT令牌",
+                "description": "用户使用手机号和密码登录，返回JWT令牌",
                 "consumes": [
                     "application/json"
                 ],
@@ -221,7 +146,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "用户名或密码错误",
+                        "description": "手机号或密码错误",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -373,6 +298,37 @@ const docTemplate = `{
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/departments/my-departments": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取当前用户负责的所有部门，包含默认部门标识",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "部门管理"
+                ],
+                "summary": "获取用户负责的部门列表",
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.UserDepartmentResponse"
+                            }
                         }
                     }
                 }
@@ -895,6 +851,81 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "提交成功",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/task-flow/statuses": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "根据任务类型获取该类型的所有状态列表（按排序顺序）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "任务流程"
+                ],
+                "summary": "获取任务状态列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "任务类型编码（如 requirement, unit_task）",
+                        "name": "task_type_code",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/task-flow/tasks/{task_id}/allowed-transitions": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "根据任务ID和当前用户，获取该任务当前允许的所有状态转换",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "任务流程"
+                ],
+                "summary": "获取任务允许的状态转换",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "任务ID",
+                        "name": "task_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -2318,37 +2349,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/departments": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "获取当前用户负责的所有部门，包含默认部门标识",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "部门管理"
-                ],
-                "summary": "获取用户负责的部门列表",
-                "responses": {
-                    "200": {
-                        "description": "获取成功",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/dto.UserDepartmentResponse"
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/users/{id}": {
             "get": {
                 "security": [
@@ -2667,6 +2667,10 @@ const docTemplate = `{
                 },
                 "nickname": {
                     "description": "用户昵称（用于显示）",
+                    "type": "string"
+                },
+                "username": {
+                    "description": "用户真实姓名",
                     "type": "string"
                 }
             }
@@ -3099,6 +3103,14 @@ const docTemplate = `{
         "dto.JuryMemberResponse": {
             "type": "object",
             "properties": {
+                "mobile": {
+                    "description": "手机号",
+                    "type": "string"
+                },
+                "nickname": {
+                    "description": "昵称",
+                    "type": "string"
+                },
                 "status": {
                     "description": "陪审团成员状态（pending=待回复, accepted=已接受, rejected=已拒绝）",
                     "type": "string"
@@ -3116,19 +3128,19 @@ const docTemplate = `{
         "dto.LoginRequest": {
             "type": "object",
             "required": [
-                "password",
-                "username"
+                "mobile",
+                "password"
             ],
             "properties": {
+                "mobile": {
+                    "description": "手机号码（用于登录）",
+                    "type": "string",
+                    "example": "13800138000"
+                },
                 "password": {
                     "description": "密码（用户登录密码）",
                     "type": "string",
                     "example": "password123"
-                },
-                "username": {
-                    "description": "用户名或邮箱（用户在系统中注册的用户名或邮箱）",
-                    "type": "string",
-                    "example": "johndoe"
                 }
             }
         },
@@ -3188,37 +3200,34 @@ const docTemplate = `{
         "dto.RegisterRequest": {
             "type": "object",
             "required": [
-                "email",
+                "mobile",
                 "password",
                 "username"
             ],
             "properties": {
                 "email": {
-                    "description": "邮箱地址（唯一，格式必须为有效邮箱）",
+                    "description": "邮箱地址（选填，格式必须为有效邮箱）",
                     "type": "string",
                     "example": "user@example.com"
                 },
                 "mobile": {
-                    "description": "手机号码（可选，格式为11位中国手机号）",
+                    "description": "手机号码（必填，格式为11位中国手机号，用于登录）",
                     "type": "string",
                     "example": "13800138000"
                 },
-                "nickname": {
-                    "description": "昵称（用户昵称，用于显示，可选）",
-                    "type": "string",
-                    "example": "John"
-                },
                 "password": {
-                    "description": "密码（6-20个字符，需要包含字母和数字）",
+                    "description": "密码（6-20个字符）",
                     "type": "string",
                     "maxLength": 20,
                     "minLength": 6,
                     "example": "password123"
                 },
                 "username": {
-                    "description": "用户名（唯一，字母数字组合，5-50个字符）",
+                    "description": "用户名/真实姓名（必填，支持中文，2-50个字符）",
                     "type": "string",
-                    "example": "johndoe"
+                    "maxLength": 50,
+                    "minLength": 2,
+                    "example": "张三"
                 }
             }
         },
@@ -3466,7 +3475,8 @@ const docTemplate = `{
         "dto.SolutionItem": {
             "type": "object",
             "required": [
-                "content"
+                "content",
+                "title"
             ],
             "properties": {
                 "content": {
@@ -3479,6 +3489,9 @@ const docTemplate = `{
                 },
                 "mindmap_url": {
                     "description": "思维导图URL（可选，用于可视化展示方案）",
+                    "type": "string"
+                },
+                "title": {
                     "type": "string"
                 }
             }
@@ -3600,7 +3613,8 @@ const docTemplate = `{
             "required": [
                 "goals",
                 "implementation_steps",
-                "tech_stack"
+                "tech_stack",
+                "title"
             ],
             "properties": {
                 "goals": {
@@ -3626,6 +3640,10 @@ const docTemplate = `{
                 },
                 "tech_stack": {
                     "description": "技术栈（使用的技术和工具）",
+                    "type": "string"
+                },
+                "title": {
+                    "description": "计划标题",
                     "type": "string"
                 }
             }
@@ -4529,7 +4547,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "executor_id": {
-                    "description": "执行人用户ID（可选）",
+                    "description": "执行人用户ID（可选，传负值如-1表示清空执行人）",
                     "type": "integer"
                 },
                 "expected_end_date": {
@@ -4999,7 +5017,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "email": {
-                    "description": "邮箱（唯一）",
+                    "description": "邮箱（选填，唯一）",
                     "type": "string"
                 },
                 "id": {
@@ -5022,7 +5040,7 @@ const docTemplate = `{
                     }
                 },
                 "mobile": {
-                    "description": "手机号",
+                    "description": "手机号（唯一，用于登录）",
                     "type": "string"
                 },
                 "nickname": {
@@ -5045,7 +5063,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "username": {
-                    "description": "用户名（唯一）",
+                    "description": "用户名/真实姓名（支持中文）",
                     "type": "string"
                 }
             }

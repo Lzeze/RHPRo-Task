@@ -21,8 +21,8 @@ func TestRegister_Success(t *testing.T) {
 		UserName: "testuser123",
 		Email:    "testuser123@example.com",
 		Password: "password123",
-		Nickname: "Test User",
-		Mobile:   "13800138001",
+		// Nickname: "Test User",
+		Mobile: "13800138001",
 	}
 
 	// 发送请求
@@ -103,7 +103,7 @@ func TestLogin_Success(t *testing.T) {
 
 	// 准备登录请求 - 使用可能存在的测试账户
 	reqBody := dto.LoginRequest{
-		UserName: "admin",
+		Mobile:   "13426306041",
 		Password: "admin123",
 	}
 
@@ -123,7 +123,7 @@ func TestLogin_InvalidCredentials(t *testing.T) {
 	router.POST("/api/v1/auth/login", authController.Login)
 
 	reqBody := dto.LoginRequest{
-		UserName: "nonexistentuser",
+		Mobile:   "13426306041",
 		Password: "wrongpassword",
 	}
 
@@ -142,7 +142,7 @@ func TestLogin_EmptyCredentials(t *testing.T) {
 	router.POST("/api/v1/auth/login", authController.Login)
 
 	reqBody := dto.LoginRequest{
-		UserName: "",
+		Mobile:   "",
 		Password: "",
 	}
 

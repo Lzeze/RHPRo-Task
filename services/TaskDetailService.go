@@ -139,6 +139,8 @@ func (s *TaskDetailService) GetTaskReviewHistory(taskID uint) ([]dto.ReviewHisto
 				juryMembers = append(juryMembers, dto.JuryMemberResponse{
 					UserID:   p.UserID,
 					Username: user.Username,
+					Nickname: user.Nickname,
+					Mobile:   user.Mobile,
 					Status:   p.Status,
 				})
 			}
@@ -391,7 +393,7 @@ func (s *TaskDetailService) GetTaskDetailEnhanced(taskID uint, userID uint) (*dt
 		recordResponses := make([]dto.ReviewRecordResponse, 0)
 		for _, record := range records {
 			var user models.User
-			database.DB.Select("id, username").First(&user, record.ReviewerID)
+			database.DB.Select("id, username, nickname").First(&user, record.ReviewerID)
 
 			recordResponses = append(recordResponses, dto.ReviewRecordResponse{
 				ID:           record.ID,
@@ -403,6 +405,27 @@ func (s *TaskDetailService) GetTaskDetailEnhanced(taskID uint, userID uint) (*dt
 				Score:        record.Score,
 				VoteWeight:   record.VoteWeight,
 			})
+		}
+
+		// 如果是陪审团模式，查询陪审团成员
+		var juryMembers []dto.JuryMemberResponse
+		if currentReview.ReviewMode == "jury" {
+			var participants []models.TaskParticipant
+			database.DB.Where("task_id = ? AND role = ?", taskID, "jury").
+				Find(&participants)
+
+			for _, p := range participants {
+				var user models.User
+				database.DB.Select("id, username, nickname").First(&user, p.UserID)
+
+				juryMembers = append(juryMembers, dto.JuryMemberResponse{
+					UserID:   p.UserID,
+					Username: user.Username,
+					Nickname: user.Nickname,
+					Mobile:   user.Mobile,
+					Status:   p.Status,
+				})
+			}
 		}
 
 		response.CurrentReview = &dto.ReviewHistoryResponse{
@@ -419,6 +442,7 @@ func (s *TaskDetailService) GetTaskDetailEnhanced(taskID uint, userID uint) (*dt
 			InitiatedAt:          dto.ToResponseTime(currentReview.InitiatedAt),
 			CompletedAt:          dto.PtrToResponseTime(currentReview.CompletedAt),
 			ReviewRecords:        recordResponses,
+			JuryMembers:          juryMembers,
 		}
 	}
 

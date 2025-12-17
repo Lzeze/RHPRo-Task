@@ -21,18 +21,14 @@ type Claims struct {
 }
 
 // GenerateToken 生成JWT Token
-func GenerateToken(userID uint, username string, mobile string, deptID uint, deptName string, isLeader bool, managedDeptIDs []uint, expireHours int) (string, error) {
+func GenerateToken(userID uint, username string, mobile string, expireHours int) (string, error) {
 	nowTime := time.Now()
 	expireTime := nowTime.Add(time.Duration(expireHours) * time.Hour)
 
 	claims := Claims{
-		UserID:         userID,
-		Username:       username,
-		UserMobile:     mobile,
-		DepartmentID:   deptID,
-		DepartmentName: deptName,
-		IsLeader:       isLeader,
-		ManagedDeptIDs: managedDeptIDs,
+		UserID:     userID,
+		Username:   username,
+		UserMobile: mobile,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expireTime),
 			IssuedAt:  jwt.NewNumericDate(nowTime),

@@ -15,31 +15,25 @@ type UserService struct{}
 
 // Register 用户注册
 func (s *UserService) Register(req *dto.RegisterRequest) (*models.User, error) {
-	// 检查用户名是否存在
 	var existingUser models.User
-	if err := database.DB.Where("username = ?", req.UserName).First(&existingUser).Error; err == nil {
-		return nil, errors.New("用户名已存在")
+	// 检查手机号是否存在（手机号为必填且唯一）
+	if err := database.DB.Where("mobile = ?", req.Mobile).First(&existingUser).Error; err == nil {
+		return nil, errors.New("手机号已被注册")
 	}
 
-	// 检查邮箱是否存在
-	if err := database.DB.Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
-		return nil, errors.New("邮箱已被注册")
-	}
-	// 检查手机号是否存在
-	if req.Mobile != "" {
-		if err := database.DB.Where("mobile = ?", req.Mobile).First(&existingUser).Error; err == nil {
-			return nil, errors.New("手机号已被注册")
+	// 检查邮箱是否存在（如果填写了邮箱）
+	if req.Email != "" {
+		if err := database.DB.Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
+			return nil, errors.New("邮箱已被注册")
 		}
 	}
 
 	// 创建用户
 	user := &models.User{
-		Username: req.UserName,
-		Nickname: req.Nickname,
-		Email:    req.Email,
 		Mobile:   req.Mobile,
-		// DepartmentID: req.DepartmentID,
-		Status: models.UserStatusPending, // 默认为待审核
+		Username: req.UserName,
+		Email:    req.Email,
+		Status:   models.UserStatusPending, // 默认为待审核
 	}
 
 	// 设置密码
@@ -63,18 +57,18 @@ func (s *UserService) Register(req *dto.RegisterRequest) (*models.User, error) {
 
 // Login 用户登录
 func (s *UserService) Login(req *dto.LoginRequest) (*dto.LoginResponse, error) {
-	// 查询用户
+	// 通过手机号查询用户
 	var user models.User
-	if err := database.DB.Preload("Roles.Permissions").Preload("Department").Preload("ManagedDepartments").Where("username = ?", req.UserName).First(&user).Error; err != nil {
+	if err := database.DB.Preload("Roles.Permissions").Preload("Department").Preload("ManagedDepartments").Where("mobile = ?", req.Mobile).First(&user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, errors.New("用户名或密码错误")
+			return nil, errors.New("手机号或密码错误")
 		}
 		return nil, err
 	}
 
 	// 验证密码
 	if !user.CheckPassword(req.Password) {
-		return nil, errors.New("用户名或密码错误")
+		return nil, errors.New("手机号或密码错误")
 	}
 
 	// 检查用户状态
@@ -85,26 +79,24 @@ func (s *UserService) Login(req *dto.LoginRequest) (*dto.LoginResponse, error) {
 		return nil, errors.New("用户待审核，请联系管理员")
 	}
 
-	// 获取部门信息
-	var deptID uint
-	var deptName string
-	if user.Department != nil {
-		deptID = user.Department.ID
-		deptName = user.Department.Name
-	}
+	// // 获取部门信息
+	// var deptID uint
+	// var deptName string
+	// if user.Department != nil {
+	// 	deptID = user.Department.ID
+	// 	deptName = user.Department.Name
+	// }
 
-	// 获取负责的部门信息
-	var managedDeptIDs []uint
-	isLeader := false
-	if len(user.ManagedDepartments) > 0 {
-		isLeader = true
-		for _, dept := range user.ManagedDepartments {
-			managedDeptIDs = append(managedDeptIDs, dept.ID)
-		}
-	}
+	// // 获取负责的部门信息
+	// var managedDeptIDs []uint
+	// if len(user.ManagedDepartments) > 0 {
+	// 	for _, dept := range user.ManagedDepartments {
+	// 		managedDeptIDs = append(managedDeptIDs, dept.ID)
+	// 	}
+	// }
 
 	// 生成token
-	token, err := utils.GenerateToken(user.ID, user.Username, user.Mobile, deptID, deptName, isLeader, managedDeptIDs, 24)
+	token, err := utils.GenerateToken(user.ID, user.Username, user.Mobile, 24)
 	if err != nil {
 		return nil, err
 	}
@@ -328,28 +320,23 @@ func (s *UserService) AssignRoles(userID uint, roleIDs []uint) error {
 
 // CreateUser 管理员创建用户（直接激活）
 func (s *UserService) CreateUser(req *dto.RegisterRequest) (*models.User, error) {
-	// 复用 Register 的检查逻辑，但状态设置为 Active
-	// 检查用户名是否存在
 	var existingUser models.User
-	if err := database.DB.Where("username = ?", req.UserName).First(&existingUser).Error; err == nil {
-		return nil, errors.New("用户名已存在")
+	// 检查手机号是否存在
+	if err := database.DB.Where("mobile = ?", req.Mobile).First(&existingUser).Error; err == nil {
+		return nil, errors.New("手机号已被注册")
 	}
-	if err := database.DB.Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
-		return nil, errors.New("邮箱已被注册")
-	}
-	if req.Mobile != "" {
-		if err := database.DB.Where("mobile = ?", req.Mobile).First(&existingUser).Error; err == nil {
-			return nil, errors.New("手机号已被注册")
+	// 检查邮箱是否存在（如果填写了邮箱）
+	if req.Email != "" {
+		if err := database.DB.Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
+			return nil, errors.New("邮箱已被注册")
 		}
 	}
 
 	user := &models.User{
-		Username: req.UserName,
-		Nickname: req.Nickname,
-		Email:    req.Email,
 		Mobile:   req.Mobile,
-		// DepartmentID: req.DepartmentID,
-		Status: models.UserStatusActive, // 管理员创建直接激活
+		Username: req.UserName,
+		Email:    req.Email,
+		Status:   models.UserStatusActive, // 管理员创建直接激活
 	}
 
 	if err := user.SetPassword(req.Password); err != nil {
@@ -405,7 +392,7 @@ func (s *UserService) GetAssignableUsers(userID uint, req *dto.GetAssignableUser
 
 	// 如果提供了关键词，则进行模糊搜索
 	if req.Keyword != "" {
-		query = query.Where("nickname LIKE ? OR email LIKE ?", "%"+req.Keyword+"%", "%"+req.Keyword+"%")
+		query = query.Where("username LIKE ? OR nickname LIKE ? OR email LIKE ?", "%"+req.Keyword+"%", "%"+req.Keyword+"%", "%"+req.Keyword+"%")
 	}
 
 	if err := query.Find(&sameDepUsers).Error; err != nil {
@@ -422,6 +409,7 @@ func (s *UserService) GetAssignableUsers(userID uint, req *dto.GetAssignableUser
 	for _, user := range sameDepUsers {
 		results = append(results, dto.AssignableUserResponse{
 			ID:                 user.ID,
+			Username:           user.Username,
 			Nickname:           user.Nickname,
 			Email:              user.Email,
 			DepartmentID:       currentDep.ID,
@@ -435,6 +423,7 @@ func (s *UserService) GetAssignableUsers(userID uint, req *dto.GetAssignableUser
 	var leaders []struct {
 		UserID       uint
 		Nickname     string
+		Username     string
 		Email        string
 		DepartmentID uint
 		DepName      string
@@ -443,7 +432,7 @@ func (s *UserService) GetAssignableUsers(userID uint, req *dto.GetAssignableUser
 	// 使用GORM的Joins进行关联查询
 	query = database.DB.
 		Table("users u").
-		Select("DISTINCT u.id as user_id, u.nickname, u.email, d.id as department_id, d.name as dep_name").
+		Select("DISTINCT u.id as user_id, u.nickname,u.username, u.email, d.id as department_id, d.name as dep_name").
 		Joins("INNER JOIN department_leaders dl ON u.id = dl.user_id").
 		Joins("INNER JOIN departments d ON dl.department_id = d.id").
 		Where("u.status != ? AND u.id != ? AND dl.department_id != ?",
@@ -451,8 +440,8 @@ func (s *UserService) GetAssignableUsers(userID uint, req *dto.GetAssignableUser
 
 	// 如果提供了关键词，则进行模糊搜索
 	if req.Keyword != "" {
-		query = query.Where("u.nickname LIKE ? OR u.email LIKE ?",
-			"%"+req.Keyword+"%", "%"+req.Keyword+"%")
+		query = query.Where("u.username LIKE ? OR u.nickname LIKE ? OR u.email LIKE ?",
+			"%"+req.Keyword+"%", "%"+req.Keyword+"%", "%"+req.Keyword+"%")
 	}
 
 	if err := query.Scan(&leaders).Error; err != nil {
@@ -463,6 +452,7 @@ func (s *UserService) GetAssignableUsers(userID uint, req *dto.GetAssignableUser
 	for _, leader := range leaders {
 		results = append(results, dto.AssignableUserResponse{
 			ID:                 leader.UserID,
+			Username:           leader.Username,
 			Nickname:           leader.Nickname,
 			Email:              leader.Email,
 			DepartmentID:       leader.DepartmentID,

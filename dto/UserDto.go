@@ -48,6 +48,8 @@ type AssignableUserResponse struct {
 	ID uint `json:"id"`
 	// 用户昵称（用于显示）
 	Nickname string `json:"nickname"`
+	//用户真实姓名
+	Username string `json:"username"`
 	// 邮箱地址
 	Email string `json:"email"`
 	// 所属部门ID

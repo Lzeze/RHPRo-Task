@@ -142,7 +142,7 @@ func TestCreateUser_Success(t *testing.T) {
 		UserName: "newuser123",
 		Email:    "newuser123@example.com",
 		Password: "password123",
-		Nickname: "New User",
+		// Nickname: "New User",
 	}
 
 	w := testutils.HTTPRequest(router, "POST", "/api/v1/users", reqBody)
