@@ -284,7 +284,7 @@ psql -h 10.0.10.114 -U postgres -d rhpro_task -f database/migrations/init_databa
 
 ### 本地环境
 
-- Go 1.21+
+- Go 1.25+
 - Git
 - SSH 客户端
 - PostgreSQL 客户端（psql）
@@ -351,7 +351,7 @@ stages:
 
 ### 1. 编译失败
 
-确保 Go 版本 >= 1.21，并已安装所有依赖：
+确保 Go 版本 >= 1.25，并已安装所有依赖：
 ```bash
 go mod tidy
 ```

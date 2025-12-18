@@ -1,0 +1,24 @@
+services:
+  # 后端应用
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rhppro-task
+    restart: unless-stopped
+    ports:
+      - "${SERVER_PORT:-7777}:${SERVER_PORT:-7777}"
+    env_file:
+      - .env
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - ./logs:/app/logs
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - rhppro-network
+
+networks:
+  rhppro-network:
+    driver: bridge
