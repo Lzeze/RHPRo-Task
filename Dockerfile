@@ -35,7 +35,8 @@ RUN go mod download
 #WORKDIR /app
 
 # 从构建阶段复制二进制文件
-COPY --from=builder /app/rhppro-task .
+#COPY --from=builder /app/rhppro-task .
+COPY rhppro-task .
 
 # 创建日志目录
 RUN mkdir -p /app/logs
