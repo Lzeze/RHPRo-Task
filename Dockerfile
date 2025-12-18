@@ -13,7 +13,8 @@ COPY go.mod go.sum ./
 
 # 下载依赖
 RUN go mod download
-
+RUN pwd
+RUN ls bin
 ADD ./bin/rhppro-task .
 
 # 创建日志目录
