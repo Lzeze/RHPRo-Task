@@ -1,5 +1,5 @@
 # 构建阶段
-FROM rhzy-harbor.gshbzw.com/rhzy/go:1.25.5-alpine3.23 AS builder
+FROM rhzy-harbor.gshbzw.com/rhzy/go:v1.25.5-v1 AS builder
 
 # 设置工作目录
 WORKDIR /app
