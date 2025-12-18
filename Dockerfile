@@ -13,9 +13,9 @@ COPY go.mod go.sum ./
 
 # 下载依赖
 RUN go mod download
-RUN pwd
-RUN ls
+
 ADD ./bin/rhppro-task .
+ADD .env .
 
 # 创建日志目录
 RUN mkdir -p /app/logs
