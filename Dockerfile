@@ -5,7 +5,12 @@ FROM rhzy-harbor.gshbzw.com/rhzy/go:v1.25.5-v1 AS builder
 WORKDIR /app
 
 # 安装必要的构建工具
-RUN apk add --no-cache git ca-certificates tzdata
+#RUN apk add --no-cache git ca-certificates tzdata
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    ca-certificates \
+    tzdata \
+    && rm -rf /var/lib/apt/lists/*
 
 # 复制 go.mod 和 go.sum
 COPY go.mod go.sum ./
