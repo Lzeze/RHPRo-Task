@@ -1,5 +1,5 @@
 # 构建阶段
-FROM golang:1.25.5-alpine3.23 AS builder
+FROM rhzy-harbor.gshbzw.com/rhzy/go:1.25.5-alpine3.23 AS builder
 
 # 设置工作目录
 WORKDIR /app
@@ -36,7 +36,7 @@ COPY --from=builder /app/rhppro-task .
 RUN mkdir -p /app/logs
 
 # 暴露端口
-EXPOSE 7777
+EXPOSE 8080
 
 # 启动应用
 CMD ["./rhppro-task"]
