@@ -19,20 +19,20 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 # 复制源代码
-COPY . .
+#COPY . .
 
 # 构建应用
 #RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /app/rhppro-task main.go
 
 # 运行阶段
-FROM alpine:3.23
+#FROM alpine:3.23
 
 # 设置时区
- RUN apk add --no-cache ca-certificates tzdata \
-    && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
-    && echo "Asia/Shanghai" > /etc/timezone
+# RUN apk add --no-cache ca-certificates tzdata \
+#    && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
+#    && echo "Asia/Shanghai" > /etc/timezone
 
-WORKDIR /app
+#WORKDIR /app
 
 # 从构建阶段复制二进制文件
 COPY --from=builder /app/rhppro-task .
