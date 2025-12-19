@@ -259,12 +259,15 @@ func (s *UserService) GetUserList(pagination *dto.PaginationRequest) (*dto.Pagin
 	}, nil
 }
 
-// UpdateUser 更新用户信息
+// UpdateUser 更新用户信息（只更新请求中有值的字段）
 func (s *UserService) UpdateUser(id uint, req *dto.UpdateUserRequest) error {
 	var user models.User
 	if err := database.DB.First(&user, id).Error; err != nil {
 		return errors.New("用户不存在")
 	}
+
+	// 构建更新字段map
+	updates := make(map[string]interface{})
 
 	// 检查用户名唯一性（如果要更新用户名）
 	if req.Username != "" && req.Username != user.Username {
@@ -272,7 +275,7 @@ func (s *UserService) UpdateUser(id uint, req *dto.UpdateUserRequest) error {
 		if err := database.DB.Where("username = ? AND id != ?", req.Username, id).First(&existingUser).Error; err == nil {
 			return errors.New("用户名已被使用")
 		}
-		user.Username = req.Username
+		updates["username"] = req.Username
 	}
 
 	// 检查邮箱唯一性（如果要更新邮箱）
@@ -281,7 +284,7 @@ func (s *UserService) UpdateUser(id uint, req *dto.UpdateUserRequest) error {
 		if err := database.DB.Where("email = ? AND id != ?", req.Email, id).First(&existingUser).Error; err == nil {
 			return errors.New("邮箱已被使用")
 		}
-		user.Email = req.Email
+		updates["email"] = req.Email
 	}
 
 	// 检查手机号唯一性（如果要更新手机号）
@@ -290,15 +293,20 @@ func (s *UserService) UpdateUser(id uint, req *dto.UpdateUserRequest) error {
 		if err := database.DB.Where("mobile = ? AND id != ?", req.Mobile, id).First(&existingUser).Error; err == nil {
 			return errors.New("手机号已被使用")
 		}
-		user.Mobile = req.Mobile
+		updates["mobile"] = req.Mobile
 	}
 
 	// 更新昵称
 	if req.Nickname != "" {
-		user.Nickname = req.Nickname
+		updates["nickname"] = req.Nickname
 	}
 
-	return database.DB.Save(&user).Error
+	// 没有需要更新的字段
+	if len(updates) == 0 {
+		return nil
+	}
+
+	return database.DB.Model(&user).Updates(updates).Error
 }
 
 // AssignRoles 分配角色

@@ -133,7 +133,7 @@ func (ctrl *UserController) UpdateUser(c *gin.Context) {
 	}
 
 	if err := ctrl.userService.UpdateUser(uint(id), &req); err != nil {
-		utils.Error(c, 500, "更新失败")
+		utils.Error(c, 500, err.Error())
 		return
 	}
 

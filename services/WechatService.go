@@ -106,8 +106,8 @@ func (s *WechatService) Login(req *dto.WechatLoginRequest) (*dto.WechatLoginResp
 		var existingUser models.User
 		if err := database.DB.Where("mobile = ?", wechatMobile).First(&existingUser).Error; err == nil {
 			// 手机号已注册，绑定微信信息并直接登录
-			existingUser.WechatUnionID = tokenResp.UnionID
-			existingUser.WechatOpenID = tokenResp.OpenID
+			existingUser.WechatUnionid = tokenResp.UnionID
+			existingUser.WechatOpenid = tokenResp.OpenID
 			if existingUser.Nickname == "" {
 				existingUser.Nickname = userInfo.Nickname
 			}
@@ -157,8 +157,8 @@ func (s *WechatService) BindMobile(req *dto.WechatBindRequest) (*dto.LoginRespon
 	var existingUser models.User
 	if err := database.DB.Where("mobile = ?", req.Mobile).First(&existingUser).Error; err == nil {
 		// 手机号已存在，绑定微信到现有账号
-		existingUser.WechatUnionID = claims.UnionID
-		existingUser.WechatOpenID = claims.OpenID
+		existingUser.WechatUnionid = claims.UnionID
+		existingUser.WechatOpenid = claims.OpenID
 		if existingUser.Nickname == "" {
 			existingUser.Nickname = claims.Nickname
 		}
@@ -177,8 +177,8 @@ func (s *WechatService) BindMobile(req *dto.WechatBindRequest) (*dto.LoginRespon
 		Username:      req.UserName,
 		Nickname:      claims.Nickname,
 		Avatar:        claims.Avatar,
-		WechatUnionID: claims.UnionID,
-		WechatOpenID:  claims.OpenID,
+		WechatUnionid: claims.UnionID,
+		WechatOpenid:  claims.OpenID,
 		Status:        models.UserStatusPending,
 	}
 	if err := user.SetPassword(req.Password); err != nil {
