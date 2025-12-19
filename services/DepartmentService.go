@@ -211,7 +211,7 @@ func (s *DepartmentService) AddLeader(deptID uint, req *dto.AddLeaderRequest) er
 // 3. 检查用户是否还负责其他部门
 // 4. 如果不再负责任何部门：
 //   - 将 is_department_leader 设为 false
-//   - 清空 department_id
+//   - 降为普通用户
 func (s *DepartmentService) RemoveLeader(deptID uint, userID uint) error {
 	// 1. 验证用户存在
 	var user models.User

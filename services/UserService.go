@@ -371,6 +371,30 @@ func (s *UserService) ApproveUser(id uint) error {
 	return database.DB.Save(&user).Error
 }
 
+// DeleteUser 删除用户（软删除）
+func (s *UserService) DeleteUser(id uint) error {
+	var user models.User
+	if err := database.DB.First(&user, id).Error; err != nil {
+		return errors.New("用户不存在")
+	}
+	return database.DB.Delete(&user).Error
+}
+
+// DisableUser 禁用用户
+func (s *UserService) DisableUser(id uint) error {
+	var user models.User
+	if err := database.DB.First(&user, id).Error; err != nil {
+		return errors.New("用户不存在")
+	}
+
+	if user.Status == models.UserStatusDisabled {
+		return errors.New("用户已是禁用状态")
+	}
+
+	user.Status = models.UserStatusDisabled
+	return database.DB.Save(&user).Error
+}
+
 // GetAssignableUsers 获取可指派的执行人列表
 // 包括：1.同部门的所有成员 2.其他部门的负责人（如果负责多部门则产生多条记录）
 func (s *UserService) GetAssignableUsers(userID uint, req *dto.GetAssignableUsersRequest) ([]dto.AssignableUserResponse, error) {

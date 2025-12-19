@@ -36,10 +36,16 @@ func validateMobile(fl validator.FieldLevel) bool {
 	return matched
 }
 
-// validateUsername 验证用户名（字母数字下划线，3-20位）
+// validateUsername 验证用户名（支持中文、字母、数字、下划线，2-50位）
 func validateUsername(fl validator.FieldLevel) bool {
 	username := fl.Field().String()
-	pattern := `^[a-zA-Z0-9_]{3,20}$`
+	// 检查长度（按字符数，非字节数）
+	runeCount := len([]rune(username))
+	if runeCount < 2 || runeCount > 50 {
+		return false
+	}
+	// 允许中文、字母、数字、下划线
+	pattern := `^[\p{Han}a-zA-Z0-9_]+$`
 	matched, _ := regexp.MatchString(pattern, username)
 	return matched
 }
@@ -65,7 +71,7 @@ func TranslateValidationErrors(err error) map[string]string {
 			case "mobile":
 				errors[field] = field + " 必须是有效的手机号码"
 			case "username":
-				errors[field] = field + " 必须是3-20位的字母、数字或下划线"
+				errors[field] = field + " 必须是2-50位的中文、字母、数字或下划线"
 			case "gte":
 				errors[field] = field + " 必须大于或等于 " + e.Param()
 			case "lte":

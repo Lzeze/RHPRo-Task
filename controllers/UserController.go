@@ -243,6 +243,64 @@ func (ctrl *UserController) ApproveUser(c *gin.Context) {
 	utils.SuccessWithMessage(c, "用户审核通过", nil)
 }
 
+// DeleteUser 删除用户（软删除）
+// @Summary 删除用户
+// @Description 软删除指定用户
+// @Tags 用户管理
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "用户ID"
+// @Success 200 {object} map[string]interface{} "删除成功"
+// @Failure 400 {object} map[string]interface{} "无效的用户ID"
+// @Failure 401 {object} map[string]interface{} "未授权"
+// @Failure 500 {object} map[string]interface{} "删除失败"
+// @Router /users/{id} [delete]
+func (ctrl *UserController) DeleteUser(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		utils.BadRequest(c, "无效的用户ID")
+		return
+	}
+
+	if err := ctrl.userService.DeleteUser(uint(id)); err != nil {
+		utils.Error(c, 500, err.Error())
+		return
+	}
+
+	utils.SuccessWithMessage(c, "用户删除成功", nil)
+}
+
+// DisableUser 禁用用户
+// @Summary 禁用用户
+// @Description 将用户状态设置为禁用
+// @Tags 用户管理
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "用户ID"
+// @Success 200 {object} map[string]interface{} "禁用成功"
+// @Failure 400 {object} map[string]interface{} "无效的用户ID"
+// @Failure 401 {object} map[string]interface{} "未授权"
+// @Failure 500 {object} map[string]interface{} "禁用失败"
+// @Router /users/{id}/disable [post]
+func (ctrl *UserController) DisableUser(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		utils.BadRequest(c, "无效的用户ID")
+		return
+	}
+
+	if err := ctrl.userService.DisableUser(uint(id)); err != nil {
+		utils.Error(c, 500, err.Error())
+		return
+	}
+
+	utils.SuccessWithMessage(c, "用户已禁用", nil)
+}
+
 // GetAssignableUsers 获取可指派的执行人列表
 // @Summary 获取可指派的执行人列表
 // @Description 获取可指派为任务执行人的用户列表，包括同部门成员和其他部门负责人，支持昵称和邮箱模糊检索

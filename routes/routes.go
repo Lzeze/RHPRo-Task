@@ -87,6 +87,16 @@ func SetupRoutes() *gin.Engine {
 			// middlewares.PermissionMiddleware("user:approve"),
 			userController.ApproveUser)
 
+		// 删除用户（软删除）
+		userRoutes.DELETE("/:id",
+			// middlewares.PermissionMiddleware("user:delete"),
+			userController.DeleteUser)
+
+		// 禁用用户
+		userRoutes.POST("/:id/disable",
+			// middlewares.PermissionMiddleware("user:disable"),
+			userController.DisableUser)
+
 		// 获取可指派的执行人列表（用于任务分配，只需要当前用户有效即可）
 		userRoutes.GET("/assignable",
 			userController.GetAssignableUsers)

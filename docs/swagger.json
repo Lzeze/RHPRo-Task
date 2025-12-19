@@ -191,6 +191,88 @@
                 }
             }
         },
+        "/auth/wechat/bind": {
+            "post": {
+                "description": "微信新用户绑定手机号并设置密码完成注册",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "认证"
+                ],
+                "summary": "微信绑定手机号",
+                "parameters": [
+                    {
+                        "description": "绑定请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.WechatBindRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "注册成功",
+                        "schema": {
+                            "$ref": "#/definitions/dto.LoginResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数验证失败",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/wechat/login": {
+            "post": {
+                "description": "使用微信授权码登录，支持扫码登录、小程序登录、公众号H5登录",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "认证"
+                ],
+                "summary": "微信登录",
+                "parameters": [
+                    {
+                        "description": "微信登录请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.WechatLoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "登录结果",
+                        "schema": {
+                            "$ref": "#/definitions/dto.WechatLoginResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数验证失败",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/departments": {
             "get": {
                 "security": [
@@ -2465,6 +2547,63 @@
                         }
                     }
                 }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "软删除指定用户",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户管理"
+                ],
+                "summary": "删除用户",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "用户ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "删除成功",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "无效的用户ID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "删除失败",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
             }
         },
         "/users/{id}/approve": {
@@ -2518,6 +2657,65 @@
                     },
                     "500": {
                         "description": "审核失败",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{id}/disable": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "将用户状态设置为禁用",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户管理"
+                ],
+                "summary": "禁用用户",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "用户ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "禁用成功",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "无效的用户ID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "禁用失败",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -4726,6 +4924,118 @@
                 }
             }
         },
+        "dto.WechatBindRequest": {
+            "type": "object",
+            "required": [
+                "mobile",
+                "password",
+                "temp_token",
+                "username"
+            ],
+            "properties": {
+                "mobile": {
+                    "description": "手机号码",
+                    "type": "string",
+                    "example": "13800138000"
+                },
+                "password": {
+                    "description": "密码",
+                    "type": "string",
+                    "maxLength": 20,
+                    "minLength": 6,
+                    "example": "password123"
+                },
+                "temp_token": {
+                    "description": "临时凭证",
+                    "type": "string"
+                },
+                "username": {
+                    "description": "用户名/真实姓名",
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 2,
+                    "example": "张三"
+                }
+            }
+        },
+        "dto.WechatLoginRequest": {
+            "type": "object",
+            "required": [
+                "code",
+                "login_type"
+            ],
+            "properties": {
+                "code": {
+                    "description": "微信授权码",
+                    "type": "string",
+                    "example": "021xxx"
+                },
+                "login_type": {
+                    "description": "登录类型：scan-扫码登录，mp-小程序登录，h5-公众号H5登录",
+                    "type": "string",
+                    "enum": [
+                        "scan",
+                        "mp",
+                        "h5"
+                    ],
+                    "example": "scan"
+                },
+                "phone_code": {
+                    "description": "手机号授权码（小程序获取手机号时使用，可选）",
+                    "type": "string",
+                    "example": "xxx"
+                }
+            }
+        },
+        "dto.WechatLoginResponse": {
+            "type": "object",
+            "properties": {
+                "need_bind": {
+                    "description": "是否需要绑定手机号（新用户需要补充信息）",
+                    "type": "boolean"
+                },
+                "temp_token": {
+                    "description": "临时凭证（用于绑定手机号时使用）",
+                    "type": "string"
+                },
+                "token": {
+                    "description": "JWT令牌（已绑定用户直接返回）",
+                    "type": "string"
+                },
+                "user_info": {
+                    "description": "用户信息（已绑定用户返回）"
+                },
+                "wechat_info": {
+                    "description": "微信用户信息（需要绑定时返回）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.WechatUserInfo"
+                        }
+                    ]
+                }
+            }
+        },
+        "dto.WechatUserInfo": {
+            "type": "object",
+            "properties": {
+                "avatar": {
+                    "type": "string"
+                },
+                "mobile": {
+                    "description": "微信绑定的手机号（从微信获取）",
+                    "type": "string"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "openid": {
+                    "type": "string"
+                },
+                "unionid": {
+                    "type": "string"
+                }
+            }
+        },
         "models.Department": {
             "type": "object",
             "properties": {
@@ -4994,6 +5304,10 @@
         "models.User": {
             "type": "object",
             "properties": {
+                "avatar": {
+                    "description": "用户头像URL",
+                    "type": "string"
+                },
                 "created_at": {
                     "description": "创建时间",
                     "type": "string"
@@ -5058,6 +5372,14 @@
                 },
                 "username": {
                     "description": "用户名/真实姓名（支持中文）",
+                    "type": "string"
+                },
+                "wechat_openid": {
+                    "description": "微信OpenID（单应用内唯一）",
+                    "type": "string"
+                },
+                "wechat_unionid": {
+                    "description": "微信UnionID（跨应用唯一）",
                     "type": "string"
                 }
             }
