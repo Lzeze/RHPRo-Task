@@ -250,13 +250,10 @@ func (s *TaskDetailService) GetTaskTimeline(taskID uint) ([]dto.TimelineEventRes
 		var user models.User
 		database.DB.Select("id, username").First(&user, review.InitiatedBy)
 
-		title := "发起了审核"
-		content := review.ReviewType
-		eventType := "review_started"
-
 		if review.FinalDecision != nil {
-			title = "审核完成"
-			eventType = "review_completed"
+			title := "审核完成"
+			eventType := "review_completed"
+			var content string
 			if *review.FinalDecision == "approved" {
 				content = "审核通过"
 			} else {
