@@ -176,25 +176,148 @@ func (s *TaskDetailService) GetTaskChangeLogs(taskID uint) ([]dto.ChangeLogRespo
 		return nil, err
 	}
 
+	// 字段名映射
+	fieldNameMap := map[string]string{
+		"title":               "标题",
+		"description":         "描述",
+		"priority":            "优先级",
+		"executor_id":         "执行人",
+		"status_code":         "状态",
+		"expected_start_date": "期望开始时间",
+		"expected_end_date":   "期望完成时间",
+		"actual_start_date":   "实际开始时间",
+		"actual_end_date":     "实际完成时间",
+		"solution_deadline":   "方案截止天数",
+		"department_id":       "部门",
+	}
+
+	// 变更类型映射
+	changeTypeMap := map[string]string{
+		"field_update":  "字段更新",
+		"status_change": "状态变更",
+		"create":        "创建",
+		"delete":        "删除",
+	}
+
+	// 预加载所有涉及的用户ID（用于executor_id字段的值转换）
+	userIDs := make(map[uint]bool)
+	for _, log := range logs {
+		userIDs[log.UserID] = true
+		// 收集executor_id相关的用户ID
+		if log.FieldName == "executor_id" {
+			if log.OldValue != "" {
+				if id, err := parseUint(log.OldValue); err == nil && id > 0 {
+					userIDs[id] = true
+				}
+			}
+			if log.NewValue != "" {
+				if id, err := parseUint(log.NewValue); err == nil && id > 0 {
+					userIDs[id] = true
+				}
+			}
+		}
+	}
+
+	// 批量查询用户信息
+	var userIDList []uint
+	for id := range userIDs {
+		userIDList = append(userIDList, id)
+	}
+	var users []models.User
+	database.DB.Select("id, username").Where("id IN ?", userIDList).Find(&users)
+	userMap := make(map[uint]string)
+	for _, u := range users {
+		userMap[u.ID] = u.Username
+	}
+
+	// 预加载状态码映射
+	var statuses []models.TaskStatus
+	database.DB.Select("code, name").Find(&statuses)
+	statusMap := make(map[string]string)
+	for _, s := range statuses {
+		statusMap[s.Code] = s.Name
+	}
+
 	responses := make([]dto.ChangeLogResponse, len(logs))
 	for i, log := range logs {
-		var user models.User
-		database.DB.Select("id, username").First(&user, log.UserID)
+		// 获取字段显示名称
+		fieldLabel := fieldNameMap[log.FieldName]
+		if fieldLabel == "" {
+			fieldLabel = log.FieldName
+		}
+
+		// 获取变更类型显示名称
+		changeTypeName := changeTypeMap[log.ChangeType]
+		if changeTypeName == "" {
+			changeTypeName = log.ChangeType
+		}
+
+		// 转换显示值
+		oldValueDisplay := s.convertValueForDisplay(log.FieldName, log.OldValue, userMap, statusMap)
+		newValueDisplay := s.convertValueForDisplay(log.FieldName, log.NewValue, userMap, statusMap)
 
 		responses[i] = dto.ChangeLogResponse{
-			ID:         log.ID,
-			UserID:     log.UserID,
-			Username:   user.Username,
-			ChangeType: log.ChangeType,
-			FieldName:  log.FieldName,
-			OldValue:   log.OldValue,
-			NewValue:   log.NewValue,
-			Comment:    log.Comment,
-			CreatedAt:  dto.ToResponseTime(log.CreatedAt),
+			ID:              log.ID,
+			UserID:          log.UserID,
+			Username:        userMap[log.UserID],
+			ChangeType:      log.ChangeType,
+			ChangeTypeName:  changeTypeName,
+			FieldName:       log.FieldName,
+			FieldNameLabel:  fieldLabel,
+			OldValue:        log.OldValue,
+			OldValueDisplay: oldValueDisplay,
+			NewValue:        log.NewValue,
+			NewValueDisplay: newValueDisplay,
+			Comment:         log.Comment,
+			CreatedAt:       dto.ToResponseTime(log.CreatedAt),
 		}
 	}
 
 	return responses, nil
+}
+
+// convertValueForDisplay 将原始值转换为显示值
+func (s *TaskDetailService) convertValueForDisplay(fieldName, value string, userMap map[uint]string, statusMap map[string]string) string {
+	if value == "" {
+		return "空"
+	}
+
+	switch fieldName {
+	case "executor_id":
+		if id, err := parseUint(value); err == nil && id > 0 {
+			if username, ok := userMap[id]; ok {
+				return username
+			}
+		}
+		return "空"
+	case "status_code":
+		if name, ok := statusMap[value]; ok {
+			return name
+		}
+		return value
+	case "priority":
+		switch value {
+		case "1":
+			return "低"
+		case "2":
+			return "中"
+		case "3":
+			return "高"
+		case "4":
+			return "紧急"
+		default:
+			return value
+		}
+	default:
+		return value
+	}
+}
+
+// parseUint 解析字符串为uint
+func parseUint(s string) (uint, error) {
+	var id uint
+	_, err := fmt.Sscanf(s, "%d", &id)
+	return id, err
 }
 
 // GetTaskTimeline 获取任务的时间轴视图

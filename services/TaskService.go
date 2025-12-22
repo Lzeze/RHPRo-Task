@@ -602,25 +602,45 @@ func (s *TaskService) UpdateTask(taskID uint, userID uint, req *dto.UpdateTaskRe
 
 	// 辅助函数：添加变更
 	addChange := func(field string, oldVal, newVal interface{}, comment string) {
-		strOld := fmt.Sprintf("%v", oldVal)
-		strNew := fmt.Sprintf("%v", newVal)
-		// 处理指针
-		if oldVal == nil {
+		strOld := ""
+		strNew := ""
+
+		// 处理旧值
+		switch v := oldVal.(type) {
+		case nil:
 			strOld = ""
+		case *uint:
+			if v != nil {
+				strOld = fmt.Sprintf("%d", *v)
+			}
+		case *time.Time:
+			if v != nil {
+				strOld = v.Format(time.RFC3339)
+			}
+		case time.Time:
+			strOld = v.Format(time.RFC3339)
+		default:
+			strOld = fmt.Sprintf("%v", oldVal)
 		}
-		if newVal == nil {
+
+		// 处理新值
+		switch v := newVal.(type) {
+		case nil:
 			strNew = ""
-		}
-		// 特殊处理时间格式
-		if t, ok := oldVal.(*time.Time); ok && t != nil {
-			strOld = t.Format(time.RFC3339)
-		} else if t, ok := oldVal.(time.Time); ok {
-			strOld = t.Format(time.RFC3339)
-		}
-		if t, ok := newVal.(*time.Time); ok && t != nil {
-			strNew = t.Format(time.RFC3339)
-		} else if t, ok := newVal.(time.Time); ok {
-			strNew = t.Format(time.RFC3339)
+		case *uint:
+			if v != nil {
+				strNew = fmt.Sprintf("%d", *v)
+			}
+		case uint:
+			strNew = fmt.Sprintf("%d", v)
+		case *time.Time:
+			if v != nil {
+				strNew = v.Format(time.RFC3339)
+			}
+		case time.Time:
+			strNew = v.Format(time.RFC3339)
+		default:
+			strNew = fmt.Sprintf("%v", newVal)
 		}
 
 		changes = append(changes, models.TaskChangeLog{

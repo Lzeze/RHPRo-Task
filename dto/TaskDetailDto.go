@@ -130,12 +130,20 @@ type ChangeLogResponse struct {
 	Username string `json:"username"`
 	// 变更类型（修改、删除等）
 	ChangeType string `json:"change_type"`
+	// 变更类型显示名称
+	ChangeTypeName string `json:"change_type_name"`
 	// 被修改的字段名
 	FieldName string `json:"field_name"`
+	// 字段显示名称
+	FieldNameLabel string `json:"field_name_label"`
 	// 修改前的值
 	OldValue string `json:"old_value"`
+	// 修改前的值（显示用）
+	OldValueDisplay string `json:"old_value_display"`
 	// 修改后的值
 	NewValue string `json:"new_value"`
+	// 修改后的值（显示用）
+	NewValueDisplay string `json:"new_value_display"`
 	// 变更备注
 	Comment string `json:"comment"`
 	// 变更发生时间（RFC3339 格式）
