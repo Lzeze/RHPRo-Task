@@ -81,7 +81,7 @@ func (ctrl *TaskController) GetTaskInfo(c *gin.Context) {
 
 // GetTaskList 获取任务列表
 // @Summary 获取任务列表
-// @Description 获取任务列表，支持分页和多条件过滤
+// @Description 获取任务列表，支持分页和多条件过滤。普通用户获取所属部门任务，部门负责人获取所负责部门任务，管理员获取所有任务
 // @Tags 任务管理
 // @Accept json
 // @Produce json
@@ -103,6 +103,14 @@ func (ctrl *TaskController) GetTaskInfo(c *gin.Context) {
 // @Failure 500 {object} map[string]interface{} "查询失败"
 // @Router /tasks [get]
 func (ctrl *TaskController) GetTaskList(c *gin.Context) {
+	// 获取当前用户ID
+	userIDValue, exists := c.Get("userID")
+	if !exists {
+		utils.Unauthorized(c, "未授权")
+		return
+	}
+	userID := userIDValue.(uint)
+
 	var req dto.TaskQueryRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
 		validationErrors := utils.TranslateValidationErrors(err)
@@ -110,9 +118,9 @@ func (ctrl *TaskController) GetTaskList(c *gin.Context) {
 		return
 	}
 
-	result, err := ctrl.taskService.GetTaskList(&req)
+	result, err := ctrl.taskService.GetTaskList(&req, userID)
 	if err != nil {
-		utils.Error(c, 500, "查询失败")
+		utils.Error(c, 500, err.Error())
 		return
 	}
 

@@ -28,31 +28,48 @@ func (s *UserService) Register(req *dto.RegisterRequest) (*models.User, error) {
 		}
 	}
 
-	// 创建用户
-	user := &models.User{
-		Mobile:   req.Mobile,
-		Username: req.UserName,
-		Email:    req.Email,
-		Status:   models.UserStatusPending, // 默认为待审核
-	}
-
-	// 设置密码
-	if err := user.SetPassword(req.Password); err != nil {
+	// 使用临时User对象生成密码哈希
+	tempUser := &models.User{}
+	if err := tempUser.SetPassword(req.Password); err != nil {
 		return nil, err
 	}
 
-	// 保存到数据库
-	if err := database.DB.Create(user).Error; err != nil {
+	// 构建插入字段（只插入请求中有值的字段）
+	insertData := map[string]interface{}{
+		"mobile":   req.Mobile,
+		"username": req.UserName,
+		"password": tempUser.Password,
+		"status":   models.UserStatusPending, // 默认为待审核
+	}
+
+	// 只有邮箱有值时才插入
+	if req.Email != "" {
+		insertData["email"] = req.Email
+	}
+
+	// 插入数据
+	result := database.DB.Model(&models.User{}).Create(insertData)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	// 获取插入的用户ID
+	var userID uint
+	database.DB.Raw("SELECT lastval()").Scan(&userID)
+
+	// 查询完整用户信息
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
 		return nil, err
 	}
 
 	// 分配默认角色（普通用户）
 	var userRole models.Role
 	if err := database.DB.Where("name = ?", "user").First(&userRole).Error; err == nil {
-		database.DB.Model(user).Association("Roles").Append(&userRole)
+		database.DB.Model(&user).Association("Roles").Append(&userRole)
 	}
 
-	return user, nil
+	return &user, nil
 }
 
 // Login 用户登录
@@ -340,28 +357,48 @@ func (s *UserService) CreateUser(req *dto.RegisterRequest) (*models.User, error)
 		}
 	}
 
-	user := &models.User{
-		Mobile:   req.Mobile,
-		Username: req.UserName,
-		Email:    req.Email,
-		Status:   models.UserStatusActive, // 管理员创建直接激活
-	}
-
-	if err := user.SetPassword(req.Password); err != nil {
+	// 使用临时User对象生成密码哈希
+	tempUser := &models.User{}
+	if err := tempUser.SetPassword(req.Password); err != nil {
 		return nil, err
 	}
 
-	if err := database.DB.Create(user).Error; err != nil {
+	// 构建插入字段（只插入请求中有值的字段）
+	insertData := map[string]interface{}{
+		"mobile":   req.Mobile,
+		"username": req.UserName,
+		"password": tempUser.Password,
+		"status":   models.UserStatusActive, // 管理员创建直接激活
+	}
+
+	// 只有邮箱有值时才插入
+	if req.Email != "" {
+		insertData["email"] = req.Email
+	}
+
+	// 插入数据
+	result := database.DB.Model(&models.User{}).Create(insertData)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	// 获取插入的用户ID
+	var userID uint
+	database.DB.Raw("SELECT lastval()").Scan(&userID)
+
+	// 查询完整用户信息
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
 		return nil, err
 	}
 
 	// 分配默认角色
 	var userRole models.Role
 	if err := database.DB.Where("name = ?", "user").First(&userRole).Error; err == nil {
-		database.DB.Model(user).Association("Roles").Append(&userRole)
+		database.DB.Model(&user).Association("Roles").Append(&userRole)
 	}
 
-	return user, nil
+	return &user, nil
 }
 
 // ApproveUser 审核用户

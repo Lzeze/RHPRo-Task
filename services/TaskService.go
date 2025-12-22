@@ -193,12 +193,72 @@ func (s *TaskService) CreateTask(req *dto.TaskRequest, creatorID uint) (*models.
 }
 
 // GetTaskList 查询任务列表（带分页和过滤）
-func (s *TaskService) GetTaskList(req *dto.TaskQueryRequest) (*dto.PaginationResponse, error) {
+// 权限规则：
+// - 超级管理员（admin角色）：获取所有任务
+// - 部门负责人：获取所负责的所有部门的任务
+// - 普通用户：获取所属部门的任务
+func (s *TaskService) GetTaskList(req *dto.TaskQueryRequest, userID uint) (*dto.PaginationResponse, error) {
 	var tasks []models.Task
 	var total int64
 
+	// 获取用户信息，包括角色和负责的部门
+	var user models.User
+	if err := database.DB.Preload("Roles").Preload("ManagedDepartments").First(&user, userID).Error; err != nil {
+		return nil, errors.New("用户不存在")
+	}
+
+	// 判断用户角色
+	isAdmin := false
+	for _, role := range user.Roles {
+		if role.Name == "admin" {
+			isAdmin = true
+			break
+		}
+	}
+
 	// 构建查询
 	query := database.DB.Model(&models.Task{})
+
+	// 根据用户角色添加部门过滤条件
+	if !isAdmin {
+		// 非管理员需要按部门过滤
+		var departmentIDs []uint
+
+		// 如果是部门负责人，获取所负责的所有部门ID
+		if len(user.ManagedDepartments) > 0 {
+			for _, dept := range user.ManagedDepartments {
+				departmentIDs = append(departmentIDs, dept.ID)
+			}
+		}
+
+		// 如果用户有所属部门，也加入查询范围
+		if user.DepartmentID != nil {
+			// 检查是否已包含
+			found := false
+			for _, id := range departmentIDs {
+				if id == *user.DepartmentID {
+					found = true
+					break
+				}
+			}
+			if !found {
+				departmentIDs = append(departmentIDs, *user.DepartmentID)
+			}
+		}
+
+		if len(departmentIDs) == 0 {
+			// 用户没有部门，返回空结果
+			return &dto.PaginationResponse{
+				Total:      0,
+				Page:       req.GetPage(),
+				PageSize:   req.GetPageSize(),
+				TotalPages: 0,
+				Data:       []dto.TaskResponse{},
+			}, nil
+		}
+
+		query = query.Where("department_id IN ?", departmentIDs)
+	}
 
 	// 应用过滤条件
 	if req.TaskNo != "" {
