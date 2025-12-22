@@ -56,6 +56,9 @@ definitions:
       change_type:
         description: 变更类型（修改、删除等）
         type: string
+      change_type_name:
+        description: 变更类型显示名称
+        type: string
       comment:
         description: 变更备注
         type: string
@@ -66,14 +69,23 @@ definitions:
       field_name:
         description: 被修改的字段名
         type: string
+      field_name_label:
+        description: 字段显示名称
+        type: string
       id:
         description: 变更日志ID
         type: integer
       new_value:
         description: 修改后的值
         type: string
+      new_value_display:
+        description: 修改后的值（显示用）
+        type: string
       old_value:
         description: 修改前的值
+        type: string
+      old_value_display:
+        description: 修改前的值（显示用）
         type: string
       user_id:
         description: 变更操作人用户ID
@@ -1804,7 +1816,7 @@ definitions:
         description: 微信OpenID（单应用内唯一）
         type: string
       wechat_unionid:
-        description: 微信UnionID（跨应用唯一）
+        description: 微信UnionID（跨应用唯一)
         type: string
     type: object
 host: 192.168.12.48:8888
@@ -2459,7 +2471,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: 获取任务列表，支持分页和多条件过滤
+      description: 获取任务列表，支持分页和多条件过滤。普通用户获取所属部门任务，部门负责人获取所负责部门任务，管理员获取所有任务
       parameters:
       - default: 1
         description: 页码
