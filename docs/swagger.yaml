@@ -928,6 +928,9 @@ definitions:
       executor_id:
         description: 执行人用户ID
         type: integer
+      executor_username:
+        description: 执行人用户名
+        type: string
       expected_end_date:
         allOf:
         - $ref: '#/definitions/dto.ResponseTime'
@@ -1064,6 +1067,9 @@ definitions:
       executor_id:
         description: 执行人用户ID
         type: integer
+      executor_username:
+        description: 执行人用户名
+        type: string
       expected_end_date:
         allOf:
         - $ref: '#/definitions/dto.ResponseTime'
@@ -1243,6 +1249,9 @@ definitions:
       executor_id:
         description: 执行人用户ID
         type: integer
+      executor_username:
+        description: 执行人用户名
+        type: string
       expected_end_date:
         allOf:
         - $ref: '#/definitions/dto.ResponseTime'
@@ -3616,7 +3625,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: 将用户状态设置为禁用
+      description: 如果用户已禁用则启用，如果用户是正常或待审核状态则禁用
       parameters:
       - description: 用户ID
         in: path
@@ -3627,7 +3636,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: 禁用成功
+          description: 状态切换成功
           schema:
             additionalProperties: true
             type: object
@@ -3642,13 +3651,13 @@ paths:
             additionalProperties: true
             type: object
         "500":
-          description: 禁用失败
+          description: 操作失败
           schema:
             additionalProperties: true
             type: object
       security:
       - BearerAuth: []
-      summary: 禁用用户
+      summary: 切换用户状态（禁用/启用）
       tags:
       - 用户管理
   /users/{id}/roles:

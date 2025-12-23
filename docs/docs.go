@@ -2783,7 +2783,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "将用户状态设置为禁用",
+                "description": "如果用户已禁用则启用，如果用户是正常或待审核状态则禁用",
                 "consumes": [
                     "application/json"
                 ],
@@ -2793,7 +2793,7 @@ const docTemplate = `{
                 "tags": [
                     "用户管理"
                 ],
-                "summary": "禁用用户",
+                "summary": "切换用户状态（禁用/启用）",
                 "parameters": [
                     {
                         "type": "integer",
@@ -2805,7 +2805,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "禁用成功",
+                        "description": "状态切换成功",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -2826,7 +2826,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "禁用失败",
+                        "description": "操作失败",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -4236,6 +4236,10 @@ const docTemplate = `{
                     "description": "执行人用户ID",
                     "type": "integer"
                 },
+                "executor_username": {
+                    "description": "执行人用户名",
+                    "type": "string"
+                },
                 "expected_end_date": {
                     "description": "期望完成日期（RFC3339 格式）",
                     "allOf": [
@@ -4445,6 +4449,10 @@ const docTemplate = `{
                 "executor_id": {
                     "description": "执行人用户ID",
                     "type": "integer"
+                },
+                "executor_username": {
+                    "description": "执行人用户名",
+                    "type": "string"
                 },
                 "expected_end_date": {
                     "description": "期望完成日期（RFC3339 格式）",
@@ -4708,6 +4716,10 @@ const docTemplate = `{
                 "executor_id": {
                     "description": "执行人用户ID",
                     "type": "integer"
+                },
+                "executor_username": {
+                    "description": "执行人用户名",
+                    "type": "string"
                 },
                 "expected_end_date": {
                     "description": "期望完成日期（RFC3339 格式）",
