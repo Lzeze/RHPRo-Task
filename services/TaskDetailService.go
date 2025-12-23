@@ -189,14 +189,21 @@ func (s *TaskDetailService) GetTaskChangeLogs(taskID uint) ([]dto.ChangeLogRespo
 		"actual_end_date":     "实际完成时间",
 		"solution_deadline":   "方案截止天数",
 		"department_id":       "部门",
+		"single":              "单人审核",
+		"jury":                "陪审团陪审",
 	}
 
 	// 变更类型映射
 	changeTypeMap := map[string]string{
-		"field_update":  "字段更新",
-		"status_change": "状态变更",
-		"create":        "创建",
-		"delete":        "删除",
+		"field_update":       "字段更新",
+		"status_change":      "状态变更",
+		"create":             "创建",
+		"delete":             "删除",
+		"solution_submitted": "方案提交",
+		"plan_submitted":     "执行计划提交",
+		"jury_invited":       "邀请陪审团",
+		"task_rejected":      "拒绝任务",
+		"review_finalized":   "最终决策",
 	}
 
 	// 预加载所有涉及的用户ID（用于executor_id字段的值转换）
@@ -403,15 +410,34 @@ func (s *TaskDetailService) GetTaskTimeline(taskID uint) ([]dto.TimelineEventRes
 	var logs []models.TaskChangeLog
 	database.DB.Where("task_id = ? AND change_type = ?", taskID, "status_change").
 		Order("created_at ASC").Find(&logs)
+
+	// 预加载状态码映射
+	var statuses []models.TaskStatus
+	database.DB.Select("code, name").Find(&statuses)
+	statusMap := make(map[string]string)
+	for _, st := range statuses {
+		statusMap[st.Code] = st.Name
+	}
+
 	for _, log := range logs {
 		var user models.User
 		database.DB.Select("id, username").First(&user, log.UserID)
+
+		// 将状态码转换为可读名称
+		oldStatusName := log.OldValue
+		if name, ok := statusMap[log.OldValue]; ok {
+			oldStatusName = name
+		}
+		newStatusName := log.NewValue
+		if name, ok := statusMap[log.NewValue]; ok {
+			newStatusName = name
+		}
 
 		events = append(events, dto.TimelineEventResponse{
 			ID:        log.ID,
 			EventType: "status_changed",
 			Title:     "状态变更",
-			Content:   log.OldValue + " → " + log.NewValue,
+			Content:   oldStatusName + " → " + newStatusName,
 			UserID:    log.UserID,
 			Username:  user.Username,
 			CreatedAt: dto.ToResponseTime(log.CreatedAt),
