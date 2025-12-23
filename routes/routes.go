@@ -100,6 +100,11 @@ func SetupRoutes() *gin.Engine {
 		// 获取可指派的执行人列表（用于任务分配，只需要当前用户有效即可）
 		userRoutes.GET("/assignable",
 			userController.GetAssignableUsers)
+
+		// 批量导入用户（需要管理员权限，必须放在 /:id 之前）
+		userRoutes.POST("/batch-import",
+			middlewares.PermissionMiddleware("permission:manage"),
+			userController.BatchImportUsers)
 	}
 
 	// 部门管理路由

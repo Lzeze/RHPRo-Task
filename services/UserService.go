@@ -1,6 +1,7 @@
 package services
 
 import (
+	"RHPRo-Task/config"
 	"RHPRo-Task/database"
 	"RHPRo-Task/dto"
 	"RHPRo-Task/models"
@@ -438,6 +439,85 @@ func (s *UserService) DisableUser(id uint) error {
 
 	user.Status = models.UserStatusDisabled
 	return database.DB.Save(&user).Error
+}
+
+// BatchImportUsers 批量导入用户
+// 默认密码从配置文件获取，默认状态：正常，默认角色：普通用户
+func (s *UserService) BatchImportUsers(items []dto.BatchImportUserItem) (*dto.BatchImportUserResult, error) {
+	result := &dto.BatchImportUserResult{
+		SuccessCount: 0,
+		FailedCount:  0,
+		FailedItems:  []dto.BatchImportUserFailedItem{},
+	}
+
+	// 从配置文件获取默认密码
+	cfg := config.GetConfig()
+	defaultPassword := cfg.User.DefaultPassword
+
+	// 生成密码哈希（所有用户使用相同默认密码）
+	tempUser := &models.User{}
+	if err := tempUser.SetPassword(defaultPassword); err != nil {
+		return nil, errors.New("生成默认密码失败")
+	}
+	hashedPassword := tempUser.Password
+
+	// 获取默认角色（普通用户）
+	var userRole models.Role
+	hasDefaultRole := false
+	if err := database.DB.Where("name = ?", "user").First(&userRole).Error; err == nil {
+		hasDefaultRole = true
+	}
+
+	// 按顺序处理每个用户
+	for _, item := range items {
+		// 检查手机号是否已存在
+		var existingUser models.User
+		if err := database.DB.Where("mobile = ?", item.Mobile).First(&existingUser).Error; err == nil {
+			result.FailedCount++
+			result.FailedItems = append(result.FailedItems, dto.BatchImportUserFailedItem{
+				Username: item.Username,
+				Mobile:   item.Mobile,
+				Reason:   "手机号已被注册",
+			})
+			continue
+		}
+
+		// 构建插入字段（只插入导入的参数数值）
+		insertData := map[string]interface{}{
+			"mobile":   item.Mobile,
+			"username": item.Username,
+			"password": hashedPassword,
+			"status":   models.UserStatusActive, // 默认正常状态
+		}
+
+		// 插入数据
+		insertResult := database.DB.Model(&models.User{}).Create(insertData)
+		if insertResult.Error != nil {
+			result.FailedCount++
+			result.FailedItems = append(result.FailedItems, dto.BatchImportUserFailedItem{
+				Username: item.Username,
+				Mobile:   item.Mobile,
+				Reason:   "创建失败: " + insertResult.Error.Error(),
+			})
+			continue
+		}
+
+		// 获取插入的用户ID并分配默认角色
+		if hasDefaultRole {
+			var userID uint
+			database.DB.Raw("SELECT lastval()").Scan(&userID)
+			if userID > 0 {
+				var newUser models.User
+				if err := database.DB.First(&newUser, userID).Error; err == nil {
+					database.DB.Model(&newUser).Association("Roles").Append(&userRole)
+				}
+			}
+		}
+
+		result.SuccessCount++
+	}
+
+	return result, nil
 }
 
 // GetAssignableUsers 获取可指派的执行人列表

@@ -301,6 +301,41 @@ func (ctrl *UserController) DisableUser(c *gin.Context) {
 	utils.SuccessWithMessage(c, "用户已禁用", nil)
 }
 
+// BatchImportUsers 批量导入用户
+// @Summary 批量导入用户
+// @Description 管理员批量导入组织架构成员，默认密码password123，默认正常状态，默认普通用户角色
+// @Tags 用户管理
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param users body []dto.BatchImportUserItem true "用户列表"
+// @Success 200 {object} dto.BatchImportUserResult "导入结果"
+// @Failure 400 {object} map[string]interface{} "参数验证失败"
+// @Failure 401 {object} map[string]interface{} "未授权"
+// @Failure 500 {object} map[string]interface{} "导入失败"
+// @Router /users/batch-import [post]
+func (ctrl *UserController) BatchImportUsers(c *gin.Context) {
+	var items []dto.BatchImportUserItem
+	if err := c.ShouldBindJSON(&items); err != nil {
+		validationErrors := utils.TranslateValidationErrors(err)
+		utils.ErrorWithData(c, 400, "参数验证失败", validationErrors)
+		return
+	}
+
+	if len(items) == 0 {
+		utils.BadRequest(c, "用户列表不能为空")
+		return
+	}
+
+	result, err := ctrl.userService.BatchImportUsers(items)
+	if err != nil {
+		utils.Error(c, 500, err.Error())
+		return
+	}
+
+	utils.SuccessWithMessage(c, "批量导入完成", result)
+}
+
 // GetAssignableUsers 获取可指派的执行人列表
 // @Summary 获取可指派的执行人列表
 // @Description 获取可指派为任务执行人的用户列表，包括同部门成员和其他部门负责人，支持昵称和邮箱模糊检索

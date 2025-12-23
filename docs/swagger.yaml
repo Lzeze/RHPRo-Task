@@ -86,6 +86,45 @@ definitions:
         description: 失败原因
         type: string
     type: object
+  dto.BatchImportUserFailedItem:
+    properties:
+      mobile:
+        description: 手机号
+        type: string
+      reason:
+        description: 失败原因
+        type: string
+      username:
+        description: 用户名
+        type: string
+    type: object
+  dto.BatchImportUserItem:
+    properties:
+      mobile:
+        description: 手机号（必填，作为登录账号，11位中国手机号）
+        type: string
+      username:
+        description: 用户名/真实姓名（必填，支持中文，最多50个字符）
+        maxLength: 50
+        type: string
+    required:
+    - mobile
+    - username
+    type: object
+  dto.BatchImportUserResult:
+    properties:
+      failed_count:
+        description: 失败数量
+        type: integer
+      failed_items:
+        description: 失败详情
+        items:
+          $ref: '#/definitions/dto.BatchImportUserFailedItem'
+        type: array
+      success_count:
+        description: 成功导入数量
+        type: integer
+    type: object
   dto.ChangeLogResponse:
     properties:
       change_type:
@@ -3694,6 +3733,47 @@ paths:
       security:
       - BearerAuth: []
       summary: 获取可指派的执行人列表
+      tags:
+      - 用户管理
+  /users/batch-import:
+    post:
+      consumes:
+      - application/json
+      description: 管理员批量导入组织架构成员，默认密码password123，默认正常状态，默认普通用户角色
+      parameters:
+      - description: 用户列表
+        in: body
+        name: users
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/dto.BatchImportUserItem'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 导入结果
+          schema:
+            $ref: '#/definitions/dto.BatchImportUserResult'
+        "400":
+          description: 参数验证失败
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 未授权
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 导入失败
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 批量导入用户
       tags:
       - 用户管理
 securityDefinitions:

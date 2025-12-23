@@ -2473,6 +2473,69 @@ const docTemplate = `{
                 }
             }
         },
+        "/users/batch-import": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "管理员批量导入组织架构成员，默认密码password123，默认正常状态，默认普通用户角色",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户管理"
+                ],
+                "summary": "批量导入用户",
+                "parameters": [
+                    {
+                        "description": "用户列表",
+                        "name": "users",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.BatchImportUserItem"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "导入结果",
+                        "schema": {
+                            "$ref": "#/definitions/dto.BatchImportUserResult"
+                        }
+                    },
+                    "400": {
+                        "description": "参数验证失败",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "导入失败",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/users/{id}": {
             "get": {
                 "security": [
@@ -2962,6 +3025,61 @@ const docTemplate = `{
                 "reason": {
                     "description": "失败原因",
                     "type": "string"
+                }
+            }
+        },
+        "dto.BatchImportUserFailedItem": {
+            "type": "object",
+            "properties": {
+                "mobile": {
+                    "description": "手机号",
+                    "type": "string"
+                },
+                "reason": {
+                    "description": "失败原因",
+                    "type": "string"
+                },
+                "username": {
+                    "description": "用户名",
+                    "type": "string"
+                }
+            }
+        },
+        "dto.BatchImportUserItem": {
+            "type": "object",
+            "required": [
+                "mobile",
+                "username"
+            ],
+            "properties": {
+                "mobile": {
+                    "description": "手机号（必填，作为登录账号，11位中国手机号）",
+                    "type": "string"
+                },
+                "username": {
+                    "description": "用户名/真实姓名（必填，支持中文，最多50个字符）",
+                    "type": "string",
+                    "maxLength": 50
+                }
+            }
+        },
+        "dto.BatchImportUserResult": {
+            "type": "object",
+            "properties": {
+                "failed_count": {
+                    "description": "失败数量",
+                    "type": "integer"
+                },
+                "failed_items": {
+                    "description": "失败详情",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.BatchImportUserFailedItem"
+                    }
+                },
+                "success_count": {
+                    "description": "成功导入数量",
+                    "type": "integer"
                 }
             }
         },

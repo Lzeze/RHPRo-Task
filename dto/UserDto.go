@@ -87,3 +87,31 @@ type PermissionResponse struct {
 	// 权限描述
 	Description string `json:"description"`
 }
+
+// BatchImportUserItem 批量导入用户项
+type BatchImportUserItem struct {
+	// 用户名/真实姓名（必填，支持中文，最多50个字符）
+	Username string `json:"username" binding:"required,max=50"`
+	// 手机号（必填，作为登录账号，11位中国手机号）
+	Mobile string `json:"mobile" binding:"required,mobile"`
+}
+
+// BatchImportUserResult 批量导入用户结果
+type BatchImportUserResult struct {
+	// 成功导入数量
+	SuccessCount int `json:"success_count"`
+	// 失败数量
+	FailedCount int `json:"failed_count"`
+	// 失败详情
+	FailedItems []BatchImportUserFailedItem `json:"failed_items,omitempty"`
+}
+
+// BatchImportUserFailedItem 导入失败项
+type BatchImportUserFailedItem struct {
+	// 用户名
+	Username string `json:"username"`
+	// 手机号
+	Mobile string `json:"mobile"`
+	// 失败原因
+	Reason string `json:"reason"`
+}

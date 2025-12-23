@@ -13,6 +13,13 @@ type Config struct {
 	JWT      JWTConfig
 	Task     TaskConfig
 	Wechat   WechatConfig
+	User     UserConfig
+}
+
+// UserConfig 用户相关配置
+type UserConfig struct {
+	// 批量导入用户默认密码
+	DefaultPassword string
 }
 
 // WechatConfig 微信登录配置
@@ -110,6 +117,9 @@ func loadConfigFromEnv() *Config {
 			MpAppSecret:   getEnv("WECHAT_MP_SECRET", ""),
 			H5AppID:       getEnv("WECHAT_H5_APPID", ""),
 			H5AppSecret:   getEnv("WECHAT_H5_SECRET", ""),
+		},
+		User: UserConfig{
+			DefaultPassword: getEnv("USER_DEFAULT_PASSWORD", "password123"),
 		},
 	}
 }
