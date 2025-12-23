@@ -272,18 +272,18 @@ func (ctrl *UserController) DeleteUser(c *gin.Context) {
 	utils.SuccessWithMessage(c, "用户删除成功", nil)
 }
 
-// DisableUser 禁用用户
-// @Summary 禁用用户
-// @Description 将用户状态设置为禁用
+// DisableUser 切换用户状态
+// @Summary 切换用户状态（禁用/启用）
+// @Description 如果用户已禁用则启用，如果用户是正常或待审核状态则禁用
 // @Tags 用户管理
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Param id path int true "用户ID"
-// @Success 200 {object} map[string]interface{} "禁用成功"
+// @Success 200 {object} map[string]interface{} "状态切换成功"
 // @Failure 400 {object} map[string]interface{} "无效的用户ID"
 // @Failure 401 {object} map[string]interface{} "未授权"
-// @Failure 500 {object} map[string]interface{} "禁用失败"
+// @Failure 500 {object} map[string]interface{} "操作失败"
 // @Router /users/{id}/disable [post]
 func (ctrl *UserController) DisableUser(c *gin.Context) {
 	idStr := c.Param("id")
@@ -298,7 +298,7 @@ func (ctrl *UserController) DisableUser(c *gin.Context) {
 		return
 	}
 
-	utils.SuccessWithMessage(c, "用户已禁用", nil)
+	utils.SuccessWithMessage(c, "用户状态已切换", nil)
 }
 
 // BatchImportUsers 批量导入用户

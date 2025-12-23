@@ -426,19 +426,24 @@ func (s *UserService) DeleteUser(id uint) error {
 	return database.DB.Delete(&user).Error
 }
 
-// DisableUser 禁用用户
+// DisableUser 切换用户状态（禁用/启用）
+// 如果用户已禁用则启用，如果用户是正常或待审核状态则禁用
 func (s *UserService) DisableUser(id uint) error {
 	var user models.User
 	if err := database.DB.First(&user, id).Error; err != nil {
 		return errors.New("用户不存在")
 	}
 
+	var newStatus int
 	if user.Status == models.UserStatusDisabled {
-		return errors.New("用户已是禁用状态")
+		// 已禁用 -> 启用
+		newStatus = models.UserStatusActive
+	} else {
+		// 正常或待审核 -> 禁用
+		newStatus = models.UserStatusDisabled
 	}
 
-	user.Status = models.UserStatusDisabled
-	return database.DB.Save(&user).Error
+	return database.DB.Model(&user).Update("status", newStatus).Error
 }
 
 // BatchImportUsers 批量导入用户

@@ -206,6 +206,8 @@ type TaskResponse struct {
 	CreatorID uint `json:"creator_id"`
 	// 执行人用户ID
 	ExecutorID uint `json:"executor_id"`
+	// 执行人用户名
+	ExecutorUsername string `json:"executor_username,omitempty"`
 	// 所属部门ID
 	DepartmentID uint `json:"department_id"`
 	// 父任务ID

@@ -1080,6 +1080,11 @@ func (s *TaskService) toTaskResponse(task *models.Task) dto.TaskResponse {
 	// 处理指针字段
 	if task.ExecutorID != nil {
 		response.ExecutorID = *task.ExecutorID
+		// 查询执行人用户名
+		var executor models.User
+		if err := database.DB.Select("username").First(&executor, *task.ExecutorID).Error; err == nil {
+			response.ExecutorUsername = executor.Username
+		}
 	}
 	if task.DepartmentID != nil {
 		response.DepartmentID = *task.DepartmentID
