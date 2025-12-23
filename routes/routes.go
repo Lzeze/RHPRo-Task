@@ -116,6 +116,9 @@ func SetupRoutes() *gin.Engine {
 		// 设置默认部门（必须放在 /:id 之前）
 		deptRoutes.PUT("/default", deptController.SetDefaultDepartment)
 
+		// 批量导入部门（必须放在 /:id 之前，需要管理员权限）
+		deptRoutes.POST("/batch-import", middlewares.PermissionMiddleware("permission:manage"), deptController.BatchImportDepartments)
+
 		//创建部门
 		deptRoutes.POST("", deptController.CreateDepartment)
 		//更新部门

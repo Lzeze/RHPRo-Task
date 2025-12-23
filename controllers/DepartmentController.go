@@ -319,3 +319,34 @@ func (ctrl *DepartmentController) GetUserDepartments(c *gin.Context) {
 
 	utils.SuccessWithMessage(c, "获取成功", departments)
 }
+
+// BatchImportDepartments 批量导入部门
+// @Summary 批量导入部门
+// @Description 批量导入组织架构，支持父子关系依赖。parent_name为-1表示顶级部门，为字符串表示上级部门名称
+// @Tags 部门管理
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param departments body []dto.BatchImportDepartmentItem true "部门列表"
+// @Success 200 {object} dto.BatchImportDepartmentResult "导入结果"
+// @Router /departments/batch-import [post]
+func (ctrl *DepartmentController) BatchImportDepartments(c *gin.Context) {
+	var items []dto.BatchImportDepartmentItem
+	if err := c.ShouldBindJSON(&items); err != nil {
+		utils.BadRequest(c, err.Error())
+		return
+	}
+
+	if len(items) == 0 {
+		utils.BadRequest(c, "部门列表不能为空")
+		return
+	}
+
+	result, err := ctrl.deptService.BatchImportDepartments(items)
+	if err != nil {
+		utils.Error(c, 500, err.Error())
+		return
+	}
+
+	utils.SuccessWithMessage(c, "批量导入完成", result)
+}

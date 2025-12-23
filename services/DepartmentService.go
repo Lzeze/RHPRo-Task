@@ -372,3 +372,109 @@ func (s *DepartmentService) GetUserDepartments(userID uint) ([]dto.UserDepartmen
 
 	return result, nil
 }
+
+// BatchImportDepartments 批量导入部门
+// 按顺序处理，支持父子关系依赖
+func (s *DepartmentService) BatchImportDepartments(items []dto.BatchImportDepartmentItem) (*dto.BatchImportDepartmentResult, error) {
+	result := &dto.BatchImportDepartmentResult{
+		SuccessCount: 0,
+		FailedCount:  0,
+		FailedItems:  []dto.BatchImportFailedItem{},
+	}
+
+	// 用于存储本次导入中已创建的部门名称到ID的映射
+	nameToID := make(map[string]uint)
+
+	// 先加载已存在的部门到映射中
+	var existingDepts []models.Department
+	if err := database.DB.Find(&existingDepts).Error; err != nil {
+		return nil, errors.New("获取现有部门列表失败")
+	}
+	for _, dept := range existingDepts {
+		nameToID[dept.Name] = dept.ID
+	}
+
+	// 按顺序处理每个部门
+	for _, item := range items {
+		// 检查部门名称是否已存在
+		if _, exists := nameToID[item.Name]; exists {
+			result.FailedCount++
+			result.FailedItems = append(result.FailedItems, dto.BatchImportFailedItem{
+				Name:   item.Name,
+				Reason: "部门名称已存在",
+			})
+			continue
+		}
+
+		// 解析上级部门
+		var parentID *uint
+		switch v := item.ParentName.(type) {
+		case float64:
+			// JSON 数字类型，-1 表示顶级部门
+			if int(v) != -1 {
+				result.FailedCount++
+				result.FailedItems = append(result.FailedItems, dto.BatchImportFailedItem{
+					Name:   item.Name,
+					Reason: "上级部门参数无效，数字类型只支持-1表示顶级部门",
+				})
+				continue
+			}
+			// parentID 保持 nil，表示顶级部门
+		case int:
+			if v != -1 {
+				result.FailedCount++
+				result.FailedItems = append(result.FailedItems, dto.BatchImportFailedItem{
+					Name:   item.Name,
+					Reason: "上级部门参数无效，数字类型只支持-1表示顶级部门",
+				})
+				continue
+			}
+		case string:
+			// 字符串类型，查找上级部门
+			if v == "-1" {
+				// 字符串 "-1" 也表示顶级部门
+				// parentID 保持 nil
+			} else {
+				pid, exists := nameToID[v]
+				if !exists {
+					result.FailedCount++
+					result.FailedItems = append(result.FailedItems, dto.BatchImportFailedItem{
+						Name:   item.Name,
+						Reason: "上级部门 \"" + v + "\" 不存在",
+					})
+					continue
+				}
+				parentID = &pid
+			}
+		default:
+			result.FailedCount++
+			result.FailedItems = append(result.FailedItems, dto.BatchImportFailedItem{
+				Name:   item.Name,
+				Reason: "上级部门参数类型无效",
+			})
+			continue
+		}
+
+		// 创建部门
+		dept := &models.Department{
+			Name:     item.Name,
+			ParentID: parentID,
+			Status:   1, // 默认正常状态
+		}
+
+		if err := database.DB.Create(dept).Error; err != nil {
+			result.FailedCount++
+			result.FailedItems = append(result.FailedItems, dto.BatchImportFailedItem{
+				Name:   item.Name,
+				Reason: "创建失败: " + err.Error(),
+			})
+			continue
+		}
+
+		// 添加到映射中，供后续部门引用
+		nameToID[item.Name] = dept.ID
+		result.SuccessCount++
+	}
+
+	return result, nil
+}

@@ -104,3 +104,35 @@ type UserDepartmentResponse struct {
 	// 是否为默认部门
 	IsDefault bool `json:"is_default"`
 }
+
+// BatchImportDepartmentItem 批量导入部门项
+type BatchImportDepartmentItem struct {
+	// 部门名称（必填，支持中文，最多100个字符）
+	Name string `json:"name" binding:"required,max=100"`
+	// 上级部门名称（-1表示顶级部门，其他为上级部门名称）
+	ParentName interface{} `json:"parent_name" binding:"required"`
+}
+
+// BatchImportDepartmentRequest 批量导入部门请求
+type BatchImportDepartmentRequest struct {
+	// 部门列表
+	Departments []BatchImportDepartmentItem `json:"departments" binding:"required,min=1,dive"`
+}
+
+// BatchImportDepartmentResult 批量导入结果
+type BatchImportDepartmentResult struct {
+	// 成功导入数量
+	SuccessCount int `json:"success_count"`
+	// 失败数量
+	FailedCount int `json:"failed_count"`
+	// 失败详情
+	FailedItems []BatchImportFailedItem `json:"failed_items,omitempty"`
+}
+
+// BatchImportFailedItem 导入失败项
+type BatchImportFailedItem struct {
+	// 部门名称
+	Name string `json:"name"`
+	// 失败原因
+	Reason string `json:"reason"`
+}

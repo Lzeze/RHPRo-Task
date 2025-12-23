@@ -339,6 +339,48 @@
                 }
             }
         },
+        "/departments/batch-import": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "批量导入组织架构，支持父子关系依赖。parent_name为-1表示顶级部门，为字符串表示上级部门名称",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "部门管理"
+                ],
+                "summary": "批量导入部门",
+                "parameters": [
+                    {
+                        "description": "部门列表",
+                        "name": "departments",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.BatchImportDepartmentItem"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "导入结果",
+                        "schema": {
+                            "$ref": "#/definitions/dto.BatchImportDepartmentResult"
+                        }
+                    }
+                }
+            }
+        },
         "/departments/default": {
             "put": {
                 "security": [
@@ -2863,6 +2905,56 @@
                 },
                 "username": {
                     "description": "用户真实姓名",
+                    "type": "string"
+                }
+            }
+        },
+        "dto.BatchImportDepartmentItem": {
+            "type": "object",
+            "required": [
+                "name",
+                "parent_name"
+            ],
+            "properties": {
+                "name": {
+                    "description": "部门名称（必填，支持中文，最多100个字符）",
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "parent_name": {
+                    "description": "上级部门名称（-1表示顶级部门，其他为上级部门名称）"
+                }
+            }
+        },
+        "dto.BatchImportDepartmentResult": {
+            "type": "object",
+            "properties": {
+                "failed_count": {
+                    "description": "失败数量",
+                    "type": "integer"
+                },
+                "failed_items": {
+                    "description": "失败详情",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.BatchImportFailedItem"
+                    }
+                },
+                "success_count": {
+                    "description": "成功导入数量",
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.BatchImportFailedItem": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "description": "部门名称",
+                    "type": "string"
+                },
+                "reason": {
+                    "description": "失败原因",
                     "type": "string"
                 }
             }

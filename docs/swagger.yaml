@@ -51,6 +51,41 @@ definitions:
         description: 用户真实姓名
         type: string
     type: object
+  dto.BatchImportDepartmentItem:
+    properties:
+      name:
+        description: 部门名称（必填，支持中文，最多100个字符）
+        maxLength: 100
+        type: string
+      parent_name:
+        description: 上级部门名称（-1表示顶级部门，其他为上级部门名称）
+    required:
+    - name
+    - parent_name
+    type: object
+  dto.BatchImportDepartmentResult:
+    properties:
+      failed_count:
+        description: 失败数量
+        type: integer
+      failed_items:
+        description: 失败详情
+        items:
+          $ref: '#/definitions/dto.BatchImportFailedItem'
+        type: array
+      success_count:
+        description: 成功导入数量
+        type: integer
+    type: object
+  dto.BatchImportFailedItem:
+    properties:
+      name:
+        description: 部门名称
+        type: string
+      reason:
+        description: 失败原因
+        type: string
+    type: object
   dto.ChangeLogResponse:
     properties:
       change_type:
@@ -2205,6 +2240,32 @@ paths:
       security:
       - BearerAuth: []
       summary: 分配人员
+      tags:
+      - 部门管理
+  /departments/batch-import:
+    post:
+      consumes:
+      - application/json
+      description: 批量导入组织架构，支持父子关系依赖。parent_name为-1表示顶级部门，为字符串表示上级部门名称
+      parameters:
+      - description: 部门列表
+        in: body
+        name: departments
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/dto.BatchImportDepartmentItem'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 导入结果
+          schema:
+            $ref: '#/definitions/dto.BatchImportDepartmentResult'
+      security:
+      - BearerAuth: []
+      summary: 批量导入部门
       tags:
       - 部门管理
   /departments/default:
