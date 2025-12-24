@@ -68,6 +68,10 @@ type GoalItemResponse struct {
 	Priority int `json:"priority"`
 	// 目标状态（pending=进行中, completed=已完成）
 	Status string `json:"status"`
+	// 开始时间（RFC3339 格式）
+	StartDate *ResponseTime `json:"start_date,omitempty"`
+	// 结束时间（RFC3339 格式）
+	EndDate *ResponseTime `json:"end_date,omitempty"`
 }
 
 // ========== 审核历史相关 ==========

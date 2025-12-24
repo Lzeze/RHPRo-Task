@@ -25,6 +25,10 @@ type RequirementGoal struct {
 	Status string `gorm:"size:50;default:'pending'" json:"status"`
 	// 排序序号
 	SortOrder int `gorm:"default:0" json:"sort_order"`
+	// 开始时间
+	StartDate *time.Time `json:"start_date"`
+	// 结束时间
+	EndDate *time.Time `json:"end_date"`
 }
 
 // TableName 指定表名

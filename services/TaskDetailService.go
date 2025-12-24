@@ -66,6 +66,8 @@ func (s *TaskDetailService) GetTaskExecutionPlans(taskID uint) ([]dto.ExecutionP
 				SuccessCriteria: goal.SuccessCriteria,
 				Priority:        goal.Priority,
 				Status:          goal.Status,
+				StartDate:       dto.PtrToResponseTime(goal.StartDate),
+				EndDate:         dto.PtrToResponseTime(goal.EndDate),
 			}
 		}
 
@@ -504,6 +506,8 @@ func (s *TaskDetailService) GetTaskDetailEnhanced(taskID uint, userID uint) (*dt
 				SuccessCriteria: goal.SuccessCriteria,
 				Priority:        goal.Priority,
 				Status:          goal.Status,
+				StartDate:       dto.PtrToResponseTime(goal.StartDate),
+				EndDate:         dto.PtrToResponseTime(goal.EndDate),
 			}
 		}
 

@@ -113,6 +113,8 @@ CREATE TABLE "public"."requirement_goals" (
 "sort_order" int4 DEFAULT 0,
 "created_at" timestamptz(6) DEFAULT CURRENT_TIMESTAMP,
 "updated_at" timestamptz(6) DEFAULT CURRENT_TIMESTAMP,
+"start_date" timestamp(6),
+"end_date" timestamp(6),
 PRIMARY KEY ("id"));
 
 -- public.requirement_solutions DDL
@@ -639,6 +641,8 @@ COMMENT ON COLUMN "public"."requirement_goals"."status" IS '目标状态：pendi
 COMMENT ON COLUMN "public"."requirement_goals"."sort_order" IS '排序顺序';
 COMMENT ON COLUMN "public"."requirement_goals"."created_at" IS '创建时间';
 COMMENT ON COLUMN "public"."requirement_goals"."updated_at" IS '更新时间';
+COMMENT ON COLUMN "public"."requirement_goals"."start_date" IS '目标开始时间';
+COMMENT ON COLUMN "public"."requirement_goals"."end_date" IS '目标结束时间';
 CREATE TRIGGER "update_requirement_goals_updated_at"
     BEFORE UPDATE
     ON "public"."requirement_goals"

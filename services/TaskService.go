@@ -1558,6 +1558,17 @@ func (s *TaskService) generateRandomString(length int) string {
 // - 2006-01-02T15:04:05 (ISO8601 without timezone)
 // - 2006-01-02 15:04:05 (标准格式)
 func (s *TaskService) parseDateTime(dateStr string) (*time.Time, error) {
+	return ParseDateTime(dateStr)
+}
+
+// ParseDateTime 解析日期时间字符串（公共函数，供其他服务调用）
+// 支持格式：
+// - 2006-01-02 (日期格式)
+// - 2006-01-02T15:04:05Z (RFC3339 UTC)
+// - 2006-01-02T15:04:05Z07:00 (RFC3339 with timezone)
+// - 2006-01-02T15:04:05 (ISO8601 without timezone)
+// - 2006-01-02 15:04:05 (标准格式)
+func ParseDateTime(dateStr string) (*time.Time, error) {
 	if dateStr == "" {
 		return nil, nil
 	}

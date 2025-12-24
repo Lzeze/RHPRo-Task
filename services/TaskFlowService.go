@@ -852,6 +852,28 @@ func (s *TaskFlowService) SubmitExecutionPlanWithGoals(taskID uint, userID uint,
 
 	// 创建目标记录（关联到执行计划）
 	for i, goalItem := range req.Goals {
+		// 解析开始时间
+		var startDate *time.Time
+		if goalItem.StartDate != "" {
+			parsed, err := ParseDateTime(goalItem.StartDate)
+			if err != nil {
+				tx.Rollback()
+				return fmt.Errorf("目标 %d 的开始时间格式错误: %v", i+1, err)
+			}
+			startDate = parsed
+		}
+
+		// 解析结束时间
+		var endDate *time.Time
+		if goalItem.EndDate != "" {
+			parsed, err := ParseDateTime(goalItem.EndDate)
+			if err != nil {
+				tx.Rollback()
+				return fmt.Errorf("目标 %d 的结束时间格式错误: %v", i+1, err)
+			}
+			endDate = parsed
+		}
+
 		goal := &models.RequirementGoal{
 			ExecutionPlanID: plan.ID, // 关联执行计划ID
 			GoalNo:          i + 1,
@@ -861,6 +883,8 @@ func (s *TaskFlowService) SubmitExecutionPlanWithGoals(taskID uint, userID uint,
 			Priority:        goalItem.Priority,
 			Status:          "pending",
 			SortOrder:       i + 1,
+			StartDate:       startDate,
+			EndDate:         endDate,
 		}
 		if err := tx.Create(goal).Error; err != nil {
 			tx.Rollback()

@@ -21,6 +21,10 @@ type GoalItem struct {
 	SuccessCriteria string `json:"success_criteria"`
 	// 优先级（1=低, 2=中, 3=高, 4=紧急）
 	Priority int `json:"priority"`
+	// 开始时间（格式：2006-01-02 或 RFC3339）
+	StartDate string `json:"start_date" binding:"required"`
+	// 结束时间（格式：2006-01-02 或 RFC3339）
+	EndDate string `json:"end_date" binding:"required"`
 }
 
 // SolutionItem 方案条目
