@@ -3401,6 +3401,8 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "description",
+                "end_date",
+                "start_date",
                 "title"
             ],
             "properties": {
@@ -3408,9 +3410,17 @@ const docTemplate = `{
                     "description": "目标描述（详细说明目标内容）",
                     "type": "string"
                 },
+                "end_date": {
+                    "description": "结束时间（格式：2006-01-02 或 RFC3339）",
+                    "type": "string"
+                },
                 "priority": {
                     "description": "优先级（1=低, 2=中, 3=高, 4=紧急）",
                     "type": "integer"
+                },
+                "start_date": {
+                    "description": "开始时间（格式：2006-01-02 或 RFC3339）",
+                    "type": "string"
                 },
                 "success_criteria": {
                     "description": "成功标准（如何判定目标已完成）",
@@ -3429,6 +3439,14 @@ const docTemplate = `{
                     "description": "目标描述",
                     "type": "string"
                 },
+                "end_date": {
+                    "description": "结束时间（RFC3339 格式）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ResponseTime"
+                        }
+                    ]
+                },
                 "goal_no": {
                     "description": "目标序号（第几个目标）",
                     "type": "integer"
@@ -3440,6 +3458,14 @@ const docTemplate = `{
                 "priority": {
                     "description": "目标优先级",
                     "type": "integer"
+                },
+                "start_date": {
+                    "description": "开始时间（RFC3339 格式）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ResponseTime"
+                        }
+                    ]
                 },
                 "status": {
                     "description": "目标状态（pending=进行中, completed=已完成）",
