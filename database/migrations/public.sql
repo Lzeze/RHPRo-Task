@@ -1,6 +1,6 @@
 SET session_replication_role = 'replica';
 -- public DDL
-CREATE SCHEMA "public";
+-- CREATE SCHEMA "public";
 COMMENT ON SCHEMA "public" IS 'standard public schema';
 ALTER SCHEMA "public" OWNER TO "pg_database_owner";
 
@@ -839,6 +839,29 @@ COMMENT ON COLUMN "public"."task_participants"."invited_at" IS '邀请时间';
 COMMENT ON COLUMN "public"."task_participants"."response_at" IS '响应时间';
 COMMENT ON COLUMN "public"."task_participants"."created_at" IS '创建时间';
 
+-- public.task_types Indexes
+COMMENT ON TABLE "public"."task_types" IS '任务类型表';
+CREATE UNIQUE INDEX "task_types_code_key" ON "public"."task_types" USING btree ("code" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST);
+COMMENT ON COLUMN "public"."task_types"."id" IS '主键ID';
+COMMENT ON COLUMN "public"."task_types"."code" IS '任务类型编码（requirement-需求任务, unit_task-最小单元任务）';
+COMMENT ON COLUMN "public"."task_types"."name" IS '任务类型名称';
+COMMENT ON COLUMN "public"."task_types"."description" IS '任务类型描述';
+COMMENT ON COLUMN "public"."task_types"."created_at" IS '创建时间';
+
+-- public.task_statuses Indexes
+COMMENT ON TABLE "public"."task_statuses" IS '任务状态表';
+CREATE UNIQUE INDEX "task_statuses_code_key" ON "public"."task_statuses" USING btree ("code" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST);
+ALTER TABLE "public"."task_statuses" ADD CONSTRAINT "task_statuses_task_type_code_fkey" FOREIGN KEY ("task_type_code") REFERENCES "public"."task_types" ("code")ON DELETE NO ACTION ON UPDATE NO ACTION;
+COMMENT ON COLUMN "public"."task_statuses"."id" IS '主键ID';
+COMMENT ON COLUMN "public"."task_statuses"."code" IS '状态编码（唯一标识）';
+COMMENT ON COLUMN "public"."task_statuses"."name" IS '状态名称';
+COMMENT ON COLUMN "public"."task_statuses"."task_type_code" IS '所属任务类型编码';
+COMMENT ON COLUMN "public"."task_statuses"."sort_order" IS '排序顺序';
+COMMENT ON COLUMN "public"."task_statuses"."description" IS '状态描述';
+COMMENT ON COLUMN "public"."task_statuses"."created_at" IS '创建时间';
+
+
+
 -- public.task_status_transitions Indexes
 COMMENT ON TABLE "public"."task_status_transitions" IS '任务状态转换规则表（状态机配置）';
 CREATE INDEX "idx_status_transitions_from_status" ON "public"."task_status_transitions" USING btree ("from_status_code" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST);
@@ -857,17 +880,6 @@ COMMENT ON COLUMN "public"."task_status_transitions"."is_allowed" IS '是否允�
 COMMENT ON COLUMN "public"."task_status_transitions"."description" IS '转换说明';
 COMMENT ON COLUMN "public"."task_status_transitions"."created_at" IS '创建时间';
 
--- public.task_statuses Indexes
-COMMENT ON TABLE "public"."task_statuses" IS '任务状态表';
-CREATE UNIQUE INDEX "task_statuses_code_key" ON "public"."task_statuses" USING btree ("code" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST);
-ALTER TABLE "public"."task_statuses" ADD CONSTRAINT "task_statuses_task_type_code_fkey" FOREIGN KEY ("task_type_code") REFERENCES "public"."task_types" ("code")ON DELETE NO ACTION ON UPDATE NO ACTION;
-COMMENT ON COLUMN "public"."task_statuses"."id" IS '主键ID';
-COMMENT ON COLUMN "public"."task_statuses"."code" IS '状态编码（唯一标识）';
-COMMENT ON COLUMN "public"."task_statuses"."name" IS '状态名称';
-COMMENT ON COLUMN "public"."task_statuses"."task_type_code" IS '所属任务类型编码';
-COMMENT ON COLUMN "public"."task_statuses"."sort_order" IS '排序顺序';
-COMMENT ON COLUMN "public"."task_statuses"."description" IS '状态描述';
-COMMENT ON COLUMN "public"."task_statuses"."created_at" IS '创建时间';
 
 -- public.task_tag_rel Indexes
 COMMENT ON TABLE "public"."task_tag_rel" IS '任务与标签关系表';
@@ -887,14 +899,6 @@ COMMENT ON COLUMN "public"."task_tags"."color" IS '标签颜色（用于前端�
 COMMENT ON COLUMN "public"."task_tags"."description" IS '标签描述';
 COMMENT ON COLUMN "public"."task_tags"."created_at" IS '创建时间';
 
--- public.task_types Indexes
-COMMENT ON TABLE "public"."task_types" IS '任务类型表';
-CREATE UNIQUE INDEX "task_types_code_key" ON "public"."task_types" USING btree ("code" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST);
-COMMENT ON COLUMN "public"."task_types"."id" IS '主键ID';
-COMMENT ON COLUMN "public"."task_types"."code" IS '任务类型编码（requirement-需求任务, unit_task-最小单元任务）';
-COMMENT ON COLUMN "public"."task_types"."name" IS '任务类型名称';
-COMMENT ON COLUMN "public"."task_types"."description" IS '任务类型描述';
-COMMENT ON COLUMN "public"."task_types"."created_at" IS '创建时间';
 
 -- public.tasks Indexes
 COMMENT ON TABLE "public"."tasks" IS '任务主表（统一管理所有类型任务及其层级关系）';
