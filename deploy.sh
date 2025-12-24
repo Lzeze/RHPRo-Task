@@ -92,10 +92,10 @@ echo -e "${GREEN}✅ 远程环境已准备${NC}"
 # 4. 上传文件
 echo -e "${YELLOW}📤 上传应用文件...${NC}"
 scp -q "$BINARY_PATH" "${USERNAME}@${SERVER_IP}:${REMOTE_PATH}/"
-if [ -f ".env.production" ]; then
-    scp -q ".env.production" "${USERNAME}@${SERVER_IP}:${REMOTE_PATH}/.env"
+if [ -f ".env.development" ]; then
+    scp -q ".env.development" "${USERNAME}@${SERVER_IP}:${REMOTE_PATH}/.env"
 else
-    echo -e "${YELLOW}⚠️  警告：未找到 .env.production 文件，跳过上传${NC}"
+    echo -e "${YELLOW}⚠️  警告：未找到 .env.development 文件，跳过上传${NC}"
 fi
 
 echo -e "${GREEN}✅ 文件上传完成${NC}"

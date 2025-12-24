@@ -15,7 +15,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 ADD ./bin/rhppro-task .
-ADD .env .
+ADD .env.production .env
 
 # 创建日志目录
 RUN mkdir -p /app/logs
