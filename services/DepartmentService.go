@@ -48,7 +48,13 @@ func (s *DepartmentService) UpdateDepartment(id uint, req *dto.DepartmentRequest
 	updates := map[string]interface{}{
 		"name":        req.Name,
 		"description": req.Description,
-		"parent_id":   req.ParentID, // 直接使用指针，nil 会被正确处理为 NULL
+	}
+
+	// 处理 parent_id：nil 或 0 都表示顶级部门，设置为 NULL
+	if req.ParentID == nil || *req.ParentID == 0 {
+		updates["parent_id"] = nil
+	} else {
+		updates["parent_id"] = *req.ParentID
 	}
 
 	// 只有状态有值时才更新
