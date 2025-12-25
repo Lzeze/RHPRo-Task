@@ -447,9 +447,9 @@ func (s *TaskDetailService) GetTaskTimeline(taskID uint) ([]dto.TimelineEventRes
 		})
 	}
 
-	// 按时间排序（从旧到新）
+	// 按时间排序（从新到旧）
 	sort.Slice(events, func(i, j int) bool {
-		return events[i].CreatedAt.Time.Before(events[j].CreatedAt.Time)
+		return events[i].CreatedAt.Time.After(events[j].CreatedAt.Time)
 	})
 
 	return events, nil
