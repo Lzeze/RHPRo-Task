@@ -210,6 +210,9 @@ definitions:
       parent_id:
         description: 父部门ID
         type: integer
+      sort_order:
+        description: 排序序号
+        type: integer
       status:
         description: 部门状态（1=正常, 2=禁用）
         type: integer
@@ -282,6 +285,35 @@ definitions:
       name:
         description: 部门名称
         type: string
+      sort_order:
+        description: 排序序号
+        type: integer
+    type: object
+  dto.DepartmentTreeResponse:
+    properties:
+      children:
+        description: 子部门列表
+        items:
+          $ref: '#/definitions/dto.DepartmentTreeResponse'
+        type: array
+      description:
+        description: 部门描述
+        type: string
+      id:
+        description: 部门ID
+        type: integer
+      name:
+        description: 部门名称
+        type: string
+      parent_id:
+        description: 父部门ID
+        type: integer
+      sort_order:
+        description: 排序序号
+        type: integer
+      status:
+        description: 部门状态
+        type: integer
     type: object
   dto.ExecutionPlanListItemResponse:
     properties:
@@ -819,6 +851,29 @@ definitions:
       version:
         description: 方案版本号（第几版）
         type: integer
+    type: object
+  dto.SortDepartmentItem:
+    properties:
+      department_id:
+        description: 部门ID
+        type: integer
+      sort_order:
+        description: 排序序号（数值越小越靠前）
+        minimum: 0
+        type: integer
+    required:
+    - department_id
+    type: object
+  dto.SortDepartmentsRequest:
+    properties:
+      items:
+        description: 部门排序列表（同一父级下的部门）
+        items:
+          $ref: '#/definitions/dto.SortDepartmentItem'
+        minItems: 1
+        type: array
+    required:
+    - items
     type: object
   dto.SubmitExecutionPlanRequest:
     properties:
@@ -1720,6 +1775,9 @@ definitions:
       parent_id:
         description: 父部门ID（可空）
         type: integer
+      sort_order:
+        description: 排序序号（同级部门内排序，数值越小越靠前）
+        type: integer
       status:
         description: 状态：1=正常，2=禁用
         type: integer
@@ -2407,6 +2465,75 @@ paths:
       security:
       - BearerAuth: []
       summary: 获取用户负责的部门列表
+      tags:
+      - 部门管理
+  /departments/sort:
+    post:
+      consumes:
+      - application/json
+      description: 对同一父级下的部门进行排序，支持顶级部门排序和子部门排序
+      parameters:
+      - description: 排序信息
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SortDepartmentsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 排序成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 参数错误
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 未授权
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 服务器错误
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 部门排序
+      tags:
+      - 部门管理
+  /departments/tree:
+    get:
+      consumes:
+      - application/json
+      description: 获取部门树形结构，按排序序号排序
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            items:
+              $ref: '#/definitions/dto.DepartmentTreeResponse'
+            type: array
+        "401":
+          description: 未授权
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 服务器错误
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 获取部门树结构
       tags:
       - 部门管理
   /profile:

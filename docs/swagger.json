@@ -452,6 +452,112 @@
                 }
             }
         },
+        "/departments/sort": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "对同一父级下的部门进行排序，支持顶级部门排序和子部门排序",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "部门管理"
+                ],
+                "summary": "部门排序",
+                "parameters": [
+                    {
+                        "description": "排序信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SortDepartmentsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "排序成功",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "服务器错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/departments/tree": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取部门树形结构，按排序序号排序",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "部门管理"
+                ],
+                "summary": "获取部门树结构",
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.DepartmentTreeResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "服务器错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/departments/{id}": {
             "get": {
                 "security": [
@@ -3386,6 +3492,10 @@
                     "description": "父部门ID",
                     "type": "integer"
                 },
+                "sort_order": {
+                    "description": "排序序号",
+                    "type": "integer"
+                },
                 "status": {
                     "description": "部门状态（1=正常, 2=禁用）",
                     "type": "integer"
@@ -3485,6 +3595,46 @@
                 "name": {
                     "description": "部门名称",
                     "type": "string"
+                },
+                "sort_order": {
+                    "description": "排序序号",
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.DepartmentTreeResponse": {
+            "type": "object",
+            "properties": {
+                "children": {
+                    "description": "子部门列表",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.DepartmentTreeResponse"
+                    }
+                },
+                "description": {
+                    "description": "部门描述",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "部门ID",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "部门名称",
+                    "type": "string"
+                },
+                "parent_id": {
+                    "description": "父部门ID",
+                    "type": "integer"
+                },
+                "sort_order": {
+                    "description": "排序序号",
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "部门状态",
+                    "type": "integer"
                 }
             }
         },
@@ -4251,6 +4401,39 @@
                 "version": {
                     "description": "方案版本号（第几版）",
                     "type": "integer"
+                }
+            }
+        },
+        "dto.SortDepartmentItem": {
+            "type": "object",
+            "required": [
+                "department_id"
+            ],
+            "properties": {
+                "department_id": {
+                    "description": "部门ID",
+                    "type": "integer"
+                },
+                "sort_order": {
+                    "description": "排序序号（数值越小越靠前）",
+                    "type": "integer",
+                    "minimum": 0
+                }
+            }
+        },
+        "dto.SortDepartmentsRequest": {
+            "type": "object",
+            "required": [
+                "items"
+            ],
+            "properties": {
+                "items": {
+                    "description": "部门排序列表（同一父级下的部门）",
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/dto.SortDepartmentItem"
+                    }
                 }
             }
         },
@@ -5565,6 +5748,10 @@
                 },
                 "parent_id": {
                     "description": "父部门ID（可空）",
+                    "type": "integer"
+                },
+                "sort_order": {
+                    "description": "排序序号（同级部门内排序，数值越小越靠前）",
                     "type": "integer"
                 },
                 "status": {
