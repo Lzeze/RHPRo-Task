@@ -350,3 +350,53 @@ func (ctrl *DepartmentController) BatchImportDepartments(c *gin.Context) {
 
 	utils.SuccessWithMessage(c, "批量导入完成", result)
 }
+
+// SortDepartments 部门排序
+// @Summary 部门排序
+// @Description 对同一父级下的部门进行排序，支持顶级部门排序和子部门排序
+// @Tags 部门管理
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body dto.SortDepartmentsRequest true "排序信息"
+// @Success 200 {object} map[string]interface{} "排序成功"
+// @Failure 400 {object} map[string]interface{} "参数错误"
+// @Failure 401 {object} map[string]interface{} "未授权"
+// @Failure 500 {object} map[string]interface{} "服务器错误"
+// @Router /departments/sort [post]
+func (ctrl *DepartmentController) SortDepartments(c *gin.Context) {
+	var req dto.SortDepartmentsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		validationErrors := utils.TranslateValidationErrors(err)
+		utils.ErrorWithData(c, 400, "参数验证失败", validationErrors)
+		return
+	}
+
+	if err := ctrl.deptService.SortDepartments(&req); err != nil {
+		utils.Error(c, 500, err.Error())
+		return
+	}
+
+	utils.SuccessWithMessage(c, "排序成功", nil)
+}
+
+// GetDepartmentTree 获取部门树结构
+// @Summary 获取部门树结构
+// @Description 获取部门树形结构，按排序序号排序
+// @Tags 部门管理
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {array} dto.DepartmentTreeResponse "获取成功"
+// @Failure 401 {object} map[string]interface{} "未授权"
+// @Failure 500 {object} map[string]interface{} "服务器错误"
+// @Router /departments/tree [get]
+func (ctrl *DepartmentController) GetDepartmentTree(c *gin.Context) {
+	tree, err := ctrl.deptService.GetDepartmentTree()
+	if err != nil {
+		utils.Error(c, 500, err.Error())
+		return
+	}
+
+	utils.Success(c, tree)
+}

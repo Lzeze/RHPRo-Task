@@ -50,6 +50,7 @@ CREATE TABLE "public"."departments" (
 "created_at" timestamptz(6),
 "updated_at" timestamptz(6),
 "deleted_at" timestamptz(6),
+"sort_order" int4 DEFAULT 0,
 PRIMARY KEY ("id"));
 
 -- public.execution_plans DDL
@@ -564,6 +565,7 @@ COMMENT ON COLUMN "public"."departments"."status" IS '状态：1-正常，0-禁�
 COMMENT ON COLUMN "public"."departments"."created_at" IS '创建时间';
 COMMENT ON COLUMN "public"."departments"."updated_at" IS '更新时间';
 COMMENT ON COLUMN "public"."departments"."deleted_at" IS '软删除时间';
+COMMENT ON COLUMN "public"."departments"."sort_order" IS '排序序号（同级部门内排序，数值越小越靠前）';
 CREATE TRIGGER "update_departments_updated_at"
     BEFORE UPDATE
     ON "public"."departments"

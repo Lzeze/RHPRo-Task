@@ -24,6 +24,8 @@ type DepartmentDetailResponse struct {
 	ParentID *uint `json:"parent_id"`
 	// 部门状态（1=正常, 2=禁用）
 	Status int `json:"status"`
+	// 排序序号
+	SortOrder int `json:"sort_order"`
 	// 部门负责人列表（去掉 IsPrimary 标识）
 	Leaders []DepartmentLeaderDetail `json:"leaders"`
 	// 部门成员列表
@@ -85,6 +87,40 @@ type DepartmentResponse struct {
 	ID uint `json:"id"`
 	// 部门名称
 	Name string `json:"name"`
+	// 排序序号
+	SortOrder int `json:"sort_order"`
+}
+
+// DepartmentTreeResponse 部门树响应（包含子部门）
+type DepartmentTreeResponse struct {
+	// 部门ID
+	ID uint `json:"id"`
+	// 部门名称
+	Name string `json:"name"`
+	// 部门描述
+	Description string `json:"description"`
+	// 父部门ID
+	ParentID *uint `json:"parent_id"`
+	// 部门状态
+	Status int `json:"status"`
+	// 排序序号
+	SortOrder int `json:"sort_order"`
+	// 子部门列表
+	Children []DepartmentTreeResponse `json:"children,omitempty"`
+}
+
+// SortDepartmentItem 部门排序项
+type SortDepartmentItem struct {
+	// 部门ID
+	DepartmentID uint `json:"department_id" binding:"required"`
+	// 排序序号（数值越小越靠前）
+	SortOrder int `json:"sort_order" binding:"min=0"`
+}
+
+// SortDepartmentsRequest 部门排序请求
+type SortDepartmentsRequest struct {
+	// 部门排序列表（同一父级下的部门）
+	Items []SortDepartmentItem `json:"items" binding:"required,min=1,dive"`
 }
 
 // SetDefaultDepartmentRequest 设置默认部门请求

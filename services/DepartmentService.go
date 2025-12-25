@@ -71,10 +71,10 @@ func (s *DepartmentService) DeleteDepartment(id uint) error {
 	return database.DB.Unscoped().Delete(&models.Department{}, id).Error
 }
 
-// GetDepartmentList 获取部门列表
+// GetDepartmentList 获取部门列表（按排序序号排序）
 func (s *DepartmentService) GetDepartmentList() ([]models.Department, error) {
 	var depts []models.Department
-	if err := database.DB.Find(&depts).Error; err != nil {
+	if err := database.DB.Order("sort_order ASC, id ASC").Find(&depts).Error; err != nil {
 		return nil, err
 	}
 	return depts, nil
@@ -108,6 +108,7 @@ func (s *DepartmentService) GetDepartmentDetail(id uint) (*dto.DepartmentDetailR
 		Description: dept.Description,
 		ParentID:    dept.ParentID,
 		Status:      dept.Status,
+		SortOrder:   dept.SortOrder,
 		Leaders:     []dto.DepartmentLeaderDetail{},
 		Members:     []dto.DepartmentMemberDetail{},
 	}
@@ -477,4 +478,110 @@ func (s *DepartmentService) BatchImportDepartments(items []dto.BatchImportDepart
 	}
 
 	return result, nil
+}
+
+// SortDepartments 部门排序（同一父级下的部门排序）
+func (s *DepartmentService) SortDepartments(req *dto.SortDepartmentsRequest) error {
+	if len(req.Items) == 0 {
+		return errors.New("排序列表不能为空")
+	}
+
+	// 获取第一个部门，确定父级ID
+	var firstDept models.Department
+	if err := database.DB.First(&firstDept, req.Items[0].DepartmentID).Error; err != nil {
+		return errors.New("部门不存在")
+	}
+	parentID := firstDept.ParentID
+
+	// 验证所有部门是否属于同一父级
+	deptIDs := make([]uint, len(req.Items))
+	for i, item := range req.Items {
+		deptIDs[i] = item.DepartmentID
+	}
+
+	var depts []models.Department
+	if err := database.DB.Where("id IN ?", deptIDs).Find(&depts).Error; err != nil {
+		return err
+	}
+
+	if len(depts) != len(req.Items) {
+		return errors.New("部分部门不存在")
+	}
+
+	// 检查是否都属于同一父级
+	for _, dept := range depts {
+		if (parentID == nil && dept.ParentID != nil) || (parentID != nil && dept.ParentID == nil) || (parentID != nil && dept.ParentID != nil && *parentID != *dept.ParentID) {
+			return errors.New("只能对同一父级下的部门进行排序")
+		}
+	}
+
+	// 批量更新排序
+	tx := database.DB.Begin()
+	for _, item := range req.Items {
+		if err := tx.Model(&models.Department{}).Where("id = ?", item.DepartmentID).Update("sort_order", item.SortOrder).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	return tx.Commit().Error
+}
+
+// GetDepartmentTree 获取部门树结构（按排序序号排序）
+func (s *DepartmentService) GetDepartmentTree() ([]dto.DepartmentTreeResponse, error) {
+	var depts []models.Department
+	if err := database.DB.Order("sort_order ASC, id ASC").Find(&depts).Error; err != nil {
+		return nil, err
+	}
+
+	// 构建部门映射
+	deptMap := make(map[uint]*dto.DepartmentTreeResponse)
+
+	// 第一遍：创建所有部门节点
+	for _, dept := range depts {
+		node := dto.DepartmentTreeResponse{
+			ID:          dept.ID,
+			Name:        dept.Name,
+			Description: dept.Description,
+			ParentID:    dept.ParentID,
+			Status:      dept.Status,
+			SortOrder:   dept.SortOrder,
+			Children:    []dto.DepartmentTreeResponse{},
+		}
+		deptMap[dept.ID] = &node
+	}
+
+	// 构建树结构
+	var roots []dto.DepartmentTreeResponse
+	for _, dept := range depts {
+		if dept.ParentID == nil {
+			roots = append(roots, *s.buildTreeNode(dept.ID, deptMap, depts))
+		}
+	}
+
+	return roots, nil
+}
+
+// buildTreeNode 递归构建树节点
+func (s *DepartmentService) buildTreeNode(deptID uint, deptMap map[uint]*dto.DepartmentTreeResponse, allDepts []models.Department) *dto.DepartmentTreeResponse {
+	node := deptMap[deptID]
+	result := &dto.DepartmentTreeResponse{
+		ID:          node.ID,
+		Name:        node.Name,
+		Description: node.Description,
+		ParentID:    node.ParentID,
+		Status:      node.Status,
+		SortOrder:   node.SortOrder,
+		Children:    []dto.DepartmentTreeResponse{},
+	}
+
+	// 查找所有子部门
+	for _, dept := range allDepts {
+		if dept.ParentID != nil && *dept.ParentID == deptID {
+			child := s.buildTreeNode(dept.ID, deptMap, allDepts)
+			result.Children = append(result.Children, *child)
+		}
+	}
+
+	return result
 }

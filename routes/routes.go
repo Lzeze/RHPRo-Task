@@ -137,6 +137,12 @@ func SetupRoutes() *gin.Engine {
 		// 批量导入部门（必须放在 /:id 之前，需要管理员权限）
 		deptRoutes.POST("/batch-import", middlewares.PermissionMiddleware("permission:manage"), deptController.BatchImportDepartments)
 
+		// 部门排序（必须放在 /:id 之前）
+		deptRoutes.POST("/sort", middlewares.PermissionMiddleware("permission:manage"), deptController.SortDepartments)
+
+		// 获取部门树结构（必须放在 /:id 之前）
+		deptRoutes.GET("/tree", deptController.GetDepartmentTree)
+
 		//创建部门
 		deptRoutes.POST("", deptController.CreateDepartment)
 		//更新部门
