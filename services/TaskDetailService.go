@@ -24,15 +24,16 @@ func (s *TaskDetailService) GetTaskSolutions(taskID uint) ([]dto.SolutionVersion
 	responses := make([]dto.SolutionVersionResponse, len(solutions))
 	for i, sol := range solutions {
 		responses[i] = dto.SolutionVersionResponse{
-			ID:          sol.ID,
-			Version:     sol.Version,
-			Content:     sol.Content,
-			MindmapURL:  sol.MindmapURL,
-			FileName:    sol.FileName,
-			Status:      sol.Status,
-			SubmittedBy: *sol.SubmittedBy,
-			SubmittedAt: dto.PtrToResponseTime(sol.SubmittedAt),
-			CreatedAt:   dto.ToResponseTime(sol.CreatedAt),
+			ID:              sol.ID,
+			Version:         sol.Version,
+			Content:         sol.Content,
+			MindmapURL:      sol.MindmapURL,
+			MindmapMarkdown: sol.MindmapMarkdown,
+			FileName:        sol.FileName,
+			Status:          sol.Status,
+			SubmittedBy:     *sol.SubmittedBy,
+			SubmittedAt:     dto.PtrToResponseTime(sol.SubmittedAt),
+			CreatedAt:       dto.ToResponseTime(sol.CreatedAt),
 		}
 	}
 
@@ -473,15 +474,16 @@ func (s *TaskDetailService) GetTaskDetailEnhanced(taskID uint, userID uint) (*dt
 		Order("version DESC").
 		First(&latestSolution).Error; err == nil {
 		response.CurrentSolution = &dto.SolutionVersionResponse{
-			ID:          latestSolution.ID,
-			Version:     latestSolution.Version,
-			Content:     latestSolution.Content,
-			MindmapURL:  latestSolution.MindmapURL,
-			FileName:    latestSolution.FileName,
-			Status:      latestSolution.Status,
-			SubmittedBy: *latestSolution.SubmittedBy,
-			SubmittedAt: dto.PtrToResponseTime(latestSolution.SubmittedAt),
-			CreatedAt:   dto.ToResponseTime(latestSolution.CreatedAt),
+			ID:              latestSolution.ID,
+			Version:         latestSolution.Version,
+			Content:         latestSolution.Content,
+			MindmapURL:      latestSolution.MindmapURL,
+			MindmapMarkdown: latestSolution.MindmapMarkdown,
+			FileName:        latestSolution.FileName,
+			Status:          latestSolution.Status,
+			SubmittedBy:     *latestSolution.SubmittedBy,
+			SubmittedAt:     dto.PtrToResponseTime(latestSolution.SubmittedAt),
+			CreatedAt:       dto.ToResponseTime(latestSolution.CreatedAt),
 		}
 	}
 

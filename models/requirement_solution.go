@@ -18,6 +18,8 @@ type RequirementSolution struct {
 	Content string `gorm:"type:text" json:"content"`
 	// 脑图文件 URL
 	MindmapURL string `gorm:"size:500" json:"mindmap_url"`
+	// 脑图 Markdown 文本
+	MindmapMarkdown string `gorm:"type:text" json:"mindmap_markdown"`
 	// 文件名
 	FileName string `gorm:"size:255" json:"file_name"`
 	// 文件大小（字节）

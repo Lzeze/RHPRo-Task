@@ -3937,6 +3937,10 @@ const docTemplate = `{
                     "description": "关联的文件名（可选）",
                     "type": "string"
                 },
+                "mindmap_markdown": {
+                    "description": "脑图 Markdown 文本（可选，用于存储脑图的原始文本）",
+                    "type": "string"
+                },
                 "mindmap_url": {
                     "description": "思维导图URL（可选，用于可视化展示方案）",
                     "type": "string"
@@ -4005,6 +4009,10 @@ const docTemplate = `{
                 "id": {
                     "description": "方案版本ID",
                     "type": "integer"
+                },
+                "mindmap_markdown": {
+                    "description": "脑图 Markdown 文本（可选，用于存储脑图的原始文本）",
+                    "type": "string"
                 },
                 "mindmap_url": {
                     "description": "思维导图URL（可选，用于展示方案的可视化）",

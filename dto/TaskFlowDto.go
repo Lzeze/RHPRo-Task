@@ -34,6 +34,8 @@ type SolutionItem struct {
 	Content string `json:"content" binding:"required"`
 	// 思维导图URL（可选，用于可视化展示方案）
 	MindmapURL string `json:"mindmap_url"`
+	// 脑图 Markdown 文本（可选，用于存储脑图的原始文本）
+	MindmapMarkdown string `json:"mindmap_markdown"`
 	// 关联的文件名（可选）
 	FileName string `json:"file_name"`
 }

@@ -12,6 +12,8 @@ type SolutionVersionResponse struct {
 	Content string `json:"content"`
 	// 思维导图URL（可选，用于展示方案的可视化）
 	MindmapURL string `json:"mindmap_url,omitempty"`
+	// 脑图 Markdown 文本（可选，用于存储脑图的原始文本）
+	MindmapMarkdown string `json:"mindmap_markdown,omitempty"`
 	// 关联的文件名（可选）
 	FileName string `json:"file_name,omitempty"`
 	// 方案状态（pending=待审核, approved=已批准, rejected=已拒绝）

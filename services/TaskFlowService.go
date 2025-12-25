@@ -197,15 +197,16 @@ func (s *TaskFlowService) SubmitSolution(taskID uint, userID uint, req *dto.Subm
 	// 创建方案记录
 	now := time.Now()
 	solution := &models.RequirementSolution{
-		Title:       req.Solution.Title,
-		TaskID:      taskID,
-		Version:     newVersion,
-		Content:     req.Solution.Content,
-		MindmapURL:  req.Solution.MindmapURL,
-		FileName:    req.Solution.FileName,
-		Status:      "pending",
-		SubmittedBy: &userID,
-		SubmittedAt: &now,
+		Title:           req.Solution.Title,
+		TaskID:          taskID,
+		Version:         newVersion,
+		Content:         req.Solution.Content,
+		MindmapURL:      req.Solution.MindmapURL,
+		MindmapMarkdown: req.Solution.MindmapMarkdown,
+		FileName:        req.Solution.FileName,
+		Status:          "pending",
+		SubmittedBy:     &userID,
+		SubmittedAt:     &now,
 	}
 	if err := tx.Create(solution).Error; err != nil {
 		tx.Rollback()

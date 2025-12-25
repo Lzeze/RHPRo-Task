@@ -134,6 +134,7 @@ CREATE TABLE "public"."requirement_solutions" (
 "created_at" timestamptz(6) DEFAULT CURRENT_TIMESTAMP,
 "updated_at" timestamptz(6) DEFAULT CURRENT_TIMESTAMP,
 "title" varchar(500) NOT NULL DEFAULT ''::character varying,
+"mindmap_markdown" text,
 PRIMARY KEY ("id"));
 
 -- public.review_records DDL
@@ -666,6 +667,7 @@ COMMENT ON COLUMN "public"."requirement_solutions"."submitted_at" IS '提交时�
 COMMENT ON COLUMN "public"."requirement_solutions"."created_at" IS '创建时间';
 COMMENT ON COLUMN "public"."requirement_solutions"."updated_at" IS '更新时间';
 COMMENT ON COLUMN "public"."requirement_solutions"."title" IS '方案标题（用于在列表中快速识别）';
+COMMENT ON COLUMN "public"."requirement_solutions"."mindmap_markdown" IS '脑图 Markdown 文本';
 CREATE TRIGGER "update_requirement_solutions_updated_at"
     BEFORE UPDATE
     ON "public"."requirement_solutions"
