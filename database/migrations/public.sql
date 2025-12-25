@@ -715,7 +715,7 @@ COMMENT ON COLUMN "public"."review_sessions"."target_type" IS '被审核对象�
 COMMENT ON COLUMN "public"."review_sessions"."target_id" IS '被审核对象的ID';
 COMMENT ON COLUMN "public"."review_sessions"."initiated_by" IS '发起审核的用户ID（通常是执行人）';
 COMMENT ON COLUMN "public"."review_sessions"."initiated_at" IS '发起审核时间';
-COMMENT ON COLUMN "public"."review_sessions"."status" IS '审核状态：pending-待审核, in_review-审核中, approved-已通过, rejected-已驳回, cancelled-已取消';
+COMMENT ON COLUMN "public"."review_sessions"."status" IS '审核状态：pending-待审核, in_review-审核中, completed完成';
 COMMENT ON COLUMN "public"."review_sessions"."review_mode" IS '审核模式：single-单人审核（创建人）, jury-陪审团审核（多人投票）';
 COMMENT ON COLUMN "public"."review_sessions"."required_approvals" IS '需要的通过票数（陪审团模式）';
 COMMENT ON COLUMN "public"."review_sessions"."final_decision" IS '最终决策：approved-通过, rejected-驳回';

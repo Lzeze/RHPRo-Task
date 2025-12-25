@@ -27,7 +27,7 @@ INSERT INTO roles (id, name, description, created_at, updated_at) VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- 重置序列
-SELECT setval('roles_id_seq', (SELECT MAX(id) FROM roles));
+SELECT setval('roles_id_seq', (SELECT MAX(id) FROM roles) + 1, false);
 
 -- 4. 初始化权限数据
 INSERT INTO permissions (id, name, description, created_at, updated_at) VALUES
@@ -59,7 +59,7 @@ INSERT INTO permissions (id, name, description, created_at, updated_at) VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- 重置序列
-SELECT setval('permissions_id_seq', (SELECT MAX(id) FROM permissions));
+SELECT setval('permissions_id_seq', (SELECT MAX(id) FROM permissions) + 1, false);
 
 -- 5. 角色-权限关联（管理员拥有所有权限）
 INSERT INTO role_permissions (role_id, permission_id)
@@ -102,7 +102,8 @@ ON CONFLICT (id) DO UPDATE SET
     updated_at = NOW();
 
 -- 重置序列
-SELECT setval('users_id_seq', (SELECT MAX(id) FROM users));
+SELECT setval('users_id_seq', COALESCE((SELECT MAX(id) FROM users), 0) + 1, false)
+
 
 -- 7. 管理员角色关联
 INSERT INTO user_roles (user_id, role_id) VALUES
@@ -116,7 +117,7 @@ INSERT INTO task_types (id, code, name, description, created_at) VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- 重置序列
-SELECT setval('task_types_id_seq', (SELECT MAX(id) FROM task_types));
+SELECT setval('task_types_id_seq', (SELECT MAX(id) FROM task_types) + 1, false);
 
 -- 9. 初始化任务状态（按 sort_order 顺序，ID 自增）
 INSERT INTO task_statuses (id, code, name, task_type_code, sort_order, description, created_at) VALUES
@@ -147,7 +148,7 @@ INSERT INTO task_statuses (id, code, name, task_type_code, sort_order, descripti
 ON CONFLICT (id) DO NOTHING;
 
 -- 重置序列
-SELECT setval('task_statuses_id_seq', (SELECT MAX(id) FROM task_statuses));
+SELECT setval('task_statuses_id_seq', (SELECT MAX(id) FROM task_statuses) + 1, false);
 
 -- 10. 初始化状态转换规则（按流程顺序，ID 自增）
 INSERT INTO task_status_transitions (id, task_type_code, from_status_code, to_status_code, required_role, requires_approval, is_allowed, description, created_at) VALUES
@@ -216,7 +217,7 @@ INSERT INTO task_status_transitions (id, task_type_code, from_status_code, to_st
 ON CONFLICT (id) DO NOTHING;
 
 -- 重置序列
-SELECT setval('task_status_transitions_id_seq', (SELECT MAX(id) FROM task_status_transitions));
+SELECT setval('task_status_transitions_id_seq', (SELECT MAX(id) FROM task_status_transitions) + 1, false);
 
 -- 11. 初始化任务标签
 INSERT INTO task_tags (id, name, color, description, created_at) VALUES
@@ -242,7 +243,7 @@ INSERT INTO task_tags (id, name, color, description, created_at) VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- 重置序列
-SELECT setval('task_tags_id_seq', (SELECT MAX(id) FROM task_tags));
+SELECT setval('task_tags_id_seq', (SELECT MAX(id) FROM task_tags) + 1, false);
 
 -- ============================================
 -- 初始化完成

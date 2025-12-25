@@ -473,6 +473,9 @@ func (s *UserService) BatchImportUsers(items []dto.BatchImportUserItem) (*dto.Ba
 		hasDefaultRole = true
 	}
 
+	// // 修复序列值：确保序列值大于表中最大ID
+	// database.DB.Exec("SELECT setval('users_id_seq', COALESCE((SELECT MAX(id) FROM users), 0) + 1, false)")
+
 	// 按顺序处理每个用户
 	for _, item := range items {
 		// 检查手机号是否已存在
@@ -487,7 +490,7 @@ func (s *UserService) BatchImportUsers(items []dto.BatchImportUserItem) (*dto.Ba
 			continue
 		}
 
-		// 构建插入字段（只插入导入的参数数值）
+		// 构建插入字段（只插入导入的参数数值，避免唯一约束字段插入空值）
 		insertData := map[string]interface{}{
 			"mobile":   item.Mobile,
 			"username": item.Username,
@@ -616,4 +619,65 @@ func (s *UserService) GetAssignableUsers(userID uint, req *dto.GetAssignableUser
 	}
 
 	return results, nil
+}
+
+// UpdateProfile 用户修改个人手机号
+func (s *UserService) UpdateProfile(userID uint, req *dto.UpdateProfileRequest) error {
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		return errors.New("用户不存在")
+	}
+
+	// 如果要修改手机号，检查是否已被占用
+	if req.Mobile != "" && req.Mobile != user.Mobile {
+		var existingUser models.User
+		if err := database.DB.Where("mobile = ? AND id != ?", req.Mobile, userID).First(&existingUser).Error; err == nil {
+			return errors.New("手机号已被其他用户使用")
+		}
+		// 只更新手机号字段
+		return database.DB.Model(&user).Update("mobile", req.Mobile).Error
+	}
+
+	return nil
+}
+
+// ChangePassword 用户修改密码（需验证旧密码）
+func (s *UserService) ChangePassword(userID uint, req *dto.ChangePasswordRequest) error {
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		return errors.New("用户不存在")
+	}
+
+	// 验证旧密码
+	if !user.CheckPassword(req.OldPassword) {
+		return errors.New("旧密码错误")
+	}
+
+	// 设置新密码
+	if err := user.SetPassword(req.NewPassword); err != nil {
+		return errors.New("设置新密码失败")
+	}
+
+	// 只更新密码字段
+	return database.DB.Model(&user).Update("password", user.Password).Error
+}
+
+// ResetPassword 重置用户密码为初始密码（仅超级管理员可操作）
+func (s *UserService) ResetPassword(targetUserID uint) error {
+	var user models.User
+	if err := database.DB.First(&user, targetUserID).Error; err != nil {
+		return errors.New("用户不存在")
+	}
+
+	// 获取默认密码
+	cfg := config.GetConfig()
+	defaultPassword := cfg.User.DefaultPassword
+
+	// 设置为默认密码
+	if err := user.SetPassword(defaultPassword); err != nil {
+		return errors.New("重置密码失败")
+	}
+
+	// 只更新密码字段
+	return database.DB.Model(&user).Update("password", user.Password).Error
 }

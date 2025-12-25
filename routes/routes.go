@@ -105,6 +105,19 @@ func SetupRoutes() *gin.Engine {
 		userRoutes.POST("/batch-import",
 			middlewares.PermissionMiddleware("permission:manage"),
 			userController.BatchImportUsers)
+
+		// 用户修改个人手机号（只能修改自己的）
+		userRoutes.PUT("/profile",
+			userController.UpdateProfile)
+
+		// 用户修改密码（需验证旧密码）
+		userRoutes.PUT("/password",
+			userController.ChangePassword)
+
+		// 重置用户密码（仅超级管理员）
+		userRoutes.POST("/reset-password",
+			middlewares.PermissionMiddleware("permission:manage"),
+			userController.ResetPassword)
 	}
 
 	// 部门管理路由

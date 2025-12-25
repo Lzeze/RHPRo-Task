@@ -115,3 +115,23 @@ type BatchImportUserFailedItem struct {
 	// 失败原因
 	Reason string `json:"reason"`
 }
+
+// UpdateProfileRequest 用户修改个人信息请求
+type UpdateProfileRequest struct {
+	// 新手机号（11位中国手机号，可选）
+	Mobile string `json:"mobile" binding:"omitempty,mobile"`
+}
+
+// ChangePasswordRequest 用户修改密码请求
+type ChangePasswordRequest struct {
+	// 旧密码（必填）
+	OldPassword string `json:"old_password" binding:"required"`
+	// 新密码（必填，至少6位）
+	NewPassword string `json:"new_password" binding:"required,min=6"`
+}
+
+// ResetPasswordRequest 重置用户密码请求
+type ResetPasswordRequest struct {
+	// 用户ID（必填）
+	UserID uint `json:"user_id" binding:"required"`
+}

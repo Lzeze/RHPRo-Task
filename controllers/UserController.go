@@ -366,3 +366,95 @@ func (ctrl *UserController) GetAssignableUsers(c *gin.Context) {
 
 	utils.Success(c, result)
 }
+
+// UpdateProfile 用户修改个人手机号
+// @Summary 用户修改个人手机号
+// @Description 用户修改自己的手机号，只能修改自己的信息
+// @Tags 用户管理
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body dto.UpdateProfileRequest true "修改信息"
+// @Success 200 {object} map[string]interface{} "修改成功"
+// @Failure 400 {object} map[string]interface{} "参数错误"
+// @Failure 401 {object} map[string]interface{} "未授权"
+// @Failure 500 {object} map[string]interface{} "服务器错误"
+// @Router /users/profile [put]
+func (ctrl *UserController) UpdateProfile(c *gin.Context) {
+	userID, _ := c.Get("userID")
+
+	var req dto.UpdateProfileRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		validationErrors := utils.TranslateValidationErrors(err)
+		utils.ErrorWithData(c, 400, "参数验证失败", validationErrors)
+		return
+	}
+
+	if err := ctrl.userService.UpdateProfile(userID.(uint), &req); err != nil {
+		utils.Error(c, 500, err.Error())
+		return
+	}
+
+	utils.SuccessWithMessage(c, "修改成功", nil)
+}
+
+// ChangePassword 用户修改密码
+// @Summary 用户修改密码
+// @Description 用户修改自己的密码，需要验证旧密码
+// @Tags 用户管理
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body dto.ChangePasswordRequest true "密码信息"
+// @Success 200 {object} map[string]interface{} "修改成功"
+// @Failure 400 {object} map[string]interface{} "参数错误或旧密码错误"
+// @Failure 401 {object} map[string]interface{} "未授权"
+// @Failure 500 {object} map[string]interface{} "服务器错误"
+// @Router /users/password [put]
+func (ctrl *UserController) ChangePassword(c *gin.Context) {
+	userID, _ := c.Get("userID")
+
+	var req dto.ChangePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		validationErrors := utils.TranslateValidationErrors(err)
+		utils.ErrorWithData(c, 400, "参数验证失败", validationErrors)
+		return
+	}
+
+	if err := ctrl.userService.ChangePassword(userID.(uint), &req); err != nil {
+		utils.BadRequest(c, err.Error())
+		return
+	}
+
+	utils.SuccessWithMessage(c, "密码修改成功", nil)
+}
+
+// ResetPassword 重置用户密码
+// @Summary 重置用户密码
+// @Description 超级管理员重置指定用户的密码为初始密码
+// @Tags 用户管理
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body dto.ResetPasswordRequest true "用户ID"
+// @Success 200 {object} map[string]interface{} "重置成功"
+// @Failure 400 {object} map[string]interface{} "参数错误"
+// @Failure 401 {object} map[string]interface{} "未授权"
+// @Failure 403 {object} map[string]interface{} "无权限"
+// @Failure 500 {object} map[string]interface{} "服务器错误"
+// @Router /users/reset-password [post]
+func (ctrl *UserController) ResetPassword(c *gin.Context) {
+	var req dto.ResetPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		validationErrors := utils.TranslateValidationErrors(err)
+		utils.ErrorWithData(c, 400, "参数验证失败", validationErrors)
+		return
+	}
+
+	if err := ctrl.userService.ResetPassword(req.UserID); err != nil {
+		utils.Error(c, 500, err.Error())
+		return
+	}
+
+	utils.SuccessWithMessage(c, "密码已重置为初始密码", nil)
+}
