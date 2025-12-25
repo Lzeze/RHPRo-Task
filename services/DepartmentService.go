@@ -44,12 +44,19 @@ func (s *DepartmentService) UpdateDepartment(id uint, req *dto.DepartmentRequest
 		return err
 	}
 
-	dept.Name = req.Name
-	dept.Description = req.Description
-	dept.ParentID = req.ParentID
-	dept.Status = req.Status
+	// 使用 map 更新，支持将 parent_id 设置为 NULL
+	updates := map[string]interface{}{
+		"name":        req.Name,
+		"description": req.Description,
+		"parent_id":   req.ParentID, // 直接使用指针，nil 会被正确处理为 NULL
+	}
 
-	return database.DB.Save(&dept).Error
+	// 只有状态有值时才更新
+	if req.Status != 0 {
+		updates["status"] = req.Status
+	}
+
+	return database.DB.Model(&dept).Updates(updates).Error
 }
 
 // DeleteDepartment 删除部门（硬删除）
