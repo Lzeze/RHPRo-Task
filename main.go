@@ -11,7 +11,7 @@ package main
 // @license.name Apache 2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 
-// @host 192.168.12.48:8888
+// @host 10.0.10.113:7777
 // @BasePath /api/v1
 
 // @securityDefinitions.apikey BearerAuth

@@ -2009,7 +2009,7 @@ definitions:
         description: 微信UnionID（跨应用唯一)
         type: string
     type: object
-host: 192.168.12.48:8888
+host: 10.0.10.113:7777
 info:
   contact:
     email: support@example.com
