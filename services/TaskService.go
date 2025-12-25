@@ -963,6 +963,13 @@ func (s *TaskService) TransitStatus(taskID uint, userID uint, req *dto.TaskStatu
 		return fmt.Errorf("状态转换不被允许: %v", err)
 	}
 
+	// 需求类任务状态转换的额外校验
+	if task.TaskTypeCode == "requirement" {
+		if err := s.validateRequirementStatusTransition(taskID, oldStatusCode, req.ToStatusCode); err != nil {
+			return err
+		}
+	}
+
 	// 更新任务状态
 	if err := database.DB.Model(&task).Update("status_code", req.ToStatusCode).Error; err != nil {
 		return err
@@ -1616,4 +1623,38 @@ func (s *TaskService) GetTaskContext(taskID uint) (*dto.TaskContext, error) {
 	}
 
 	return context, nil
+}
+
+// ========== 需求类任务状态转换校验 ==========
+
+// validateRequirementStatusTransition 校验需求类任务状态转换的前置条件
+// 规则：
+// 1. 待提交方案 -> 方案审核中：需要有思路方案记录且状态为通过(approved)
+// 2. 待提交执行计划 -> 执行计划审核中：需要有执行计划目标记录且状态为通过(approved)
+func (s *TaskService) validateRequirementStatusTransition(taskID uint, fromStatus, toStatus string) error {
+	// 校验：待提交方案 -> 方案审核中
+	if fromStatus == "req_pending_solution" && toStatus == "req_solution_review" {
+		// 检查是否有思路方案记录且状态为通过
+		var solution models.RequirementSolution
+		err := database.DB.Where("task_id = ? AND status = ?", taskID, "approved").
+			Order("version DESC").
+			First(&solution).Error
+		if err != nil {
+			return errors.New("状态转换失败：需要先有已通过的思路方案记录才能进入方案审核")
+		}
+	}
+
+	// 校验：待提交执行计划 -> 执行计划审核中
+	if fromStatus == "req_pending_plan" && toStatus == "req_plan_review" {
+		// 检查是否有执行计划记录且状态为通过
+		var plan models.ExecutionPlan
+		err := database.DB.Where("task_id = ? AND status = ?", taskID, "approved").
+			Order("version DESC").
+			First(&plan).Error
+		if err != nil {
+			return errors.New("状态转换失败：需要先有已通过的执行计划目标记录才能进入计划审核")
+		}
+	}
+
+	return nil
 }

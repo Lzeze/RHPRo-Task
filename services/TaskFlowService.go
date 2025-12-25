@@ -457,6 +457,38 @@ func (s *TaskFlowService) FinalizeReview(sessionID uint, userID uint, req *dto.F
 		return fmt.Errorf("记录最终审核意见失败: %v", err)
 	}
 
+	// 根据审核结果更新关联的思路方案/执行计划/目标的状态
+	targetStatus := "approved"
+	if !req.Approved {
+		targetStatus = "rejected"
+	}
+
+	switch session.ReviewType {
+	case "solution_review":
+		// 更新思路方案状态
+		if err := tx.Model(&models.RequirementSolution{}).
+			Where("id = ?", session.TargetID).
+			Update("status", targetStatus).Error; err != nil {
+			tx.Rollback()
+			return fmt.Errorf("更新思路方案状态失败: %v", err)
+		}
+	case "plan_review", "execution_plan_review":
+		// 更新执行计划状态
+		if err := tx.Model(&models.ExecutionPlan{}).
+			Where("id = ?", session.TargetID).
+			Update("status", targetStatus).Error; err != nil {
+			tx.Rollback()
+			return fmt.Errorf("更新执行计划状态失败: %v", err)
+		}
+		// 更新关联目标的状态
+		if err := tx.Model(&models.RequirementGoal{}).
+			Where("execution_plan_id = ?", session.TargetID).
+			Update("status", targetStatus).Error; err != nil {
+			tx.Rollback()
+			return fmt.Errorf("更新目标状态失败: %v", err)
+		}
+	}
+
 	// 根据审核结果更新任务状态
 	var newStatus string
 	if req.Approved {
