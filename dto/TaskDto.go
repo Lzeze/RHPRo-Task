@@ -210,6 +210,8 @@ type TaskResponse struct {
 	ExecutorUsername string `json:"executor_username,omitempty"`
 	// 所属部门ID
 	DepartmentID uint `json:"department_id"`
+	// 所属部门名称
+	DepartmentName string `json:"department_name,omitempty"`
 	// 父任务ID
 	ParentTaskID uint `json:"parent_task_id"`
 	// 根任务ID

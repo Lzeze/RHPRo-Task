@@ -28,6 +28,7 @@ func SetupRoutes() *gin.Engine {
 	taskController := controllers.NewTaskController()
 	detailController := controllers.NewTaskDetailController()
 	deptController := controllers.NewDepartmentController()
+	uploadController := controllers.NewUploadController()
 
 	// 公开路由
 	public := router.Group("/api/v1")
@@ -258,6 +259,25 @@ func SetupRoutes() *gin.Engine {
 		adminRoutes.GET("/roles", adminController.GetRoleList)
 		adminRoutes.GET("/permissions", adminController.GetPermissionList)
 	}
+
+	// 文件上传路由
+	uploadRoutes := router.Group("/api/v1/upload")
+	uploadRoutes.Use(middlewares.AuthMiddleware())
+	{
+		// 通用上传（根据文件类型自动选择驱动）
+		uploadRoutes.POST("", uploadController.Upload)
+		// 指定驱动上传
+		uploadRoutes.POST("/driver", uploadController.UploadWithDriver)
+		// 头像上传（本地存储）
+		uploadRoutes.POST("/avatar", uploadController.UploadAvatar)
+		// 媒体文件上传（MinIO存储）
+		uploadRoutes.POST("/media", uploadController.UploadMedia)
+		// 获取可用驱动列表
+		uploadRoutes.GET("/drivers", uploadController.GetDrivers)
+	}
+
+	// 静态文件服务（本地上传文件访问）
+	router.Static("/uploads", "./uploads")
 
 	return router
 }

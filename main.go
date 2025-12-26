@@ -23,6 +23,7 @@ import (
 	"RHPRo-Task/config"
 	"RHPRo-Task/database"
 	"RHPRo-Task/routes"
+	"RHPRo-Task/upload/drivers"
 	"RHPRo-Task/utils"
 	"fmt"
 
@@ -48,6 +49,12 @@ func main() {
 
 	// 自动迁移数据库
 	// database.AutoMigrate()
+
+	// 初始化上传模块
+	if err := drivers.InitDrivers(); err != nil {
+		utils.Logger.Error(fmt.Sprintf("Failed to init upload drivers: %v", err))
+		// 上传模块初始化失败不阻止服务启动，只记录警告
+	}
 
 	// 初始化路由
 	router := routes.SetupRoutes()

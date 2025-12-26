@@ -4,7 +4,7 @@ package models
 type TaskAttachment struct {
 	BaseModel
 	// 关联任务ID
-	TaskID uint `gorm:"index;not null" json:"task_id"`
+	TaskID uint `gorm:"index" json:"task_id"`
 	// 文件名
 	FileName string `gorm:"size:255;not null" json:"file_name"`
 	// 文件访问 URL
@@ -15,7 +15,7 @@ type TaskAttachment struct {
 	FileSize int64 `json:"file_size"`
 	// 上传用户ID
 	UploadedBy uint `json:"uploaded_by"`
-	// 附件类型：requirement/solution/plan/general
+	// 附件类型：requirement/solution/plan/general/task
 	AttachmentType string `gorm:"size:50" json:"attachment_type"`
 }
 
@@ -23,5 +23,3 @@ type TaskAttachment struct {
 func (TaskAttachment) TableName() string {
 	return "task_attachments"
 }
-
-

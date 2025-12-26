@@ -1013,6 +1013,9 @@ definitions:
       department_id:
         description: 所属部门ID
         type: integer
+      department_name:
+        description: 所属部门名称
+        type: string
       description:
         description: 任务描述
         type: string
@@ -1152,6 +1155,9 @@ definitions:
       department_id:
         description: 所属部门ID
         type: integer
+      department_name:
+        description: 所属部门名称
+        type: string
       description:
         description: 任务描述
         type: string
@@ -1338,6 +1344,9 @@ definitions:
       department_id:
         description: 所属部门ID
         type: integer
+      department_name:
+        description: 所属部门名称
+        type: string
       description:
         description: 任务描述
         type: string
@@ -3556,6 +3565,171 @@ paths:
       summary: 获取我的任务列表
       tags:
       - 任务管理
+  /upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 根据文件类型自动选择存储驱动上传文件
+      parameters:
+      - description: 上传的文件
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: 存储目录
+        in: formData
+        name: directory
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 上传成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 请求错误
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 服务器错误
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 上传文件
+      tags:
+      - 文件上传
+  /upload/avatar:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 上传用户头像，存储到本地
+      parameters:
+      - description: 头像文件
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 上传成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 请求错误
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 服务器错误
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 上传头像
+      tags:
+      - 文件上传
+  /upload/driver:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 使用指定的存储驱动上传文件
+      parameters:
+      - description: 上传的文件
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: 驱动类型(local/minio/aliyun)
+        in: formData
+        name: driver
+        required: true
+        type: string
+      - description: 存储目录
+        in: formData
+        name: directory
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 上传成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 请求错误
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 服务器错误
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 使用指定驱动上传文件
+      tags:
+      - 文件上传
+  /upload/drivers:
+    get:
+      description: 获取当前可用的存储驱动列表
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 驱动列表
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 获取存储驱动列表
+      tags:
+      - 文件上传
+  /upload/media:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 上传视频或音频文件，存储到MinIO
+      parameters:
+      - description: 媒体文件
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 上传成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 请求错误
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 服务器错误
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 上传媒体文件
+      tags:
+      - 文件上传
   /users:
     get:
       consumes:

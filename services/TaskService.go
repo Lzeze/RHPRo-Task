@@ -1128,6 +1128,14 @@ func (s *TaskService) toTaskResponsePtr(task *models.Task, UserID uint) *dto.Tas
 	resp := s.toTaskResponse(task)
 	resp.MyRole = strings.Join(s.determineUserRoles(*task, UserID), ",")
 
+	// 查询部门名称
+	if task.DepartmentID != nil {
+		var department models.Department
+		if err := database.DB.Select("name").First(&department, *task.DepartmentID).Error; err == nil {
+			resp.DepartmentName = department.Name
+		}
+	}
+
 	return &resp
 }
 
