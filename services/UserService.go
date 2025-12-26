@@ -7,6 +7,7 @@ import (
 	"RHPRo-Task/models"
 	"RHPRo-Task/utils"
 	"errors"
+	"fmt"
 	"math"
 
 	"gorm.io/gorm"
@@ -529,9 +530,12 @@ func (s *UserService) BatchImportUsers(items []dto.BatchImportUserItem) (*dto.Ba
 }
 
 // GetAssignableUsers 获取可指派的执行人列表
-// 包括：1.同部门的所有成员 2.其他部门的负责人（如果负责多部门则产生多条记录）
+// 包括：
+// 1. 当前用户归属部门的所有成员
+// 2. 当前用户负责的部门的所有成员（如果是负责人）
+// 3. 其他部门的负责人（每个负责的部门产生一条记录）
 func (s *UserService) GetAssignableUsers(userID uint, req *dto.GetAssignableUsersRequest) ([]dto.AssignableUserResponse, error) {
-	// 获取当前用户信息（用于确定所在部门）
+	// 获取当前用户信息
 	var currentUser models.User
 	if err := database.DB.First(&currentUser, userID).Error; err != nil {
 		return nil, errors.New("当前用户不存在")
@@ -542,42 +546,90 @@ func (s *UserService) GetAssignableUsers(userID uint, req *dto.GetAssignableUser
 	}
 
 	var results []dto.AssignableUserResponse
+	// 用于去重：记录已添加的 用户ID+部门ID 组合
+	addedCombinations := make(map[string]bool)
 
-	// ========== 1. 同部门的所有成员（不包括被禁用的用户） ==========
-	var sameDepUsers []models.User
+	// ========== 1. 当前用户归属部门的所有成员 ==========
+	var ownDepUsers []models.User
 	query := database.DB.Where("department_id = ? AND status != ?", *currentUser.DepartmentID, models.UserStatusDisabled)
-
-	// 如果提供了关键词，则进行模糊搜索
 	if req.Keyword != "" {
 		query = query.Where("username LIKE ? OR nickname LIKE ? OR email LIKE ?", "%"+req.Keyword+"%", "%"+req.Keyword+"%", "%"+req.Keyword+"%")
 	}
-
-	if err := query.Find(&sameDepUsers).Error; err != nil {
+	if err := query.Find(&ownDepUsers).Error; err != nil {
 		return nil, err
 	}
 
-	// 获取当前部门信息
-	var currentDep models.Department
-	if err := database.DB.First(&currentDep, *currentUser.DepartmentID).Error; err != nil {
+	// 获取当前用户归属部门信息
+	var ownDep models.Department
+	if err := database.DB.First(&ownDep, *currentUser.DepartmentID).Error; err != nil {
 		return nil, errors.New("当前部门不存在")
 	}
 
-	// 添加同部门成员到结果
-	for _, user := range sameDepUsers {
-		results = append(results, dto.AssignableUserResponse{
-			ID:                 user.ID,
-			Username:           user.Username,
-			Nickname:           user.Nickname,
-			Email:              user.Email,
-			DepartmentID:       currentDep.ID,
-			DepartmentName:     currentDep.Name,
-			IsDepartmentLeader: user.IsDepartmentLeader,
-		})
+	for _, user := range ownDepUsers {
+		key := fmt.Sprintf("%d-%d", user.ID, ownDep.ID)
+		if !addedCombinations[key] {
+			addedCombinations[key] = true
+			results = append(results, dto.AssignableUserResponse{
+				ID:                 user.ID,
+				Username:           user.Username,
+				Nickname:           user.Nickname,
+				Email:              user.Email,
+				DepartmentID:       ownDep.ID,
+				DepartmentName:     ownDep.Name,
+				IsDepartmentLeader: user.IsDepartmentLeader,
+			})
+		}
 	}
 
-	// ========== 2. 其他部门的负责人（使用GORM关联查询） ==========
-	// 获取所有部门领导者的部门ID及对应用户信息
-	// 一个用户可以负责多个部门，每个部门产生一条记录
+	// ========== 2. 当前用户负责的部门的所有成员（如果是负责人） ==========
+	if currentUser.IsDepartmentLeader {
+		// 查询当前用户负责的所有部门ID
+		var managedDepIDs []uint
+		database.DB.Table("department_leaders").
+			Where("user_id = ? AND deleted_at IS NULL", userID).
+			Pluck("department_id", &managedDepIDs)
+
+		for _, depID := range managedDepIDs {
+			// 跳过归属部门（已在上面处理）
+			if depID == *currentUser.DepartmentID {
+				continue
+			}
+
+			// 获取部门信息
+			var dep models.Department
+			if err := database.DB.First(&dep, depID).Error; err != nil {
+				continue
+			}
+
+			// 查询该部门的所有成员
+			var depUsers []models.User
+			query := database.DB.Where("department_id = ? AND status != ?", depID, models.UserStatusDisabled)
+			if req.Keyword != "" {
+				query = query.Where("username LIKE ? OR nickname LIKE ? OR email LIKE ?", "%"+req.Keyword+"%", "%"+req.Keyword+"%", "%"+req.Keyword+"%")
+			}
+			if err := query.Find(&depUsers).Error; err != nil {
+				continue
+			}
+
+			for _, user := range depUsers {
+				key := fmt.Sprintf("%d-%d", user.ID, dep.ID)
+				if !addedCombinations[key] {
+					addedCombinations[key] = true
+					results = append(results, dto.AssignableUserResponse{
+						ID:                 user.ID,
+						Username:           user.Username,
+						Nickname:           user.Nickname,
+						Email:              user.Email,
+						DepartmentID:       dep.ID,
+						DepartmentName:     dep.Name,
+						IsDepartmentLeader: user.IsDepartmentLeader,
+					})
+				}
+			}
+		}
+	}
+
+	// ========== 3. 其他部门的负责人 ==========
 	var leaders []struct {
 		UserID       uint
 		Nickname     string
@@ -587,17 +639,13 @@ func (s *UserService) GetAssignableUsers(userID uint, req *dto.GetAssignableUser
 		DepName      string
 	}
 
-	// 使用GORM的Joins进行关联查询
-	// 不使用 DISTINCT，因为同一用户负责多个部门时需要返回多条记录
 	query = database.DB.
 		Table("users u").
 		Select("u.id as user_id, u.nickname, u.username, u.email, d.id as department_id, d.name as dep_name").
-		Joins("INNER JOIN department_leaders dl ON u.id = dl.user_id").
-		Joins("INNER JOIN departments d ON dl.department_id = d.id").
-		Where("u.status != ? AND dl.department_id != ?",
-			models.UserStatusDisabled, *currentUser.DepartmentID)
+		Joins("INNER JOIN department_leaders dl ON u.id = dl.user_id AND dl.deleted_at IS NULL").
+		Joins("INNER JOIN departments d ON dl.department_id = d.id AND d.deleted_at IS NULL").
+		Where("u.status != ?", models.UserStatusDisabled)
 
-	// 如果提供了关键词，则进行模糊搜索
 	if req.Keyword != "" {
 		query = query.Where("u.username LIKE ? OR u.nickname LIKE ? OR u.email LIKE ?",
 			"%"+req.Keyword+"%", "%"+req.Keyword+"%", "%"+req.Keyword+"%")
@@ -607,17 +655,20 @@ func (s *UserService) GetAssignableUsers(userID uint, req *dto.GetAssignableUser
 		return nil, err
 	}
 
-	// 添加其他部门的负责人到结果
 	for _, leader := range leaders {
-		results = append(results, dto.AssignableUserResponse{
-			ID:                 leader.UserID,
-			Username:           leader.Username,
-			Nickname:           leader.Nickname,
-			Email:              leader.Email,
-			DepartmentID:       leader.DepartmentID,
-			DepartmentName:     leader.DepName,
-			IsDepartmentLeader: true,
-		})
+		key := fmt.Sprintf("%d-%d", leader.UserID, leader.DepartmentID)
+		if !addedCombinations[key] {
+			addedCombinations[key] = true
+			results = append(results, dto.AssignableUserResponse{
+				ID:                 leader.UserID,
+				Username:           leader.Username,
+				Nickname:           leader.Nickname,
+				Email:              leader.Email,
+				DepartmentID:       leader.DepartmentID,
+				DepartmentName:     leader.DepName,
+				IsDepartmentLeader: true,
+			})
+		}
 	}
 
 	return results, nil
