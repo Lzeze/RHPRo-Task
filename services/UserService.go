@@ -578,7 +578,6 @@ func (s *UserService) GetAssignableUsers(userID uint, req *dto.GetAssignableUser
 	// ========== 2. 其他部门的负责人（使用GORM关联查询） ==========
 	// 获取所有部门领导者的部门ID及对应用户信息
 	// 一个用户可以负责多个部门，每个部门产生一条记录
-	// 注意：负责人可能不归属于他负责的部门，所以需要排除的是"已在同部门成员中出现的用户+当前部门"组合
 	var leaders []struct {
 		UserID       uint
 		Nickname     string
@@ -588,26 +587,15 @@ func (s *UserService) GetAssignableUsers(userID uint, req *dto.GetAssignableUser
 		DepName      string
 	}
 
-	// 收集同部门成员的用户ID，用于去重
-	sameDepUserIDs := make([]uint, 0, len(sameDepUsers))
-	for _, user := range sameDepUsers {
-		sameDepUserIDs = append(sameDepUserIDs, user.ID)
-	}
-
 	// 使用GORM的Joins进行关联查询
-	// 排除条件：同部门成员 + 当前部门的组合（避免重复）
-	// 即：NOT (用户在同部门成员中 AND 负责的部门是当前部门)
+	// 不使用 DISTINCT，因为同一用户负责多个部门时需要返回多条记录
 	query = database.DB.
 		Table("users u").
 		Select("u.id as user_id, u.nickname, u.username, u.email, d.id as department_id, d.name as dep_name").
-		Joins("INNER JOIN department_leaders dl ON u.id = dl.user_id AND dl.deleted_at IS NULL").
-		Joins("INNER JOIN departments d ON dl.department_id = d.id AND d.deleted_at IS NULL").
-		Where("u.status != ?", models.UserStatusDisabled)
-
-	// 排除已在同部门成员中出现且负责当前部门的记录
-	if len(sameDepUserIDs) > 0 {
-		query = query.Where("NOT (u.id IN ? AND dl.department_id = ?)", sameDepUserIDs, *currentUser.DepartmentID)
-	}
+		Joins("INNER JOIN department_leaders dl ON u.id = dl.user_id").
+		Joins("INNER JOIN departments d ON dl.department_id = d.id").
+		Where("u.status != ? AND dl.department_id != ?",
+			models.UserStatusDisabled, *currentUser.DepartmentID)
 
 	// 如果提供了关键词，则进行模糊搜索
 	if req.Keyword != "" {
