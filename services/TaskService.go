@@ -571,16 +571,31 @@ func (s *TaskService) UpdateTask(taskID uint, userID uint, req *dto.UpdateTaskRe
 		actualEndDate = parsed
 	}
 
-	// 权限验证：只有创建者或执行人可以更新任务
+	// 权限验证：创建者、执行人或超级管理员可以更新任务
 	isCreator := task.CreatorID == userID
 	isExecutor := task.ExecutorID != nil && *task.ExecutorID == userID
-	if !isCreator && !isExecutor {
-		return errors.New("只有创建者或执行人可以更新任务")
+
+	// 检查是否为超级管理员
+	isAdmin := false
+	var user models.User
+	if err := database.DB.Preload("Roles").First(&user, userID).Error; err == nil {
+		for _, role := range user.Roles {
+			if role.Name == "admin" {
+				isAdmin = true
+				break
+			}
+		}
 	}
 
-	// 状态限制检查
-	if err := s.validateUpdatePermission(&task); err != nil {
-		return err
+	if !isCreator && !isExecutor && !isAdmin {
+		return errors.New("只有创建者、执行人可以更新任务")
+	}
+
+	// 状态限制检查（超管跳过状态限制）
+	if !isAdmin {
+		if err := s.validateUpdatePermission(&task); err != nil {
+			return err
+		}
 	}
 
 	// 验证层级字段不被修改
@@ -1119,6 +1134,10 @@ func (s *TaskService) toTaskResponse(task *models.Task) dto.TaskResponse {
 	if task.ActualEndDate != nil {
 		response.ActualEndDate = dto.ToResponseTime(*task.ActualEndDate)
 	}
+
+	// 处理创建时间和更新时间
+	response.CreatedAt = dto.ToResponseTime(task.CreatedAt)
+	response.UpdatedAt = dto.ToResponseTime(task.UpdatedAt)
 
 	return response
 }

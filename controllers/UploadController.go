@@ -149,7 +149,7 @@ func (c *UploadController) UploadAvatar(ctx *gin.Context) {
 	}
 
 	// 头像强制使用本地存储
-	info, err := c.uploader.UploadFileWithDriver(ctx.Request.Context(), upload.DriverLocal, file, opts)
+	info, err := c.uploader.UploadFileWithDriver(ctx.Request.Context(), upload.DriverMinIO, file, opts)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"code":    500,

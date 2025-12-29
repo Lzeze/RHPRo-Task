@@ -226,6 +226,10 @@ type TaskResponse struct {
 	TotalSubtasks int `json:"total_subtasks"`
 	// 已完成的子任务数
 	CompletedSubtasks int `json:"completed_subtasks"`
+	// 任务创建时间
+	CreatedAt ResponseTime `json:"created_at"`
+	// 任务更新时间
+	UpdatedAt ResponseTime `json:"updated_at"`
 	// 子任务列表（与思路方案、执行计划同级展示，支持递归）
 	Subtasks []*TaskResponse `json:"subtasks,omitempty"`
 	// 最新版本的思路方案（仅包含最新版本，与子任务同级展示）

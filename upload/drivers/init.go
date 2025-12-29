@@ -25,10 +25,12 @@ func InitDrivers() error {
 	if config.MinIO.Enabled {
 		minioDriver, err := NewMinIODriver(config.MinIO)
 		if err != nil {
-			return fmt.Errorf("failed to init minio driver: %w", err)
+			// MinIO 初始化失败时记录警告，但不阻止应用启动
+			utils.Logger.Warn(fmt.Sprintf("Failed to init MinIO driver (will be skipped): %v", err))
+		} else {
+			factory.RegisterDriver(upload.DriverMinIO, minioDriver)
+			utils.Logger.Info("Upload MinIO driver initialized")
 		}
-		factory.RegisterDriver(upload.DriverMinIO, minioDriver)
-		utils.Logger.Info("Upload MinIO driver initialized")
 	}
 
 	// 初始化阿里云驱动（预留）

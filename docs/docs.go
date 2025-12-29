@@ -4866,6 +4866,14 @@ const docTemplate = `{
                     "description": "已完成的子任务数",
                     "type": "integer"
                 },
+                "created_at": {
+                    "description": "任务创建时间",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ResponseTime"
+                        }
+                    ]
+                },
                 "creator": {
                     "description": "创建者信息（可选）",
                     "allOf": [
@@ -5067,6 +5075,14 @@ const docTemplate = `{
                 "total_subtasks": {
                     "description": "子任务总数",
                     "type": "integer"
+                },
+                "updated_at": {
+                    "description": "任务更新时间",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ResponseTime"
+                        }
+                    ]
                 }
             }
         },
@@ -5107,6 +5123,14 @@ const docTemplate = `{
                 "completed_subtasks": {
                     "description": "已完成的子任务数",
                     "type": "integer"
+                },
+                "created_at": {
+                    "description": "任务创建时间",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ResponseTime"
+                        }
+                    ]
                 },
                 "creator": {
                     "description": "创建者信息（可选）",
@@ -5285,6 +5309,14 @@ const docTemplate = `{
                 "total_subtasks": {
                     "description": "子任务总数",
                     "type": "integer"
+                },
+                "updated_at": {
+                    "description": "任务更新时间",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ResponseTime"
+                        }
+                    ]
                 }
             }
         },
@@ -5394,6 +5426,14 @@ const docTemplate = `{
                 "completed_subtasks": {
                     "description": "已完成的子任务数",
                     "type": "integer"
+                },
+                "created_at": {
+                    "description": "任务创建时间",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ResponseTime"
+                        }
+                    ]
                 },
                 "creator_id": {
                     "description": "创建者用户ID",
@@ -5540,6 +5580,14 @@ const docTemplate = `{
                 "total_subtasks": {
                     "description": "子任务总数",
                     "type": "integer"
+                },
+                "updated_at": {
+                    "description": "任务更新时间",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ResponseTime"
+                        }
+                    ]
                 }
             }
         },

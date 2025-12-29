@@ -991,6 +991,10 @@ definitions:
       completed_subtasks:
         description: 已完成的子任务数
         type: integer
+      created_at:
+        allOf:
+        - $ref: '#/definitions/dto.ResponseTime'
+        description: 任务创建时间
       creator:
         allOf:
         - $ref: '#/definitions/dto.SimpleUserResponse'
@@ -1120,6 +1124,10 @@ definitions:
       total_subtasks:
         description: 子任务总数
         type: integer
+      updated_at:
+        allOf:
+        - $ref: '#/definitions/dto.ResponseTime'
+        description: 任务更新时间
     type: object
   dto.TaskDetailResponse:
     properties:
@@ -1145,6 +1153,10 @@ definitions:
       completed_subtasks:
         description: 已完成的子任务数
         type: integer
+      created_at:
+        allOf:
+        - $ref: '#/definitions/dto.ResponseTime'
+        description: 任务创建时间
       creator:
         allOf:
         - $ref: '#/definitions/dto.SimpleUserResponse'
@@ -1262,6 +1274,10 @@ definitions:
       total_subtasks:
         description: 子任务总数
         type: integer
+      updated_at:
+        allOf:
+        - $ref: '#/definitions/dto.ResponseTime'
+        description: 任务更新时间
     type: object
   dto.TaskRequest:
     properties:
@@ -1338,6 +1354,10 @@ definitions:
       completed_subtasks:
         description: 已完成的子任务数
         type: integer
+      created_at:
+        allOf:
+        - $ref: '#/definitions/dto.ResponseTime'
+        description: 任务创建时间
       creator_id:
         description: 创建者用户ID
         type: integer
@@ -1439,6 +1459,10 @@ definitions:
       total_subtasks:
         description: 子任务总数
         type: integer
+      updated_at:
+        allOf:
+        - $ref: '#/definitions/dto.ResponseTime'
+        description: 任务更新时间
     type: object
   dto.TaskStatusResponse:
     properties:
