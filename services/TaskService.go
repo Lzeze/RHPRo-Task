@@ -4,6 +4,7 @@ import (
 	"RHPRo-Task/database"
 	"RHPRo-Task/dto"
 	"RHPRo-Task/models"
+	"RHPRo-Task/utils"
 	"errors"
 	"fmt"
 	"math"
@@ -67,8 +68,9 @@ func (s *TaskService) CreateTask(req *dto.TaskRequest, creatorID uint) (*models.
 
 	// 3. 如果未指派执行人，任务进入任务池
 	isInPool := req.IsInPool
-	if req.ExecutorID == nil {
-		isInPool = true
+	if req.ExecutorID == nil && req.DepartmentID == nil {
+		// isInPool = true
+		return nil, errors.New("未指派执行人")
 	}
 
 	// 4. 判断是否跨部门（执行人部门与创建人部门是否不同）
@@ -184,7 +186,16 @@ func (s *TaskService) CreateTask(req *dto.TaskRequest, creatorID uint) (*models.
 		return nil, err
 	}
 
-	// 8. 如果有父任务，更新父任务统计信息
+	// 8. 如果有附件ID，绑定附件到任务
+	if len(req.AttachmentIDs) > 0 {
+		uploadService := &UploadService{}
+		if err := uploadService.BindAttachmentsToTask(req.AttachmentIDs, task.ID); err != nil {
+			// 附件绑定失败不影响任务创建，仅记录日志
+			utils.Logger.Warnf("绑定附件失败: %v", err)
+		}
+	}
+
+	// 9. 如果有父任务，更新父任务统计信息
 	if parentTask != nil {
 		_ = s.recalculateTaskStats(parentTask.ID)
 	}
@@ -1139,6 +1150,10 @@ func (s *TaskService) toTaskResponse(task *models.Task) dto.TaskResponse {
 	response.CreatedAt = dto.ToResponseTime(task.CreatedAt)
 	response.UpdatedAt = dto.ToResponseTime(task.UpdatedAt)
 
+	// 获取任务本身的附件（不含方案和计划附件）
+	uploadService := &UploadService{}
+	response.TaskAttachments = uploadService.GetTaskOwnAttachments(task.ID)
+
 	return response
 }
 
@@ -1166,6 +1181,8 @@ func (s *TaskService) loadTaskAssociations(resp *dto.TaskResponse, taskID uint) 
 		s.loadSubtasksRecursive(resp, taskID)
 	}
 
+	uploadService := &UploadService{}
+
 	// 加载最新版本的思路方案
 	var latestSolution models.RequirementSolution
 	if err := database.DB.Where("task_id = ?", taskID).
@@ -1186,6 +1203,8 @@ func (s *TaskService) loadTaskAssociations(resp *dto.TaskResponse, taskID uint) 
 				item.SubmittedByUsername = user.Username
 			}
 		}
+		// 加载方案附件
+		item.Attachments = uploadService.GetSolutionAttachments(latestSolution.ID)
 		resp.LatestSolution = item
 	}
 
@@ -1209,6 +1228,8 @@ func (s *TaskService) loadTaskAssociations(resp *dto.TaskResponse, taskID uint) 
 				item.SubmittedByUsername = user.Username
 			}
 		}
+		// 加载执行计划附件
+		item.Attachments = uploadService.GetPlanAttachments(latestPlan.ID)
 		resp.LatestExecutionPlan = item
 	}
 }

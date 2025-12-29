@@ -21,6 +21,7 @@ func (s *TaskDetailService) GetTaskSolutions(taskID uint) ([]dto.SolutionVersion
 		return nil, err
 	}
 
+	uploadService := &UploadService{}
 	responses := make([]dto.SolutionVersionResponse, len(solutions))
 	for i, sol := range solutions {
 		responses[i] = dto.SolutionVersionResponse{
@@ -34,6 +35,7 @@ func (s *TaskDetailService) GetTaskSolutions(taskID uint) ([]dto.SolutionVersion
 			SubmittedBy:     *sol.SubmittedBy,
 			SubmittedAt:     dto.PtrToResponseTime(sol.SubmittedAt),
 			CreatedAt:       dto.ToResponseTime(sol.CreatedAt),
+			Attachments:     uploadService.GetSolutionAttachments(sol.ID),
 		}
 	}
 
@@ -49,6 +51,7 @@ func (s *TaskDetailService) GetTaskExecutionPlans(taskID uint) ([]dto.ExecutionP
 		return nil, err
 	}
 
+	uploadService := &UploadService{}
 	responses := make([]dto.ExecutionPlanVersionResponse, 0)
 	for _, plan := range plans {
 		// 查询该执行计划关联的目标
@@ -88,6 +91,7 @@ func (s *TaskDetailService) GetTaskExecutionPlans(taskID uint) ([]dto.ExecutionP
 			SubmittedBy:          *plan.SubmittedBy,
 			SubmittedAt:          dto.PtrToResponseTime(plan.SubmittedAt),
 			CreatedAt:            dto.ToResponseTime(plan.CreatedAt),
+			Attachments:          uploadService.GetPlanAttachments(plan.ID),
 		})
 	}
 
@@ -471,6 +475,8 @@ func (s *TaskDetailService) GetTaskDetailEnhanced(taskID uint, userID uint) (*dt
 		TaskDetailResponse: basicDetail,
 	}
 
+	uploadService := &UploadService{}
+
 	// 获取最新的方案
 	var latestSolution models.RequirementSolution
 	if err := database.DB.Where("task_id = ?", taskID).
@@ -487,6 +493,7 @@ func (s *TaskDetailService) GetTaskDetailEnhanced(taskID uint, userID uint) (*dt
 			SubmittedBy:     *latestSolution.SubmittedBy,
 			SubmittedAt:     dto.PtrToResponseTime(latestSolution.SubmittedAt),
 			CreatedAt:       dto.ToResponseTime(latestSolution.CreatedAt),
+			Attachments:     uploadService.GetSolutionAttachments(latestSolution.ID),
 		}
 	}
 
@@ -531,6 +538,7 @@ func (s *TaskDetailService) GetTaskDetailEnhanced(taskID uint, userID uint) (*dt
 			SubmittedBy:          *latestPlan.SubmittedBy,
 			SubmittedAt:          dto.PtrToResponseTime(latestPlan.SubmittedAt),
 			CreatedAt:            dto.ToResponseTime(latestPlan.CreatedAt),
+			Attachments:          uploadService.GetPlanAttachments(latestPlan.ID),
 		}
 	}
 

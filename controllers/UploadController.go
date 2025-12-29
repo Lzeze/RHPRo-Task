@@ -23,13 +23,15 @@ func NewUploadController() *UploadController {
 
 // Upload 通用文件上传
 // @Summary 上传文件
-// @Description 上传文件并保存附件记录，返回附件ID。task_id可为空，后续创建任务时再绑定
+// @Description 上传文件并保存附件记录，返回附件ID。task_id可为空，后续创建任务时再绑定。传solution_id或plan_id时task_id必传
 // @Tags 文件上传
 // @Accept multipart/form-data
 // @Produce json
 // @Param file formData file true "上传的文件"
 // @Param directory formData string false "存储目录"
-// @Param task_id formData int false "关联任务ID（可选）"
+// @Param task_id formData int false "关联任务ID（传solution_id或plan_id时必传）"
+// @Param solution_id formData int false "关联方案ID（当attachment_type为solution时使用）"
+// @Param plan_id formData int false "关联执行计划ID（当attachment_type为plan时使用）"
 // @Param attachment_type formData string false "附件类型(requirement/solution/plan/general/task)"
 // @Success 200 {object} dto.AttachmentResult "上传成功"
 // @Failure 400 {object} utils.Response "请求错误"
@@ -60,18 +62,48 @@ func (c *UploadController) Upload(ctx *gin.Context) {
 	if userID != nil {
 		uploadedBy = userID.(uint)
 	}
+	attachmentType := ctx.PostForm("attachment_type")
 
 	// 获取可选参数
-	var taskID uint
+	var taskID, solutionID, planID uint
 	if tid := ctx.PostForm("task_id"); tid != "" {
 		if tidVal, err := strconv.ParseUint(tid, 10, 32); err == nil {
 			taskID = uint(tidVal)
 		}
 	}
-	attachmentType := ctx.PostForm("attachment_type")
+	if sid := ctx.PostForm("solution_id"); sid != "" {
+		if sidVal, err := strconv.ParseUint(sid, 10, 32); err == nil {
+			solutionID = uint(sidVal)
+		}
+		if attachmentType == "" {
+			attachmentType = "solution"
+		}
+		if attachmentType != "solution" {
+			utils.BadRequest(ctx, "当传solution_id时attachment_type必须为solution")
+			return
+		}
+	}
+	if pid := ctx.PostForm("plan_id"); pid != "" {
+		if pidVal, err := strconv.ParseUint(pid, 10, 32); err == nil {
+			planID = uint(pidVal)
+		}
+		if attachmentType == "" {
+			attachmentType = "plan"
+		}
+		if attachmentType != "plan" {
+			utils.BadRequest(ctx, "当传plan_id时attachment_type必须为plan")
+			return
+		}
+	}
+
+	// 验证：传 solution_id 或 plan_id 时 task_id 必传
+	if (solutionID > 0 || planID > 0) && taskID == 0 {
+		utils.BadRequest(ctx, "传solution_id或plan_id时task_id必传")
+		return
+	}
 
 	// 保存附件记录
-	result, err := c.uploadService.SaveAttachment(info.FileName, info.URL, info.MimeType, info.Size, uploadedBy, taskID, attachmentType)
+	result, err := c.uploadService.SaveAttachment(info.FileName, info.URL, info.MimeType, info.Size, uploadedBy, taskID, solutionID, planID, attachmentType)
 	if err != nil {
 		utils.Error(ctx, 500, "保存附件记录失败: "+err.Error())
 		return
@@ -82,14 +114,16 @@ func (c *UploadController) Upload(ctx *gin.Context) {
 
 // UploadWithDriver 使用指定驱动上传
 // @Summary 使用指定驱动上传文件
-// @Description 使用指定的存储驱动上传文件并保存附件记录
+// @Description 使用指定的存储驱动上传文件并保存附件记录。传solution_id或plan_id时task_id必传
 // @Tags 文件上传
 // @Accept multipart/form-data
 // @Produce json
 // @Param file formData file true "上传的文件"
 // @Param driver formData string true "驱动类型(local/minio/aliyun)"
 // @Param directory formData string false "存储目录"
-// @Param task_id formData int false "关联任务ID（可选）"
+// @Param task_id formData int false "关联任务ID（传solution_id或plan_id时必传）"
+// @Param solution_id formData int false "关联方案ID（当attachment_type为solution时使用）"
+// @Param plan_id formData int false "关联执行计划ID（当attachment_type为plan时使用）"
 // @Param attachment_type formData string false "附件类型(requirement/solution/plan/general/task)"
 // @Success 200 {object} dto.AttachmentResult "上传成功"
 // @Failure 400 {object} utils.Response "请求错误"
@@ -126,17 +160,48 @@ func (c *UploadController) UploadWithDriver(ctx *gin.Context) {
 		uploadedBy = userID.(uint)
 	}
 
+	attachmentType := ctx.PostForm("attachment_type")
+
 	// 获取可选参数
-	var taskID uint
+	var taskID, solutionID, planID uint
 	if tid := ctx.PostForm("task_id"); tid != "" {
 		if tidVal, err := strconv.ParseUint(tid, 10, 32); err == nil {
 			taskID = uint(tidVal)
 		}
 	}
-	attachmentType := ctx.PostForm("attachment_type")
+	if sid := ctx.PostForm("solution_id"); sid != "" {
+		if sidVal, err := strconv.ParseUint(sid, 10, 32); err == nil {
+			solutionID = uint(sidVal)
+		}
+		if attachmentType == "" {
+			attachmentType = "solution"
+		}
+		if attachmentType != "solution" {
+			utils.BadRequest(ctx, "当传solution_id时attachment_type必须为solution")
+			return
+		}
+	}
+	if pid := ctx.PostForm("plan_id"); pid != "" {
+		if pidVal, err := strconv.ParseUint(pid, 10, 32); err == nil {
+			planID = uint(pidVal)
+		}
+		if attachmentType == "" {
+			attachmentType = "plan"
+		}
+		if attachmentType != "plan" {
+			utils.BadRequest(ctx, "当传plan_id时attachment_type必须为plan")
+			return
+		}
+	}
+
+	// 验证：传 solution_id 或 plan_id 时 task_id 必传
+	if (solutionID > 0 || planID > 0) && taskID == 0 {
+		utils.BadRequest(ctx, "传solution_id或plan_id时task_id必传")
+		return
+	}
 
 	// 保存附件记录
-	result, err := c.uploadService.SaveAttachment(info.FileName, info.URL, info.MimeType, info.Size, uploadedBy, taskID, attachmentType)
+	result, err := c.uploadService.SaveAttachment(info.FileName, info.URL, info.MimeType, info.Size, uploadedBy, taskID, solutionID, planID, attachmentType)
 	if err != nil {
 		utils.Error(ctx, 500, "保存附件记录失败: "+err.Error())
 		return
@@ -187,8 +252,8 @@ func (c *UploadController) UploadAvatar(ctx *gin.Context) {
 		uploadedBy = userID.(uint)
 	}
 
-	// 保存附件记录
-	result, err := c.uploadService.SaveAttachment(info.FileName, info.URL, info.MimeType, info.Size, uploadedBy, 0, "avatar")
+	// 保存附件记录（头像不关联任务、方案、计划）
+	result, err := c.uploadService.SaveAttachment(info.FileName, info.URL, info.MimeType, info.Size, uploadedBy, 0, 0, 0, "avatar")
 	if err != nil {
 		utils.Error(ctx, 500, "保存附件记录失败: "+err.Error())
 		return
@@ -199,12 +264,15 @@ func (c *UploadController) UploadAvatar(ctx *gin.Context) {
 
 // UploadMedia 上传媒体文件
 // @Summary 上传媒体文件
-// @Description 上传视频或音频文件并保存附件记录
+// @Description 上传视频或音频文件并保存附件记录。传solution_id或plan_id时task_id必传
 // @Tags 文件上传
 // @Accept multipart/form-data
 // @Produce json
 // @Param file formData file true "媒体文件"
-// @Param task_id formData int false "关联任务ID（可选）"
+// @Param task_id formData int false "关联任务ID（传solution_id或plan_id时必传）"
+// @Param solution_id formData int false "关联方案ID（当attachment_type为solution时使用）"
+// @Param plan_id formData int false "关联执行计划ID（当attachment_type为plan时使用）"
+// @Param attachment_type formData string false "附件类型(requirement/solution/plan/general/task)"
 // @Success 200 {object} dto.AttachmentResult "上传成功"
 // @Failure 400 {object} utils.Response "请求错误"
 // @Failure 500 {object} utils.Response "服务器错误"
@@ -241,15 +309,35 @@ func (c *UploadController) UploadMedia(ctx *gin.Context) {
 	}
 
 	// 获取可选参数
-	var taskID uint
+	var taskID, solutionID, planID uint
 	if tid := ctx.PostForm("task_id"); tid != "" {
 		if tidVal, err := strconv.ParseUint(tid, 10, 32); err == nil {
 			taskID = uint(tidVal)
 		}
 	}
+	if sid := ctx.PostForm("solution_id"); sid != "" {
+		if sidVal, err := strconv.ParseUint(sid, 10, 32); err == nil {
+			solutionID = uint(sidVal)
+		}
+	}
+	if pid := ctx.PostForm("plan_id"); pid != "" {
+		if pidVal, err := strconv.ParseUint(pid, 10, 32); err == nil {
+			planID = uint(pidVal)
+		}
+	}
+	attachmentType := ctx.PostForm("attachment_type")
+	if attachmentType == "" {
+		attachmentType = "media"
+	}
+
+	// 验证：传 solution_id 或 plan_id 时 task_id 必传
+	if (solutionID > 0 || planID > 0) && taskID == 0 {
+		utils.BadRequest(ctx, "传solution_id或plan_id时task_id必传")
+		return
+	}
 
 	// 保存附件记录
-	result, err := c.uploadService.SaveAttachment(info.FileName, info.URL, info.MimeType, info.Size, uploadedBy, taskID, "media")
+	result, err := c.uploadService.SaveAttachment(info.FileName, info.URL, info.MimeType, info.Size, uploadedBy, taskID, solutionID, planID, attachmentType)
 	if err != nil {
 		utils.Error(ctx, 500, "保存附件记录失败: "+err.Error())
 		return

@@ -4,6 +4,7 @@ import (
 	"RHPRo-Task/database"
 	"RHPRo-Task/dto"
 	"RHPRo-Task/models"
+	"RHPRo-Task/utils"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -211,6 +212,14 @@ func (s *TaskFlowService) SubmitSolution(taskID uint, userID uint, req *dto.Subm
 	if err := tx.Create(solution).Error; err != nil {
 		tx.Rollback()
 		return err
+	}
+
+	// 绑定附件到方案
+	if len(req.AttachmentIDs) > 0 {
+		uploadService := &UploadService{}
+		if err := uploadService.BindAttachmentsToSolution(req.AttachmentIDs, taskID, solution.ID); err != nil {
+			utils.Logger.Warnf("绑定方案附件失败: %v", err)
+		}
 	}
 
 	// 更新任务状态为方案审核中
@@ -881,6 +890,14 @@ func (s *TaskFlowService) SubmitExecutionPlanWithGoals(taskID uint, userID uint,
 	if err := tx.Create(plan).Error; err != nil {
 		tx.Rollback()
 		return err
+	}
+
+	// 绑定附件到执行计划
+	if len(req.AttachmentIDs) > 0 {
+		uploadService := &UploadService{}
+		if err := uploadService.BindAttachmentsToPlan(req.AttachmentIDs, taskID, plan.ID); err != nil {
+			utils.Logger.Warnf("绑定执行计划附件失败: %v", err)
+		}
 	}
 
 	// 创建目标记录（关联到执行计划）

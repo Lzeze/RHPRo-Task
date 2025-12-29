@@ -10,6 +10,10 @@ type TaskAttachment struct {
 	CreatedAt time.Time `json:"created_at"`
 	// 关联任务ID
 	TaskID uint `gorm:"index" json:"task_id"`
+	// 关联方案ID（当 attachment_type 为 solution 时使用，0表示无关联）
+	SolutionID uint `gorm:"index;default:0" json:"solution_id"`
+	// 关联执行计划ID（当 attachment_type 为 plan 时使用，0表示无关联）
+	PlanID uint `gorm:"index;default:0" json:"plan_id"`
 	// 文件名
 	FileName string `gorm:"size:255;not null" json:"file_name"`
 	// 文件访问 URL

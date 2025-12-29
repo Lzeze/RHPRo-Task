@@ -214,6 +214,8 @@ CREATE TABLE "public"."task_attachments" (
 "uploaded_by" int4 NOT NULL,
 "attachment_type" varchar(50),
 "created_at" timestamptz(6) DEFAULT CURRENT_TIMESTAMP,
+"solution_id" int4 DEFAULT 0,
+"plan_id" int4 DEFAULT 0,
 PRIMARY KEY ("id"));
 
 -- public.task_change_logs DDL
@@ -762,6 +764,8 @@ EXECUTE FUNCTION update_updated_at_column();
 -- public.task_attachments Indexes
 COMMENT ON TABLE "public"."task_attachments" IS '任务附件表';
 CREATE INDEX "idx_task_attachments_task_id" ON "public"."task_attachments" USING btree ("task_id"  "pg_catalog"."int4_ops" ASC NULLS LAST);
+CREATE INDEX "idx_task_attachments_plan_id" ON "public"."task_attachments" USING btree ("plan_id"  "pg_catalog"."int4_ops" ASC NULLS LAST);
+CREATE INDEX "idx_task_attachments_solution_id" ON "public"."task_attachments" USING btree ("solution_id"  "pg_catalog"."int4_ops" ASC NULLS LAST);
 ALTER TABLE "public"."task_attachments" ADD CONSTRAINT "task_attachments_uploaded_by_fkey" FOREIGN KEY ("uploaded_by") REFERENCES "public"."users" ("id")ON DELETE NO ACTION ON UPDATE NO ACTION;
 COMMENT ON COLUMN "public"."task_attachments"."id" IS '主键ID';
 COMMENT ON COLUMN "public"."task_attachments"."task_id" IS '关联的任务ID';
@@ -772,6 +776,8 @@ COMMENT ON COLUMN "public"."task_attachments"."file_size" IS '文件大小（字
 COMMENT ON COLUMN "public"."task_attachments"."uploaded_by" IS '上传人用户ID';
 COMMENT ON COLUMN "public"."task_attachments"."attachment_type" IS '附件类型：requirement-需求相关，solution-方案相关，plan-计划相关，general-通用附件';
 COMMENT ON COLUMN "public"."task_attachments"."created_at" IS '上传时间';
+COMMENT ON COLUMN "public"."task_attachments"."solution_id" IS '关联方案ID，当attachment_type为solution时使用，0表示无关联';
+COMMENT ON COLUMN "public"."task_attachments"."plan_id" IS '关联执行计划ID，当attachment_type为plan时使用，0表示无关联';
 
 -- public.task_change_logs Indexes
 COMMENT ON TABLE "public"."task_change_logs" IS '任务变更历史表';

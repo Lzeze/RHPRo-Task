@@ -78,6 +78,8 @@ type TaskRequest struct {
 	IsInPool bool `json:"is_in_pool"`
 	// 思路方案截止天数（仅需求类任务适用，表示执行人接受任务后需在N天内提交方案，0表示不限制）
 	SolutionDeadline *int `json:"solution_deadline"`
+	// 附件ID集合（创建任务前先上传附件获取ID，创建任务时绑定）
+	AttachmentIDs []uint `json:"attachment_ids"`
 }
 
 // UpdateTaskRequest 更新任务请求
@@ -178,8 +180,8 @@ type TaskResponse struct {
 	Reporter uint `json:"reporter"`
 	// 任务标签列表
 	Tags []string `json:"tags"`
-	// 任务附件列表
-	Attachments []string `json:"attachments"`
+	// 任务附件列表（仅任务本身的附件，不含方案和计划附件）
+	TaskAttachments []AttachmentDetailResult `json:"task_attachments,omitempty"`
 	// 期望开始日期（RFC3339 格式）
 	ExpectedStartDate ResponseTime `json:"expected_start_date"`
 	// 期望完成日期（RFC3339 格式）

@@ -75,6 +75,12 @@ definitions:
       id:
         description: 附件ID
         type: integer
+      plan_id:
+        description: 关联执行计划ID（0表示无关联）
+        type: integer
+      solution_id:
+        description: 关联方案ID（0表示无关联）
+        type: integer
       task_id:
         description: 关联任务ID
         type: integer
@@ -372,6 +378,11 @@ definitions:
     type: object
   dto.ExecutionPlanListItemResponse:
     properties:
+      attachments:
+        description: 执行计划附件列表（可选）
+        items:
+          $ref: '#/definitions/dto.AttachmentDetailResult'
+        type: array
       id:
         description: 执行计划版本ID
         type: integer
@@ -397,6 +408,11 @@ definitions:
     type: object
   dto.ExecutionPlanVersionResponse:
     properties:
+      attachments:
+        description: 执行计划附件列表（可选）
+        items:
+          $ref: '#/definitions/dto.AttachmentDetailResult'
+        type: array
       created_at:
         allOf:
         - $ref: '#/definitions/dto.ResponseTime'
@@ -849,6 +865,11 @@ definitions:
     type: object
   dto.SolutionListItemResponse:
     properties:
+      attachments:
+        description: 方案附件列表（可选）
+        items:
+          $ref: '#/definitions/dto.AttachmentDetailResult'
+        type: array
       id:
         description: 方案版本ID
         type: integer
@@ -874,6 +895,11 @@ definitions:
     type: object
   dto.SolutionVersionResponse:
     properties:
+      attachments:
+        description: 方案附件列表（可选）
+        items:
+          $ref: '#/definitions/dto.AttachmentDetailResult'
+        type: array
       content:
         description: 方案内容（具体的方案说明）
         type: string
@@ -951,6 +977,11 @@ definitions:
     type: object
   dto.SubmitExecutionPlanWithGoalsRequest:
     properties:
+      attachment_ids:
+        description: 附件ID集合（提交执行计划前先上传附件获取ID，提交时绑定到执行计划）
+        items:
+          type: integer
+        type: array
       goals:
         description: 目标列表（至少一个目标）
         items:
@@ -1015,6 +1046,11 @@ definitions:
     type: object
   dto.SubmitSolutionRequest:
     properties:
+      attachment_ids:
+        description: 附件ID集合（提交方案前先上传附件获取ID，提交时绑定到方案）
+        items:
+          type: integer
+        type: array
       solution:
         allOf:
         - $ref: '#/definitions/dto.SolutionItem'
@@ -1035,11 +1071,6 @@ definitions:
       assignee:
         description: 分配人用户ID
         type: integer
-      attachments:
-        description: 任务附件列表
-        items:
-          type: string
-        type: array
       child_sequence:
         description: 在父任务中的序号
         type: integer
@@ -1153,6 +1184,11 @@ definitions:
         items:
           type: string
         type: array
+      task_attachments:
+        description: 任务附件列表（仅任务本身的附件，不含方案和计划附件）
+        items:
+          $ref: '#/definitions/dto.AttachmentDetailResult'
+        type: array
       task_level:
         description: 任务层级（0=顶层）
         type: integer
@@ -1197,11 +1233,6 @@ definitions:
       assignee:
         description: 分配人用户ID
         type: integer
-      attachments:
-        description: 任务附件列表
-        items:
-          type: string
-        type: array
       child_sequence:
         description: 在父任务中的序号
         type: integer
@@ -1303,6 +1334,11 @@ definitions:
         items:
           type: string
         type: array
+      task_attachments:
+        description: 任务附件列表（仅任务本身的附件，不含方案和计划附件）
+        items:
+          $ref: '#/definitions/dto.AttachmentDetailResult'
+        type: array
       task_level:
         description: 任务层级（0=顶层）
         type: integer
@@ -1336,6 +1372,11 @@ definitions:
     type: object
   dto.TaskRequest:
     properties:
+      attachment_ids:
+        description: 附件ID集合（创建任务前先上传附件获取ID，创建任务时绑定）
+        items:
+          type: integer
+        type: array
       department_id:
         description: 所属部门ID（任务所属的部门，可选）
         type: integer
@@ -1398,11 +1439,6 @@ definitions:
       assignee:
         description: 分配人用户ID
         type: integer
-      attachments:
-        description: 任务附件列表
-        items:
-          type: string
-        type: array
       child_sequence:
         description: 在父任务中的序号
         type: integer
@@ -1495,6 +1531,11 @@ definitions:
         description: 任务标签列表
         items:
           type: string
+        type: array
+      task_attachments:
+        description: 任务附件列表（仅任务本身的附件，不含方案和计划附件）
+        items:
+          $ref: '#/definitions/dto.AttachmentDetailResult'
         type: array
       task_level:
         description: 任务层级（0=顶层）
@@ -3656,7 +3697,7 @@ paths:
     post:
       consumes:
       - multipart/form-data
-      description: 上传文件并保存附件记录，返回附件ID。task_id可为空，后续创建任务时再绑定
+      description: 上传文件并保存附件记录，返回附件ID。task_id可为空，后续创建任务时再绑定。传solution_id或plan_id时task_id必传
       parameters:
       - description: 上传的文件
         in: formData
@@ -3667,9 +3708,17 @@ paths:
         in: formData
         name: directory
         type: string
-      - description: 关联任务ID（可选）
+      - description: 关联任务ID（传solution_id或plan_id时必传）
         in: formData
         name: task_id
+        type: integer
+      - description: 关联方案ID（当attachment_type为solution时使用）
+        in: formData
+        name: solution_id
+        type: integer
+      - description: 关联执行计划ID（当attachment_type为plan时使用）
+        in: formData
+        name: plan_id
         type: integer
       - description: 附件类型(requirement/solution/plan/general/task)
         in: formData
@@ -3763,7 +3812,7 @@ paths:
     post:
       consumes:
       - multipart/form-data
-      description: 使用指定的存储驱动上传文件并保存附件记录
+      description: 使用指定的存储驱动上传文件并保存附件记录。传solution_id或plan_id时task_id必传
       parameters:
       - description: 上传的文件
         in: formData
@@ -3779,9 +3828,17 @@ paths:
         in: formData
         name: directory
         type: string
-      - description: 关联任务ID（可选）
+      - description: 关联任务ID（传solution_id或plan_id时必传）
         in: formData
         name: task_id
+        type: integer
+      - description: 关联方案ID（当attachment_type为solution时使用）
+        in: formData
+        name: solution_id
+        type: integer
+      - description: 关联执行计划ID（当attachment_type为plan时使用）
+        in: formData
+        name: plan_id
         type: integer
       - description: 附件类型(requirement/solution/plan/general/task)
         in: formData
@@ -3826,17 +3883,29 @@ paths:
     post:
       consumes:
       - multipart/form-data
-      description: 上传视频或音频文件并保存附件记录
+      description: 上传视频或音频文件并保存附件记录。传solution_id或plan_id时task_id必传
       parameters:
       - description: 媒体文件
         in: formData
         name: file
         required: true
         type: file
-      - description: 关联任务ID（可选）
+      - description: 关联任务ID（传solution_id或plan_id时必传）
         in: formData
         name: task_id
         type: integer
+      - description: 关联方案ID（当attachment_type为solution时使用）
+        in: formData
+        name: solution_id
+        type: integer
+      - description: 关联执行计划ID（当attachment_type为plan时使用）
+        in: formData
+        name: plan_id
+        type: integer
+      - description: 附件类型(requirement/solution/plan/general/task)
+        in: formData
+        name: attachment_type
+        type: string
       produces:
       - application/json
       responses:

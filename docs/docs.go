@@ -2402,7 +2402,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "上传文件并保存附件记录，返回附件ID。task_id可为空，后续创建任务时再绑定",
+                "description": "上传文件并保存附件记录，返回附件ID。task_id可为空，后续创建任务时再绑定。传solution_id或plan_id时task_id必传",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -2429,8 +2429,20 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "关联任务ID（可选）",
+                        "description": "关联任务ID（传solution_id或plan_id时必传）",
                         "name": "task_id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "关联方案ID（当attachment_type为solution时使用）",
+                        "name": "solution_id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "关联执行计划ID（当attachment_type为plan时使用）",
+                        "name": "plan_id",
                         "in": "formData"
                     },
                     {
@@ -2518,7 +2530,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "使用指定的存储驱动上传文件并保存附件记录",
+                "description": "使用指定的存储驱动上传文件并保存附件记录。传solution_id或plan_id时task_id必传",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -2552,8 +2564,20 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "关联任务ID（可选）",
+                        "description": "关联任务ID（传solution_id或plan_id时必传）",
                         "name": "task_id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "关联方案ID（当attachment_type为solution时使用）",
+                        "name": "solution_id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "关联执行计划ID（当attachment_type为plan时使用）",
+                        "name": "plan_id",
                         "in": "formData"
                     },
                     {
@@ -2617,7 +2641,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "上传视频或音频文件并保存附件记录",
+                "description": "上传视频或音频文件并保存附件记录。传solution_id或plan_id时task_id必传",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -2638,8 +2662,26 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "关联任务ID（可选）",
+                        "description": "关联任务ID（传solution_id或plan_id时必传）",
                         "name": "task_id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "关联方案ID（当attachment_type为solution时使用）",
+                        "name": "solution_id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "关联执行计划ID（当attachment_type为plan时使用）",
+                        "name": "plan_id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "附件类型(requirement/solution/plan/general/task)",
+                        "name": "attachment_type",
                         "in": "formData"
                     }
                 ],
@@ -3680,6 +3722,14 @@ const docTemplate = `{
                     "description": "附件ID",
                     "type": "integer"
                 },
+                "plan_id": {
+                    "description": "关联执行计划ID（0表示无关联）",
+                    "type": "integer"
+                },
+                "solution_id": {
+                    "description": "关联方案ID（0表示无关联）",
+                    "type": "integer"
+                },
                 "task_id": {
                     "description": "关联任务ID",
                     "type": "integer"
@@ -4096,6 +4146,13 @@ const docTemplate = `{
         "dto.ExecutionPlanListItemResponse": {
             "type": "object",
             "properties": {
+                "attachments": {
+                    "description": "执行计划附件列表（可选）",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.AttachmentDetailResult"
+                    }
+                },
                 "id": {
                     "description": "执行计划版本ID",
                     "type": "integer"
@@ -4133,6 +4190,13 @@ const docTemplate = `{
         "dto.ExecutionPlanVersionResponse": {
             "type": "object",
             "properties": {
+                "attachments": {
+                    "description": "执行计划附件列表（可选）",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.AttachmentDetailResult"
+                    }
+                },
                 "created_at": {
                     "description": "创建时间（RFC3339 格式）",
                     "allOf": [
@@ -4772,6 +4836,13 @@ const docTemplate = `{
         "dto.SolutionListItemResponse": {
             "type": "object",
             "properties": {
+                "attachments": {
+                    "description": "方案附件列表（可选）",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.AttachmentDetailResult"
+                    }
+                },
                 "id": {
                     "description": "方案版本ID",
                     "type": "integer"
@@ -4809,6 +4880,13 @@ const docTemplate = `{
         "dto.SolutionVersionResponse": {
             "type": "object",
             "properties": {
+                "attachments": {
+                    "description": "方案附件列表（可选）",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.AttachmentDetailResult"
+                    }
+                },
                 "content": {
                     "description": "方案内容（具体的方案说明）",
                     "type": "string"
@@ -4927,6 +5005,13 @@ const docTemplate = `{
                 "title"
             ],
             "properties": {
+                "attachment_ids": {
+                    "description": "附件ID集合（提交执行计划前先上传附件获取ID，提交时绑定到执行计划）",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
                 "goals": {
                     "description": "目标列表（至少一个目标）",
                     "type": "array",
@@ -5014,6 +5099,13 @@ const docTemplate = `{
                 "solution"
             ],
             "properties": {
+                "attachment_ids": {
+                    "description": "附件ID集合（提交方案前先上传附件获取ID，提交时绑定到方案）",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
                 "solution": {
                     "description": "方案内容（只包含方案，不包含目标）",
                     "allOf": [
@@ -5046,13 +5138,6 @@ const docTemplate = `{
                 "assignee": {
                     "description": "分配人用户ID",
                     "type": "integer"
-                },
-                "attachments": {
-                    "description": "任务附件列表",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
                 },
                 "child_sequence": {
                     "description": "在父任务中的序号",
@@ -5232,6 +5317,13 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "task_attachments": {
+                    "description": "任务附件列表（仅任务本身的附件，不含方案和计划附件）",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.AttachmentDetailResult"
+                    }
+                },
                 "task_level": {
                     "description": "任务层级（0=顶层）",
                     "type": "integer"
@@ -5304,13 +5396,6 @@ const docTemplate = `{
                 "assignee": {
                     "description": "分配人用户ID",
                     "type": "integer"
-                },
-                "attachments": {
-                    "description": "任务附件列表",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
                 },
                 "child_sequence": {
                     "description": "在父任务中的序号",
@@ -5466,6 +5551,13 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "task_attachments": {
+                    "description": "任务附件列表（仅任务本身的附件，不含方案和计划附件）",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.AttachmentDetailResult"
+                    }
+                },
                 "task_level": {
                     "description": "任务层级（0=顶层）",
                     "type": "integer"
@@ -5523,6 +5615,13 @@ const docTemplate = `{
                 "title"
             ],
             "properties": {
+                "attachment_ids": {
+                    "description": "附件ID集合（创建任务前先上传附件获取ID，创建任务时绑定）",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
                 "department_id": {
                     "description": "所属部门ID（任务所属的部门，可选）",
                     "type": "integer"
@@ -5607,13 +5706,6 @@ const docTemplate = `{
                 "assignee": {
                     "description": "分配人用户ID",
                     "type": "integer"
-                },
-                "attachments": {
-                    "description": "任务附件列表",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
                 },
                 "child_sequence": {
                     "description": "在父任务中的序号",
@@ -5751,6 +5843,13 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "type": "string"
+                    }
+                },
+                "task_attachments": {
+                    "description": "任务附件列表（仅任务本身的附件，不含方案和计划附件）",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.AttachmentDetailResult"
                     }
                 },
                 "task_level": {

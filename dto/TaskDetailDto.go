@@ -24,6 +24,8 @@ type SolutionVersionResponse struct {
 	SubmittedAt *ResponseTime `json:"submitted_at,omitempty"`
 	// 创建时间（RFC3339 格式）
 	CreatedAt ResponseTime `json:"created_at"`
+	// 方案附件列表（可选）
+	Attachments []AttachmentDetailResult `json:"attachments,omitempty"`
 }
 
 // ========== 执行计划相关 ==========
@@ -52,6 +54,8 @@ type ExecutionPlanVersionResponse struct {
 	SubmittedAt *ResponseTime `json:"submitted_at,omitempty"`
 	// 创建时间（RFC3339 格式）
 	CreatedAt ResponseTime `json:"created_at"`
+	// 执行计划附件列表（可选）
+	Attachments []AttachmentDetailResult `json:"attachments,omitempty"`
 }
 
 // GoalItemResponse 目标条目响应
@@ -207,6 +211,8 @@ type SolutionListItemResponse struct {
 	SubmittedBy uint `json:"submitted_by"`
 	// 提交人用户名
 	SubmittedByUsername string `json:"submitted_by_username,omitempty"`
+	// 方案附件列表（可选）
+	Attachments []AttachmentDetailResult `json:"attachments,omitempty"`
 }
 
 // ExecutionPlanListItemResponse 任务列表中显示的执行计划简要信息（与子任务同级）
@@ -225,4 +231,6 @@ type ExecutionPlanListItemResponse struct {
 	SubmittedBy uint `json:"submitted_by"`
 	// 提交人用户名
 	SubmittedByUsername string `json:"submitted_by_username,omitempty"`
+	// 执行计划附件列表（可选）
+	Attachments []AttachmentDetailResult `json:"attachments,omitempty"`
 }

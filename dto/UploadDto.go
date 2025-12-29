@@ -20,6 +20,10 @@ type AttachmentDetailResult struct {
 	ID uint `json:"id"`
 	// 关联任务ID
 	TaskID uint `json:"task_id"`
+	// 关联方案ID（0表示无关联）
+	SolutionID uint `json:"solution_id"`
+	// 关联执行计划ID（0表示无关联）
+	PlanID uint `json:"plan_id"`
 	// 文件名
 	FileName string `json:"file_name"`
 	// 文件访问URL

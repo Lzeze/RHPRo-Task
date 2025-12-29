@@ -44,6 +44,8 @@ type SolutionItem struct {
 type SubmitSolutionRequest struct {
 	// 方案内容（只包含方案，不包含目标）
 	Solution SolutionItem `json:"solution" binding:"required"`
+	// 附件ID集合（提交方案前先上传附件获取ID，提交时绑定到方案）
+	AttachmentIDs []uint `json:"attachment_ids"`
 }
 
 // SubmitExecutionPlanWithGoalsRequest 提交执行计划+目标请求（合并提交）
@@ -60,6 +62,8 @@ type SubmitExecutionPlanWithGoalsRequest struct {
 	ResourceRequirements string `json:"resource_requirements"`
 	// 风险评估（可能的风险和应对方案）
 	RiskAssessment string `json:"risk_assessment"`
+	// 附件ID集合（提交执行计划前先上传附件获取ID，提交时绑定到执行计划）
+	AttachmentIDs []uint `json:"attachment_ids"`
 }
 
 // ========== 保留原有的 DTO（兼容性）==========
