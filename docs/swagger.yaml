@@ -51,6 +51,24 @@ definitions:
         description: 用户真实姓名
         type: string
     type: object
+  dto.AttachmentResult:
+    properties:
+      file_name:
+        description: 文件名
+        type: string
+      file_size:
+        description: 文件大小（字节）
+        type: integer
+      file_type:
+        description: 文件类型/MIME
+        type: string
+      file_url:
+        description: 文件访问URL
+        type: string
+      id:
+        description: 附件ID
+        type: integer
+    type: object
   dto.BatchImportDepartmentItem:
     properties:
       name:
@@ -2042,6 +2060,14 @@ definitions:
         description: 微信UnionID（跨应用唯一)
         type: string
     type: object
+  utils.Response:
+    properties:
+      code:
+        type: integer
+      data: {}
+      message:
+        type: string
+    type: object
 host: 10.0.10.113:7777
 info:
   contact:
@@ -3593,7 +3619,7 @@ paths:
     post:
       consumes:
       - multipart/form-data
-      description: 根据文件类型自动选择存储驱动上传文件
+      description: 上传文件并保存附件记录，返回附件ID。task_id可为空，后续创建任务时再绑定
       parameters:
       - description: 上传的文件
         in: formData
@@ -3604,24 +3630,29 @@ paths:
         in: formData
         name: directory
         type: string
+      - description: 关联任务ID（可选）
+        in: formData
+        name: task_id
+        type: integer
+      - description: 附件类型(requirement/solution/plan/general/task)
+        in: formData
+        name: attachment_type
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: 上传成功
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dto.AttachmentResult'
         "400":
           description: 请求错误
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/utils.Response'
         "500":
           description: 服务器错误
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/utils.Response'
       security:
       - BearerAuth: []
       summary: 上传文件
@@ -3631,7 +3662,7 @@ paths:
     post:
       consumes:
       - multipart/form-data
-      description: 上传用户头像，存储到本地
+      description: 上传用户头像并保存附件记录
       parameters:
       - description: 头像文件
         in: formData
@@ -3644,18 +3675,15 @@ paths:
         "200":
           description: 上传成功
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dto.AttachmentResult'
         "400":
           description: 请求错误
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/utils.Response'
         "500":
           description: 服务器错误
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/utils.Response'
       security:
       - BearerAuth: []
       summary: 上传头像
@@ -3665,7 +3693,7 @@ paths:
     post:
       consumes:
       - multipart/form-data
-      description: 使用指定的存储驱动上传文件
+      description: 使用指定的存储驱动上传文件并保存附件记录
       parameters:
       - description: 上传的文件
         in: formData
@@ -3681,24 +3709,29 @@ paths:
         in: formData
         name: directory
         type: string
+      - description: 关联任务ID（可选）
+        in: formData
+        name: task_id
+        type: integer
+      - description: 附件类型(requirement/solution/plan/general/task)
+        in: formData
+        name: attachment_type
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: 上传成功
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dto.AttachmentResult'
         "400":
           description: 请求错误
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/utils.Response'
         "500":
           description: 服务器错误
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/utils.Response'
       security:
       - BearerAuth: []
       summary: 使用指定驱动上传文件
@@ -3713,8 +3746,7 @@ paths:
         "200":
           description: 驱动列表
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/utils.Response'
       security:
       - BearerAuth: []
       summary: 获取存储驱动列表
@@ -3724,31 +3756,32 @@ paths:
     post:
       consumes:
       - multipart/form-data
-      description: 上传视频或音频文件，存储到MinIO
+      description: 上传视频或音频文件并保存附件记录
       parameters:
       - description: 媒体文件
         in: formData
         name: file
         required: true
         type: file
+      - description: 关联任务ID（可选）
+        in: formData
+        name: task_id
+        type: integer
       produces:
       - application/json
       responses:
         "200":
           description: 上传成功
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dto.AttachmentResult'
         "400":
           description: 请求错误
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/utils.Response'
         "500":
           description: 服务器错误
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/utils.Response'
       security:
       - BearerAuth: []
       summary: 上传媒体文件

@@ -2402,7 +2402,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "根据文件类型自动选择存储驱动上传文件",
+                "description": "上传文件并保存附件记录，返回附件ID。task_id可为空，后续创建任务时再绑定",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -2426,28 +2426,37 @@ const docTemplate = `{
                         "description": "存储目录",
                         "name": "directory",
                         "in": "formData"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "关联任务ID（可选）",
+                        "name": "task_id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "附件类型(requirement/solution/plan/general/task)",
+                        "name": "attachment_type",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "上传成功",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.AttachmentResult"
                         }
                     },
                     "400": {
                         "description": "请求错误",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/utils.Response"
                         }
                     },
                     "500": {
                         "description": "服务器错误",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/utils.Response"
                         }
                     }
                 }
@@ -2460,7 +2469,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "上传用户头像，存储到本地",
+                "description": "上传用户头像并保存附件记录",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -2484,22 +2493,19 @@ const docTemplate = `{
                     "200": {
                         "description": "上传成功",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.AttachmentResult"
                         }
                     },
                     "400": {
                         "description": "请求错误",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/utils.Response"
                         }
                     },
                     "500": {
                         "description": "服务器错误",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/utils.Response"
                         }
                     }
                 }
@@ -2512,7 +2518,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "使用指定的存储驱动上传文件",
+                "description": "使用指定的存储驱动上传文件并保存附件记录",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -2543,28 +2549,37 @@ const docTemplate = `{
                         "description": "存储目录",
                         "name": "directory",
                         "in": "formData"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "关联任务ID（可选）",
+                        "name": "task_id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "附件类型(requirement/solution/plan/general/task)",
+                        "name": "attachment_type",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "上传成功",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.AttachmentResult"
                         }
                     },
                     "400": {
                         "description": "请求错误",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/utils.Response"
                         }
                     },
                     "500": {
                         "description": "服务器错误",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/utils.Response"
                         }
                     }
                 }
@@ -2589,8 +2604,7 @@ const docTemplate = `{
                     "200": {
                         "description": "驱动列表",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/utils.Response"
                         }
                     }
                 }
@@ -2603,7 +2617,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "上传视频或音频文件，存储到MinIO",
+                "description": "上传视频或音频文件并保存附件记录",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -2621,28 +2635,31 @@ const docTemplate = `{
                         "name": "file",
                         "in": "formData",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "关联任务ID（可选）",
+                        "name": "task_id",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "上传成功",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.AttachmentResult"
                         }
                     },
                     "400": {
                         "description": "请求错误",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/utils.Response"
                         }
                     },
                     "500": {
                         "description": "服务器错误",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/utils.Response"
                         }
                     }
                 }
@@ -3524,6 +3541,31 @@ const docTemplate = `{
                 "username": {
                     "description": "用户真实姓名",
                     "type": "string"
+                }
+            }
+        },
+        "dto.AttachmentResult": {
+            "type": "object",
+            "properties": {
+                "file_name": {
+                    "description": "文件名",
+                    "type": "string"
+                },
+                "file_size": {
+                    "description": "文件大小（字节）",
+                    "type": "integer"
+                },
+                "file_type": {
+                    "description": "文件类型/MIME",
+                    "type": "string"
+                },
+                "file_url": {
+                    "description": "文件访问URL",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "附件ID",
+                    "type": "integer"
                 }
             }
         },
@@ -6387,6 +6429,18 @@ const docTemplate = `{
                 },
                 "wechat_unionid": {
                     "description": "微信UnionID（跨应用唯一)",
+                    "type": "string"
+                }
+            }
+        },
+        "utils.Response": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {},
+                "message": {
                     "type": "string"
                 }
             }
