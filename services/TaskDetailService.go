@@ -194,6 +194,7 @@ func (s *TaskDetailService) GetTaskChangeLogs(taskID uint) ([]dto.ChangeLogRespo
 		"department_id":       "部门",
 		"single":              "单人审核",
 		"jury":                "陪审团陪审",
+		"attachment":          "附件",
 	}
 
 	// 变更类型映射
@@ -207,6 +208,7 @@ func (s *TaskDetailService) GetTaskChangeLogs(taskID uint) ([]dto.ChangeLogRespo
 		"jury_invited":       "邀请陪审团",
 		"task_rejected":      "拒绝任务",
 		"review_finalized":   "最终决策",
+		"attachment_delete":  "删除附件",
 	}
 
 	// 预加载所有涉及的用户ID（用于executor_id字段的值转换）

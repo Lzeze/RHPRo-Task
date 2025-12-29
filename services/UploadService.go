@@ -88,6 +88,32 @@ func (s *UploadService) GetAttachmentsByTaskID(taskID uint) ([]dto.AttachmentDet
 }
 
 // DeleteAttachment 删除附件记录
-func (s *UploadService) DeleteAttachment(attachmentID uint) error {
-	return database.DB.Delete(&models.TaskAttachment{}, attachmentID).Error
+// 如果提供了 taskID 和 userID，会记录变更日志
+func (s *UploadService) DeleteAttachment(attachmentID uint, taskID uint, userID uint) error {
+	// 先查询附件信息用于记录日志
+	var attachment models.TaskAttachment
+	if err := database.DB.First(&attachment, attachmentID).Error; err != nil {
+		return err
+	}
+
+	// 删除附件
+	if err := database.DB.Delete(&models.TaskAttachment{}, attachmentID).Error; err != nil {
+		return err
+	}
+
+	// 如果有 taskID，记录变更日志
+	if taskID > 0 && userID > 0 {
+		changeLog := models.TaskChangeLog{
+			TaskID:     taskID,
+			UserID:     userID,
+			ChangeType: "attachment_delete",
+			FieldName:  "attachment",
+			OldValue:   attachment.FileName,
+			NewValue:   "",
+			Comment:    "删除附件: " + attachment.FileName,
+		}
+		database.DB.Create(&changeLog)
+	}
+
+	return nil
 }

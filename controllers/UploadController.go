@@ -305,10 +305,11 @@ func (c *UploadController) GetTaskAttachments(ctx *gin.Context) {
 
 // DeleteAttachment 删除附件
 // @Summary 删除附件
-// @Description 删除指定的附件记录
+// @Description 删除指定的附件记录，如果提供task_id则记录变更日志
 // @Tags 文件上传
 // @Produce json
 // @Param id path int true "附件ID"
+// @Param task_id query int false "关联任务ID（可选，提供则记录变更日志）"
 // @Success 200 {object} utils.Response "删除成功"
 // @Failure 400 {object} utils.Response "请求错误"
 // @Failure 500 {object} utils.Response "服务器错误"
@@ -322,7 +323,22 @@ func (c *UploadController) DeleteAttachment(ctx *gin.Context) {
 		return
 	}
 
-	if err := c.uploadService.DeleteAttachment(uint(id)); err != nil {
+	// 获取可选的 task_id
+	var taskID uint
+	if tid := ctx.Query("task_id"); tid != "" {
+		if tidVal, err := strconv.ParseUint(tid, 10, 32); err == nil {
+			taskID = uint(tidVal)
+		}
+	}
+
+	// 获取当前用户ID
+	userID, _ := ctx.Get("userID")
+	var currentUserID uint
+	if userID != nil {
+		currentUserID = userID.(uint)
+	}
+
+	if err := c.uploadService.DeleteAttachment(uint(id), taskID, currentUserID); err != nil {
 		utils.Error(ctx, 500, "删除附件失败: "+err.Error())
 		return
 	}

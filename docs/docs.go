@@ -2721,7 +2721,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "删除指定的附件记录",
+                "description": "删除指定的附件记录，如果提供task_id则记录变更日志",
                 "produces": [
                     "application/json"
                 ],
@@ -2736,6 +2736,12 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "关联任务ID（可选，提供则记录变更日志）",
+                        "name": "task_id",
+                        "in": "query"
                     }
                 ],
                 "responses": {
