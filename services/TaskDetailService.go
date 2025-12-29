@@ -208,6 +208,7 @@ func (s *TaskDetailService) GetTaskChangeLogs(taskID uint) ([]dto.ChangeLogRespo
 		"jury_invited":       "邀请陪审团",
 		"task_rejected":      "拒绝任务",
 		"review_finalized":   "最终决策",
+		"attachment_add":     "添加附件",
 		"attachment_delete":  "删除附件",
 	}
 

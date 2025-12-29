@@ -13,6 +13,7 @@ func NewUploadService() *UploadService {
 }
 
 // SaveAttachment 保存附件记录到数据库
+// 如果提供了 taskID，会记录变更日志
 func (s *UploadService) SaveAttachment(fileName, fileURL, fileType string, fileSize int64, userID, taskID uint, attachmentType string) (*dto.AttachmentResult, error) {
 	if attachmentType == "" {
 		attachmentType = "general"
@@ -30,6 +31,20 @@ func (s *UploadService) SaveAttachment(fileName, fileURL, fileType string, fileS
 
 	if err := database.DB.Create(&attachment).Error; err != nil {
 		return nil, err
+	}
+
+	// 如果有 taskID，记录变更日志
+	if taskID > 0 && userID > 0 {
+		changeLog := models.TaskChangeLog{
+			TaskID:     taskID,
+			UserID:     userID,
+			ChangeType: "attachment_add",
+			FieldName:  "attachment",
+			OldValue:   "",
+			NewValue:   fileName,
+			Comment:    "添加附件: " + fileName,
+		}
+		database.DB.Create(&changeLog)
 	}
 
 	return &dto.AttachmentResult{
