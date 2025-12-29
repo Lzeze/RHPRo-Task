@@ -51,6 +51,43 @@ definitions:
         description: 用户真实姓名
         type: string
     type: object
+  dto.AttachmentDetailResult:
+    properties:
+      attachment_type:
+        description: 附件类型
+        type: string
+      created_at:
+        allOf:
+        - $ref: '#/definitions/dto.ResponseTime'
+        description: 上传时间
+      file_name:
+        description: 文件名
+        type: string
+      file_size:
+        description: 文件大小（字节）
+        type: integer
+      file_type:
+        description: 文件类型/MIME
+        type: string
+      file_url:
+        description: 文件访问URL
+        type: string
+      id:
+        description: 附件ID
+        type: integer
+      task_id:
+        description: 关联任务ID
+        type: integer
+      uploaded_by:
+        description: 上传人ID
+        type: integer
+      uploader_nickname:
+        description: 上传人昵称
+        type: string
+      uploader_username:
+        description: 上传人用户名
+        type: string
+    type: object
   dto.AttachmentResult:
     properties:
       file_name:
@@ -3658,6 +3695,35 @@ paths:
       summary: 上传文件
       tags:
       - 文件上传
+  /upload/{id}:
+    delete:
+      description: 删除指定的附件记录
+      parameters:
+      - description: 附件ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "400":
+          description: 请求错误
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: 删除附件
+      tags:
+      - 文件上传
   /upload/avatar:
     post:
       consumes:
@@ -3785,6 +3851,37 @@ paths:
       security:
       - BearerAuth: []
       summary: 上传媒体文件
+      tags:
+      - 文件上传
+  /upload/task/{task_id}:
+    get:
+      description: 获取指定任务的所有附件，包含上传人信息
+      parameters:
+      - description: 任务ID
+        in: path
+        name: task_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 附件列表
+          schema:
+            items:
+              $ref: '#/definitions/dto.AttachmentDetailResult'
+            type: array
+        "400":
+          description: 请求错误
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取任务附件列表
       tags:
       - 文件上传
   /users:

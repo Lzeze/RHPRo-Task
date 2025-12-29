@@ -274,3 +274,58 @@ func (c *UploadController) GetDrivers(ctx *gin.Context) {
 		"drivers": drivers,
 	})
 }
+
+// GetTaskAttachments 获取任务附件列表
+// @Summary 获取任务附件列表
+// @Description 获取指定任务的所有附件，包含上传人信息
+// @Tags 文件上传
+// @Produce json
+// @Param task_id path int true "任务ID"
+// @Success 200 {object} []dto.AttachmentDetailResult "附件列表"
+// @Failure 400 {object} utils.Response "请求错误"
+// @Failure 500 {object} utils.Response "服务器错误"
+// @Security BearerAuth
+// @Router /upload/task/{task_id} [get]
+func (c *UploadController) GetTaskAttachments(ctx *gin.Context) {
+	taskIDStr := ctx.Param("task_id")
+	taskID, err := strconv.ParseUint(taskIDStr, 10, 32)
+	if err != nil {
+		utils.BadRequest(ctx, "无效的任务ID")
+		return
+	}
+
+	attachments, err := c.uploadService.GetAttachmentsByTaskID(uint(taskID))
+	if err != nil {
+		utils.Error(ctx, 500, "获取附件列表失败: "+err.Error())
+		return
+	}
+
+	utils.Success(ctx, attachments)
+}
+
+// DeleteAttachment 删除附件
+// @Summary 删除附件
+// @Description 删除指定的附件记录
+// @Tags 文件上传
+// @Produce json
+// @Param id path int true "附件ID"
+// @Success 200 {object} utils.Response "删除成功"
+// @Failure 400 {object} utils.Response "请求错误"
+// @Failure 500 {object} utils.Response "服务器错误"
+// @Security BearerAuth
+// @Router /upload/{id} [delete]
+func (c *UploadController) DeleteAttachment(ctx *gin.Context) {
+	idStr := ctx.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		utils.BadRequest(ctx, "无效的附件ID")
+		return
+	}
+
+	if err := c.uploadService.DeleteAttachment(uint(id)); err != nil {
+		utils.Error(ctx, 500, "删除附件失败: "+err.Error())
+		return
+	}
+
+	utils.SuccessWithMessage(ctx, "删除成功", nil)
+}

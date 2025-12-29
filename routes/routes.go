@@ -274,6 +274,10 @@ func SetupRoutes() *gin.Engine {
 		uploadRoutes.POST("/media", uploadController.UploadMedia)
 		// 获取可用驱动列表
 		uploadRoutes.GET("/drivers", uploadController.GetDrivers)
+		// 获取任务附件列表
+		uploadRoutes.GET("/task/:task_id", uploadController.GetTaskAttachments)
+		// 删除附件
+		uploadRoutes.DELETE("/:id", uploadController.DeleteAttachment)
 	}
 
 	// 静态文件服务（本地上传文件访问）

@@ -2665,6 +2665,101 @@ const docTemplate = `{
                 }
             }
         },
+        "/upload/task/{task_id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取指定任务的所有附件，包含上传人信息",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "文件上传"
+                ],
+                "summary": "获取任务附件列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "任务ID",
+                        "name": "task_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "附件列表",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.AttachmentDetailResult"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "请求错误",
+                        "schema": {
+                            "$ref": "#/definitions/utils.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器错误",
+                        "schema": {
+                            "$ref": "#/definitions/utils.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/upload/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "删除指定的附件记录",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "文件上传"
+                ],
+                "summary": "删除附件",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "附件ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "删除成功",
+                        "schema": {
+                            "$ref": "#/definitions/utils.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "请求错误",
+                        "schema": {
+                            "$ref": "#/definitions/utils.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器错误",
+                        "schema": {
+                            "$ref": "#/definitions/utils.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/users": {
             "get": {
                 "security": [
@@ -3540,6 +3635,59 @@ const docTemplate = `{
                 },
                 "username": {
                     "description": "用户真实姓名",
+                    "type": "string"
+                }
+            }
+        },
+        "dto.AttachmentDetailResult": {
+            "type": "object",
+            "properties": {
+                "attachment_type": {
+                    "description": "附件类型",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "上传时间",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.ResponseTime"
+                        }
+                    ]
+                },
+                "file_name": {
+                    "description": "文件名",
+                    "type": "string"
+                },
+                "file_size": {
+                    "description": "文件大小（字节）",
+                    "type": "integer"
+                },
+                "file_type": {
+                    "description": "文件类型/MIME",
+                    "type": "string"
+                },
+                "file_url": {
+                    "description": "文件访问URL",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "附件ID",
+                    "type": "integer"
+                },
+                "task_id": {
+                    "description": "关联任务ID",
+                    "type": "integer"
+                },
+                "uploaded_by": {
+                    "description": "上传人ID",
+                    "type": "integer"
+                },
+                "uploader_nickname": {
+                    "description": "上传人昵称",
+                    "type": "string"
+                },
+                "uploader_username": {
+                    "description": "上传人用户名",
                     "type": "string"
                 }
             }
