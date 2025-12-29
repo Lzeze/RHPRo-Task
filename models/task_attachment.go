@@ -1,8 +1,13 @@
 package models
 
+import "time"
+
 // TaskAttachment 任务附件
 type TaskAttachment struct {
-	BaseModel
+	// 主键ID
+	ID uint `gorm:"primarykey" json:"id"`
+	// 创建时间
+	CreatedAt time.Time `json:"created_at"`
 	// 关联任务ID
 	TaskID uint `gorm:"index" json:"task_id"`
 	// 文件名
