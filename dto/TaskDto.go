@@ -53,15 +53,15 @@ type TaskRequest struct {
 	// 任务标题（简要描述任务内容）
 	Title string `json:"title" binding:"required"`
 	// 任务描述（详细的任务说明和需求）
-	Description string `json:"description"`
+	Description string `json:"description" binding:"required"`
 	// 任务类型编码（如：需求、缺陷、功能等，关联 task_types.code）
 	TaskTypeCode string `json:"task_type_code" binding:"required"`
 	// 任务状态编码（关联 task_statuses.code，可选，默认为初始状态）
 	StatusCode string `json:"status_code"`
 	// 执行人用户ID（任务的具体执行者，可选）
-	ExecutorID *uint `json:"executor_id"`
+	ExecutorID *uint `json:"executor_id" binding:"required"`
 	// 所属部门ID（任务所属的部门，可选）
-	DepartmentID *uint `json:"department_id"`
+	DepartmentID *uint `json:"department_id" binding:"required"`
 	// 父任务ID（用于建立任务层级关系，可选）
 	ParentTaskID *uint `json:"parent_task_id"`
 	// 根任务ID（用于快速定位顶层任务，可选）
