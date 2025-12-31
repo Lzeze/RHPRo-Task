@@ -81,7 +81,7 @@ func (ctrl *TaskController) GetTaskInfo(c *gin.Context) {
 
 // GetTaskList 获取任务列表
 // @Summary 获取任务列表
-// @Description 获取任务列表，支持分页和多条件过滤。普通用户获取所属部门任务，部门负责人获取所负责部门任务，管理员获取所有任务
+// @Description 获取任务列表，支持分页和多条件过滤。超级管理员可查看所有任务，部门负责人可查看所负责部门+所属部门的成员任务，普通用户查看所属部门成员任务
 // @Tags 任务管理
 // @Accept json
 // @Produce json
@@ -94,9 +94,13 @@ func (ctrl *TaskController) GetTaskInfo(c *gin.Context) {
 // @Param status_code query string false "状态编码"
 // @Param creator_id query int false "创建人ID"
 // @Param executor_id query int false "执行人ID"
-// @Param department_id query int false "部门ID"
+// @Param department_id query int false "部门ID（筛选该部门成员创建或执行的任务）"
+// @Param member_id query int false "成员用户ID（筛选指定成员创建或执行的任务，可配合department_id使用）"
 // @Param priority query int false "优先级"
 // @Param is_in_pool query boolean false "是否在待领池"
+// @Param time_range query string false "时间范围快捷筛选：week(近一周)/month(近一个月)/three_months(近三个月)"
+// @Param start_time query string false "自定义开始时间（格式：2006-01-02 或 2006-01-02T15:04:05）"
+// @Param end_time query string false "自定义结束时间（格式：2006-01-02 或 2006-01-02T15:04:05）"
 // @Success 200 {object} dto.PaginationResponse "查询成功"
 // @Failure 400 {object} map[string]interface{} "参数验证失败"
 // @Failure 401 {object} map[string]interface{} "未授权"

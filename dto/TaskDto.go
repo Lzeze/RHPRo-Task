@@ -291,6 +291,15 @@ type TaskQueryRequest struct {
 	// executor: 仅查看自己执行的任务
 	// jury: 仅查看被邀请陪审的任务
 	MyRole string `form:"my_role"`
+	// 时间范围快捷筛选：week/month/three_months（可选，与自定义时间区间互斥）
+	// week: 近一周
+	// month: 近一个月
+	// three_months: 近三个月
+	TimeRange string `form:"time_range"`
+	// 自定义开始时间（可选，格式：2006-01-02 或 2006-01-02T15:04:05）
+	StartTime string `form:"start_time"`
+	// 自定义结束时间（可选，格式：2006-01-02 或 2006-01-02T15:04:05）
+	EndTime string `form:"end_time"`
 }
 
 // TaskStatusTransitionRequest 任务状态转换请求

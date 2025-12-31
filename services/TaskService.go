@@ -380,6 +380,42 @@ func (s *TaskService) GetTaskList(req *dto.TaskQueryRequest, userID uint) (*dto.
 		query = query.Where("is_in_pool = ?", *req.IsInPool)
 	}
 
+	// 时间筛选
+	if req.TimeRange != "" {
+		// 快捷时间范围筛选
+		now := time.Now()
+		var startTime time.Time
+		switch req.TimeRange {
+		case "week":
+			startTime = now.AddDate(0, 0, -7)
+		case "month":
+			startTime = now.AddDate(0, -1, 0)
+		case "three_months":
+			startTime = now.AddDate(0, -3, 0)
+		}
+		if !startTime.IsZero() {
+			query = query.Where("created_at >= ?", startTime)
+		}
+	} else if req.StartTime != "" || req.EndTime != "" {
+		// 自定义时间区间筛选
+		if req.StartTime != "" {
+			startTime, err := ParseDateTime(req.StartTime)
+			if err == nil && startTime != nil {
+				query = query.Where("created_at >= ?", *startTime)
+			}
+		}
+		if req.EndTime != "" {
+			endTime, err := ParseDateTime(req.EndTime)
+			if err == nil && endTime != nil {
+				// 如果只传了日期，结束时间应该是当天的23:59:59
+				if endTime.Hour() == 0 && endTime.Minute() == 0 && endTime.Second() == 0 {
+					*endTime = endTime.Add(24*time.Hour - time.Second)
+				}
+				query = query.Where("created_at <= ?", *endTime)
+			}
+		}
+	}
+
 	// 统计总数
 	if err := query.Count(&total).Error; err != nil {
 		return nil, err
