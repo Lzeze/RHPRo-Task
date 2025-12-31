@@ -72,7 +72,7 @@ func LoadUploadConfig() *Config {
 		TypeDriverMapping: parseTypeDriverMapping(getEnv("UPLOAD_TYPE_DRIVER_MAPPING", "")),
 
 		Local: LocalConfig{
-			Enabled:  getEnvAsBool("UPLOAD_LOCAL_ENABLED", true),
+			Enabled:  getEnvAsBool("UPLOAD_LOCAL_ENABLED", false),
 			BasePath: getEnv("UPLOAD_LOCAL_BASE_PATH", "./uploads"),
 			BaseURL:  getEnv("UPLOAD_LOCAL_BASE_URL", "/uploads"),
 			MaxSize:  getEnvAsInt64("UPLOAD_LOCAL_MAX_SIZE", 100*1024*1024), // 默认100MB
