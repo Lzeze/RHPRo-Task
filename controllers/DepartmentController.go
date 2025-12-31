@@ -400,3 +400,67 @@ func (ctrl *DepartmentController) GetDepartmentTree(c *gin.Context) {
 
 	utils.Success(c, tree)
 }
+
+// GetManagedDepartmentsForFilter 获取用户可管理的部门列表（用于任务筛选）
+// @Summary 获取可管理的部门列表
+// @Description 获取当前用户可管理的部门列表，用于任务列表的部门筛选。超级管理员返回所有部门，部门负责人返回所负责的部门+所属部门，普通用户返回空列表
+// @Tags 部门管理
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {array} dto.ManagedDepartmentResponse "获取成功"
+// @Failure 401 {object} map[string]interface{} "未授权"
+// @Failure 500 {object} map[string]interface{} "服务器错误"
+// @Router /departments/managed-for-filter [get]
+func (ctrl *DepartmentController) GetManagedDepartmentsForFilter(c *gin.Context) {
+	// 从上下文获取当前用户ID
+	userIDInterface, exists := c.Get("userID")
+	if !exists {
+		utils.Unauthorized(c, "未获取到用户信息")
+		return
+	}
+
+	userID, ok := userIDInterface.(uint)
+	if !ok {
+		utils.Error(c, 500, "用户ID类型错误")
+		return
+	}
+
+	departments, err := ctrl.deptService.GetManagedDepartmentsForFilter(userID)
+	if err != nil {
+		utils.Error(c, 500, err.Error())
+		return
+	}
+
+	utils.SuccessWithMessage(c, "获取成功", departments)
+}
+
+// GetDepartmentMembersForFilter 获取部门成员列表（用于任务筛选）
+// @Summary 获取部门成员列表
+// @Description 根据部门ID获取该部门的所有成员，包括部门负责人，用于任务列表的成员筛选
+// @Tags 部门管理
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "部门ID"
+// @Success 200 {array} dto.DepartmentMemberForFilterResponse "获取成功"
+// @Failure 400 {object} map[string]interface{} "无效的部门ID"
+// @Failure 401 {object} map[string]interface{} "未授权"
+// @Failure 500 {object} map[string]interface{} "服务器错误"
+// @Router /departments/{id}/members-for-filter [get]
+func (ctrl *DepartmentController) GetDepartmentMembersForFilter(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		utils.BadRequest(c, "无效的部门ID")
+		return
+	}
+
+	members, err := ctrl.deptService.GetDepartmentMembersForFilter(uint(id))
+	if err != nil {
+		utils.Error(c, 500, err.Error())
+		return
+	}
+
+	utils.SuccessWithMessage(c, "获取成功", members)
+}

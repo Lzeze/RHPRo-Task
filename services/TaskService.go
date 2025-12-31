@@ -205,9 +205,12 @@ func (s *TaskService) CreateTask(req *dto.TaskRequest, creatorID uint) (*models.
 
 // GetTaskList 查询任务列表（带分页和过滤）
 // 权限规则：
-// - 超级管理员（admin角色）：获取所有任务
-// - 部门负责人：获取所负责的所有部门的任务
-// - 普通用户：获取所属部门的任务
+// - 超级管理员（admin角色）：可查看所有任务，支持按部门和成员筛选
+// - 部门负责人：可查看所负责部门+所属部门的成员任务，支持按部门和成员筛选
+// - 普通用户：仅查看所属部门的任务
+// 筛选逻辑：
+// - department_id: 筛选该部门成员创建或执行的任务
+// - member_id: 筛选指定成员创建或执行的任务（需配合department_id使用）
 func (s *TaskService) GetTaskList(req *dto.TaskQueryRequest, userID uint) (*dto.PaginationResponse, error) {
 	var tasks []models.Task
 	var total int64
@@ -230,34 +233,32 @@ func (s *TaskService) GetTaskList(req *dto.TaskQueryRequest, userID uint) (*dto.
 	// 构建查询
 	query := database.DB.Model(&models.Task{})
 
-	// 根据用户角色添加部门过滤条件
-	if !isAdmin {
-		// 非管理员需要按部门过滤
-		var departmentIDs []uint
-
-		// 如果是部门负责人，获取所负责的所有部门ID
+	// 获取用户可管理的部门ID列表（用于权限校验）
+	var allowedDepartmentIDs []uint
+	if isAdmin {
+		// 超级管理员可以查看所有部门
+		allowedDepartmentIDs = nil // nil 表示不限制
+	} else {
+		// 部门负责人：负责的部门 + 所属部门
 		if len(user.ManagedDepartments) > 0 {
 			for _, dept := range user.ManagedDepartments {
-				departmentIDs = append(departmentIDs, dept.ID)
+				allowedDepartmentIDs = append(allowedDepartmentIDs, dept.ID)
 			}
 		}
-
-		// 如果用户有所属部门，也加入查询范围
 		if user.DepartmentID != nil {
-			// 检查是否已包含
 			found := false
-			for _, id := range departmentIDs {
+			for _, id := range allowedDepartmentIDs {
 				if id == *user.DepartmentID {
 					found = true
 					break
 				}
 			}
 			if !found {
-				departmentIDs = append(departmentIDs, *user.DepartmentID)
+				allowedDepartmentIDs = append(allowedDepartmentIDs, *user.DepartmentID)
 			}
 		}
 
-		if len(departmentIDs) == 0 {
+		if len(allowedDepartmentIDs) == 0 {
 			// 用户没有部门，返回空结果
 			return &dto.PaginationResponse{
 				Total:      0,
@@ -267,11 +268,93 @@ func (s *TaskService) GetTaskList(req *dto.TaskQueryRequest, userID uint) (*dto.
 				Data:       []dto.TaskResponse{},
 			}, nil
 		}
-
-		query = query.Where("department_id IN ?", departmentIDs)
 	}
 
-	// 应用过滤条件
+	// 处理部门和成员筛选逻辑
+	if req.DepartmentID != nil {
+		// 校验权限：非管理员只能筛选自己可管理的部门
+		if !isAdmin {
+			allowed := false
+			for _, id := range allowedDepartmentIDs {
+				if id == *req.DepartmentID {
+					allowed = true
+					break
+				}
+			}
+			if !allowed {
+				return nil, errors.New("无权查看该部门的任务")
+			}
+		}
+
+		if req.MemberID != nil {
+			// 有部门ID + 成员ID：筛选该成员创建或执行的任务
+			query = query.Where("creator_id = ? OR executor_id = ?", *req.MemberID, *req.MemberID)
+		} else {
+			// 只有部门ID：筛选该部门所有成员创建或执行的任务
+			// 获取该部门的所有成员ID（包括负责人）
+			memberIDs := s.getDepartmentMemberIDs(*req.DepartmentID)
+			if len(memberIDs) == 0 {
+				// 部门没有成员，返回空结果
+				return &dto.PaginationResponse{
+					Total:      0,
+					Page:       req.GetPage(),
+					PageSize:   req.GetPageSize(),
+					TotalPages: 0,
+					Data:       []dto.TaskResponse{},
+				}, nil
+			}
+			query = query.Where("creator_id IN ? OR executor_id IN ?", memberIDs, memberIDs)
+		}
+	} else if req.MemberID != nil {
+		// 只有成员ID，没有部门ID：筛选该成员创建或执行的任务
+		// 需要校验该成员是否在用户可管理的部门内
+		if !isAdmin {
+			var member models.User
+			if err := database.DB.First(&member, *req.MemberID).Error; err != nil {
+				return nil, errors.New("成员不存在")
+			}
+			if member.DepartmentID == nil {
+				return nil, errors.New("该成员没有所属部门")
+			}
+			allowed := false
+			for _, id := range allowedDepartmentIDs {
+				if id == *member.DepartmentID {
+					allowed = true
+					break
+				}
+			}
+			if !allowed {
+				return nil, errors.New("无权查看该成员的任务")
+			}
+		}
+		query = query.Where("creator_id = ? OR executor_id = ?", *req.MemberID, *req.MemberID)
+	} else {
+		// 没有部门ID和成员ID：按用户权限范围筛选
+		if !isAdmin {
+			// 获取所有可管理部门的成员ID
+			var allMemberIDs []uint
+			for _, deptID := range allowedDepartmentIDs {
+				memberIDs := s.getDepartmentMemberIDs(deptID)
+				allMemberIDs = append(allMemberIDs, memberIDs...)
+			}
+			// 去重
+			allMemberIDs = uniqueUintSlice(allMemberIDs)
+
+			if len(allMemberIDs) == 0 {
+				return &dto.PaginationResponse{
+					Total:      0,
+					Page:       req.GetPage(),
+					PageSize:   req.GetPageSize(),
+					TotalPages: 0,
+					Data:       []dto.TaskResponse{},
+				}, nil
+			}
+			query = query.Where("creator_id IN ? OR executor_id IN ?", allMemberIDs, allMemberIDs)
+		}
+		// 超级管理员不加限制，查看所有任务
+	}
+
+	// 应用其他过滤条件
 	if req.TaskNo != "" {
 		query = query.Where("task_no LIKE ?", "%"+req.TaskNo+"%")
 	}
@@ -289,9 +372,6 @@ func (s *TaskService) GetTaskList(req *dto.TaskQueryRequest, userID uint) (*dto.
 	}
 	if req.ExecutorID != nil {
 		query = query.Where("executor_id = ?", *req.ExecutorID)
-	}
-	if req.DepartmentID != nil {
-		query = query.Where("department_id = ?", *req.DepartmentID)
 	}
 	if req.Priority != nil {
 		query = query.Where("priority = ?", *req.Priority)
@@ -335,6 +415,45 @@ func (s *TaskService) GetTaskList(req *dto.TaskQueryRequest, userID uint) (*dto.
 		TotalPages: totalPages,
 		Data:       taskResponses,
 	}, nil
+}
+
+// getDepartmentMemberIDs 获取部门所有成员的用户ID（包括负责人）
+func (s *TaskService) getDepartmentMemberIDs(deptID uint) []uint {
+	var memberIDs []uint
+
+	// 1. 获取部门负责人
+	var leaders []models.DepartmentLeader
+	if err := database.DB.Where("department_id = ?", deptID).Find(&leaders).Error; err == nil {
+		for _, leader := range leaders {
+			memberIDs = append(memberIDs, leader.UserID)
+		}
+	}
+
+	// 2. 获取部门普通成员
+	var members []models.User
+	if err := database.DB.Select("id").
+		Where("department_id = ? AND status != ?", deptID, models.UserStatusDisabled).
+		Find(&members).Error; err == nil {
+		for _, member := range members {
+			memberIDs = append(memberIDs, member.ID)
+		}
+	}
+
+	// 去重
+	return uniqueUintSlice(memberIDs)
+}
+
+// uniqueUintSlice 对uint切片去重
+func uniqueUintSlice(slice []uint) []uint {
+	seen := make(map[uint]bool)
+	result := []uint{}
+	for _, v := range slice {
+		if !seen[v] {
+			seen[v] = true
+			result = append(result, v)
+		}
+	}
+	return result
 }
 
 // GetMyTasks 查询当前用户相关的任务列表（我发布的、我执行的、我陪审的）

@@ -598,3 +598,141 @@ func (s *DepartmentService) buildTreeNode(deptID uint, deptMap map[uint]*dto.Dep
 
 	return result
 }
+
+// GetManagedDepartmentsForFilter 获取用户可管理的部门列表（用于任务筛选）
+// 权限规则：
+// - 超级管理员（admin角色）：返回所有部门
+// - 部门负责人：返回所负责的所有部门 + 自己所属的部门（去重）
+// - 普通用户：返回空列表（普通用户不能使用此筛选功能）
+func (s *DepartmentService) GetManagedDepartmentsForFilter(userID uint) ([]dto.ManagedDepartmentResponse, error) {
+	// 获取用户信息，包括角色
+	var user models.User
+	if err := database.DB.Preload("Roles").First(&user, userID).Error; err != nil {
+		return nil, errors.New("用户不存在")
+	}
+
+	// 判断是否为超级管理员
+	isAdmin := false
+	for _, role := range user.Roles {
+		if role.Name == "admin" {
+			isAdmin = true
+			break
+		}
+	}
+
+	var result []dto.ManagedDepartmentResponse
+
+	if isAdmin {
+		// 超级管理员：返回所有部门
+		var depts []models.Department
+		if err := database.DB.Order("sort_order ASC, id ASC").Find(&depts).Error; err != nil {
+			return nil, err
+		}
+
+		for _, dept := range depts {
+			result = append(result, dto.ManagedDepartmentResponse{
+				ID:          dept.ID,
+				Name:        dept.Name,
+				Description: dept.Description,
+			})
+		}
+	} else if user.IsDepartmentLeader {
+		// 部门负责人：返回所负责的部门 + 自己所属的部门（去重）
+		deptMap := make(map[uint]dto.ManagedDepartmentResponse)
+
+		// 1. 添加负责的部门
+		var leaders []models.DepartmentLeader
+		if err := database.DB.Preload("Department").
+			Where("user_id = ?", userID).
+			Find(&leaders).Error; err != nil {
+			return nil, err
+		}
+
+		for _, leader := range leaders {
+			deptMap[leader.Department.ID] = dto.ManagedDepartmentResponse{
+				ID:          leader.Department.ID,
+				Name:        leader.Department.Name,
+				Description: leader.Department.Description,
+			}
+		}
+
+		// 2. 添加自己所属的部门（如果有且未重复）
+		if user.DepartmentID != nil {
+			if _, exists := deptMap[*user.DepartmentID]; !exists {
+				var dept models.Department
+				if err := database.DB.First(&dept, *user.DepartmentID).Error; err == nil {
+					deptMap[dept.ID] = dto.ManagedDepartmentResponse{
+						ID:          dept.ID,
+						Name:        dept.Name,
+						Description: dept.Description,
+					}
+				}
+			}
+		}
+
+		// 转换为切片
+		for _, dept := range deptMap {
+			result = append(result, dept)
+		}
+	}
+	// 普通用户返回空列表
+
+	return result, nil
+}
+
+// GetDepartmentMembersForFilter 获取部门成员列表（用于任务筛选）
+// 返回指定部门的所有成员，包括部门负责人
+func (s *DepartmentService) GetDepartmentMembersForFilter(deptID uint) ([]dto.DepartmentMemberForFilterResponse, error) {
+	// 验证部门存在
+	var dept models.Department
+	if err := database.DB.First(&dept, deptID).Error; err != nil {
+		return nil, errors.New("部门不存在")
+	}
+
+	// 获取部门负责人ID集合
+	leaderIDs := make(map[uint]bool)
+	var leaders []models.DepartmentLeader
+	if err := database.DB.Where("department_id = ?", deptID).Find(&leaders).Error; err == nil {
+		for _, leader := range leaders {
+			leaderIDs[leader.UserID] = true
+		}
+	}
+
+	var result []dto.DepartmentMemberForFilterResponse
+
+	// 1. 添加部门负责人（从 department_leaders 表获取）
+	for _, leader := range leaders {
+		var user models.User
+		if err := database.DB.Select("id, username, nickname").First(&user, leader.UserID).Error; err == nil {
+			result = append(result, dto.DepartmentMemberForFilterResponse{
+				UserID:   user.ID,
+				Username: user.Username,
+				Nickname: user.Nickname,
+				IsLeader: true,
+			})
+		}
+	}
+
+	// 2. 添加部门普通成员（从 users 表获取 department_id = deptID 的用户，排除已添加的负责人）
+	var members []models.User
+	if err := database.DB.Select("id, username, nickname").
+		Where("department_id = ? AND status != ?", deptID, models.UserStatusDisabled).
+		Find(&members).Error; err != nil {
+		return nil, err
+	}
+
+	for _, member := range members {
+		// 跳过已添加的负责人
+		if leaderIDs[member.ID] {
+			continue
+		}
+		result = append(result, dto.DepartmentMemberForFilterResponse{
+			UserID:   member.ID,
+			Username: member.Username,
+			Nickname: member.Nickname,
+			IsLeader: false,
+		})
+	}
+
+	return result, nil
+}

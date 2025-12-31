@@ -277,8 +277,10 @@ type TaskQueryRequest struct {
 	CreatorID *uint `form:"creator_id"`
 	// 执行人用户ID（可选）
 	ExecutorID *uint `form:"executor_id"`
-	// 所属部门ID（可选）
+	// 所属部门ID（可选，用于筛选指定部门的任务）
 	DepartmentID *uint `form:"department_id"`
+	// 成员用户ID（可选，用于筛选指定成员相关的任务，包括该成员创建或执行的任务）
+	MemberID *uint `form:"member_id"`
 	// 优先级（可选）
 	Priority *int `form:"priority"`
 	// 是否在待领池（可选）

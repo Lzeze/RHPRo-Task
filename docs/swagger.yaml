@@ -317,6 +317,21 @@ definitions:
         description: 用户名
         type: string
     type: object
+  dto.DepartmentMemberForFilterResponse:
+    properties:
+      is_leader:
+        description: 是否为部门负责人
+        type: boolean
+      nickname:
+        description: 用户昵称
+        type: string
+      user_id:
+        description: 用户ID
+        type: integer
+      username:
+        description: 用户名
+        type: string
+    type: object
   dto.DepartmentRequest:
     properties:
       description:
@@ -609,6 +624,18 @@ definitions:
         type: string
       user_info:
         description: 用户信息（包含用户基本信息和权限等）
+    type: object
+  dto.ManagedDepartmentResponse:
+    properties:
+      description:
+        description: 部门描述
+        type: string
+      id:
+        description: 部门ID
+        type: integer
+      name:
+        description: 部门名称
+        type: string
     type: object
   dto.PaginationResponse:
     properties:
@@ -1423,6 +1450,9 @@ definitions:
         description: 任务标题（简要描述任务内容）
         type: string
     required:
+    - department_id
+    - description
+    - executor_id
     - task_type_code
     - title
     type: object
@@ -2502,6 +2532,46 @@ paths:
       summary: 移除负责人
       tags:
       - 部门管理
+  /departments/{id}/members-for-filter:
+    get:
+      consumes:
+      - application/json
+      description: 根据部门ID获取该部门的所有成员，包括部门负责人，用于任务列表的成员筛选
+      parameters:
+      - description: 部门ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            items:
+              $ref: '#/definitions/dto.DepartmentMemberForFilterResponse'
+            type: array
+        "400":
+          description: 无效的部门ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 未授权
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 服务器错误
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 获取部门成员列表
+      tags:
+      - 部门管理
   /departments/{id}/users:
     post:
       consumes:
@@ -2583,6 +2653,35 @@ paths:
       security:
       - BearerAuth: []
       summary: 设置用户默认部门
+      tags:
+      - 部门管理
+  /departments/managed-for-filter:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前用户可管理的部门列表，用于任务列表的部门筛选。超级管理员返回所有部门，部门负责人返回所负责的部门+所属部门，普通用户返回空列表
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            items:
+              $ref: '#/definitions/dto.ManagedDepartmentResponse'
+            type: array
+        "401":
+          description: 未授权
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 服务器错误
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 获取可管理的部门列表
       tags:
       - 部门管理
   /departments/my-departments:

@@ -172,3 +172,25 @@ type BatchImportFailedItem struct {
 	// 失败原因
 	Reason string `json:"reason"`
 }
+
+// ManagedDepartmentResponse 负责人管理的部门响应（用于任务筛选）
+type ManagedDepartmentResponse struct {
+	// 部门ID
+	ID uint `json:"id"`
+	// 部门名称
+	Name string `json:"name"`
+	// 部门描述
+	Description string `json:"description"`
+}
+
+// DepartmentMemberForFilterResponse 部门成员响应（用于任务筛选）
+type DepartmentMemberForFilterResponse struct {
+	// 用户ID
+	UserID uint `json:"user_id"`
+	// 用户名
+	Username string `json:"username"`
+	// 用户昵称
+	Nickname string `json:"nickname"`
+	// 是否为部门负责人
+	IsLeader bool `json:"is_leader"`
+}

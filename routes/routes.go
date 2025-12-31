@@ -132,6 +132,9 @@ func SetupRoutes() *gin.Engine {
 		// 获取当前用户负责的部门列表（必须放在 /:id 之前）
 		deptRoutes.GET("/my-departments", deptController.GetUserDepartments)
 
+		// 获取用户可管理的部门列表（用于任务筛选，必须放在 /:id 之前）
+		deptRoutes.GET("/managed-for-filter", deptController.GetManagedDepartmentsForFilter)
+
 		// 设置默认部门（必须放在 /:id 之前）
 		deptRoutes.PUT("/default", deptController.SetDefaultDepartment)
 
@@ -161,6 +164,9 @@ func SetupRoutes() *gin.Engine {
 		deptRoutes.POST("/:id/leaders", deptController.AddLeader)
 		//移除负责人
 		deptRoutes.DELETE("/:id/leaders/:userId", deptController.RemoveLeader)
+
+		// 获取部门成员列表（用于任务筛选）
+		deptRoutes.GET("/:id/members-for-filter", deptController.GetDepartmentMembersForFilter)
 
 		// 人员分配
 		// deptRoutes.POST("/:id/users", middlewares.PermissionMiddleware("dept:manage"), deptController.AssignUsers)
