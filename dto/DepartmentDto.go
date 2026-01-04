@@ -181,6 +181,8 @@ type ManagedDepartmentResponse struct {
 	Name string `json:"name"`
 	// 部门描述
 	Description string `json:"description"`
+	// 任务总数（仅当 with_stats=true 时返回）
+	TaskCount *int64 `json:"task_count,omitempty"`
 }
 
 // DepartmentMemberForFilterResponse 部门成员响应（用于任务筛选）
@@ -193,4 +195,6 @@ type DepartmentMemberForFilterResponse struct {
 	Nickname string `json:"nickname"`
 	// 是否为部门负责人
 	IsLeader bool `json:"is_leader"`
+	// 任务总数（仅当 with_stats=true 时返回）
+	TaskCount *int64 `json:"task_count,omitempty"`
 }

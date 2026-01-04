@@ -445,6 +445,15 @@ const docTemplate = `{
                     "部门管理"
                 ],
                 "summary": "获取可管理的部门列表",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "是否统计各部门任务数量",
+                        "name": "with_stats",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "获取成功",
@@ -844,6 +853,13 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "是否统计各成员任务数量",
+                        "name": "with_stats",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -4202,6 +4218,10 @@ const docTemplate = `{
                     "description": "用户昵称",
                     "type": "string"
                 },
+                "task_count": {
+                    "description": "任务总数（仅当 with_stats=true 时返回）",
+                    "type": "integer"
+                },
                 "user_id": {
                     "description": "用户ID",
                     "type": "integer"
@@ -4642,6 +4662,10 @@ const docTemplate = `{
                 "name": {
                     "description": "部门名称",
                     "type": "string"
+                },
+                "task_count": {
+                    "description": "任务总数（仅当 with_stats=true 时返回）",
+                    "type": "integer"
                 }
             }
         },

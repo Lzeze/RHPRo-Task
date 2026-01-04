@@ -1,0 +1,90 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: rhzy-task-server
+  namespace: prod
+  labels:
+    app: kubesphere
+    component: rhzy-task-server
+    tier: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kubesphere
+      component: rhzy-task-server
+      tier: backend
+  template:
+    metadata:
+      labels:
+        app: kubesphere
+        component: rhzy-task-server
+        tier: backend
+    spec:
+      containers:
+        - name: rhzy-task-server
+          image: 'rhzy-harbor.gshbzw.com/xmc/rhzy-task-server:${IMAGE_TAG}'
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          env:
+            - name: ACTIVE
+            - name: JAVA_OPTS
+            - name: TZ
+              value: Asia/Shanghai
+          resources:
+            limits:
+              cpu: 1024m
+              memory: 4Gi
+            requests:
+              cpu: 512m
+              memory: 2Gi
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 180
+            timeoutSeconds: 3
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 30
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 60
+            timeoutSeconds: 3
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 30
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: logs-volume
+              mountPath: /app/logs
+            - name: uploads-volume
+              mountPath: /app/uploads
+      volumes:
+        - name: logs-volume
+          hostPath:
+            path: /data/rhzy-task-server/logs
+            type: DirectoryOrCreate
+        - name: uploads-volume
+          hostPath:
+            path: /data/rhzy-task-server/uploads
+            type: DirectoryOrCreate
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      imagePullSecrets:
+        - name: aliyun-docker-secret
+      schedulerName: default-scheduler
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600

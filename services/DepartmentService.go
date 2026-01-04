@@ -604,7 +604,8 @@ func (s *DepartmentService) buildTreeNode(deptID uint, deptMap map[uint]*dto.Dep
 // - 超级管理员（admin角色）：返回所有部门
 // - 部门负责人：返回所负责的所有部门 + 自己所属的部门（去重）
 // - 普通用户：返回空列表（普通用户不能使用此筛选功能）
-func (s *DepartmentService) GetManagedDepartmentsForFilter(userID uint) ([]dto.ManagedDepartmentResponse, error) {
+// withStats: 是否统计各部门任务数量
+func (s *DepartmentService) GetManagedDepartmentsForFilter(userID uint, withStats bool) ([]dto.ManagedDepartmentResponse, error) {
 	// 获取用户信息，包括角色
 	var user models.User
 	if err := database.DB.Preload("Roles").First(&user, userID).Error; err != nil {
@@ -630,11 +631,16 @@ func (s *DepartmentService) GetManagedDepartmentsForFilter(userID uint) ([]dto.M
 		}
 
 		for _, dept := range depts {
-			result = append(result, dto.ManagedDepartmentResponse{
+			item := dto.ManagedDepartmentResponse{
 				ID:          dept.ID,
 				Name:        dept.Name,
 				Description: dept.Description,
-			})
+			}
+			if withStats {
+				count := s.countDepartmentTasks(dept.ID)
+				item.TaskCount = &count
+			}
+			result = append(result, item)
 		}
 	} else if user.IsDepartmentLeader {
 		// 部门负责人：返回所负责的部门 + 自己所属的部门（去重）
@@ -649,11 +655,16 @@ func (s *DepartmentService) GetManagedDepartmentsForFilter(userID uint) ([]dto.M
 		}
 
 		for _, leader := range leaders {
-			deptMap[leader.Department.ID] = dto.ManagedDepartmentResponse{
+			item := dto.ManagedDepartmentResponse{
 				ID:          leader.Department.ID,
 				Name:        leader.Department.Name,
 				Description: leader.Department.Description,
 			}
+			if withStats {
+				count := s.countDepartmentTasks(leader.Department.ID)
+				item.TaskCount = &count
+			}
+			deptMap[leader.Department.ID] = item
 		}
 
 		// 2. 添加自己所属的部门（如果有且未重复）
@@ -661,11 +672,16 @@ func (s *DepartmentService) GetManagedDepartmentsForFilter(userID uint) ([]dto.M
 			if _, exists := deptMap[*user.DepartmentID]; !exists {
 				var dept models.Department
 				if err := database.DB.First(&dept, *user.DepartmentID).Error; err == nil {
-					deptMap[dept.ID] = dto.ManagedDepartmentResponse{
+					item := dto.ManagedDepartmentResponse{
 						ID:          dept.ID,
 						Name:        dept.Name,
 						Description: dept.Description,
 					}
+					if withStats {
+						count := s.countDepartmentTasks(dept.ID)
+						item.TaskCount = &count
+					}
+					deptMap[dept.ID] = item
 				}
 			}
 		}
@@ -680,9 +696,56 @@ func (s *DepartmentService) GetManagedDepartmentsForFilter(userID uint) ([]dto.M
 	return result, nil
 }
 
+// countDepartmentTasks 统计部门任务数量（部门成员创建或执行的任务）
+func (s *DepartmentService) countDepartmentTasks(deptID uint) int64 {
+	// 获取部门所有成员ID
+	var memberIDs []uint
+
+	// 1. 获取部门负责人
+	var leaders []models.DepartmentLeader
+	if err := database.DB.Where("department_id = ?", deptID).Find(&leaders).Error; err == nil {
+		for _, leader := range leaders {
+			memberIDs = append(memberIDs, leader.UserID)
+		}
+	}
+
+	// 2. 获取部门普通成员
+	var members []models.User
+	if err := database.DB.Select("id").
+		Where("department_id = ? AND status != ?", deptID, models.UserStatusDisabled).
+		Find(&members).Error; err == nil {
+		for _, member := range members {
+			memberIDs = append(memberIDs, member.ID)
+		}
+	}
+
+	if len(memberIDs) == 0 {
+		return 0
+	}
+
+	// 去重
+	seen := make(map[uint]bool)
+	uniqueIDs := []uint{}
+	for _, id := range memberIDs {
+		if !seen[id] {
+			seen[id] = true
+			uniqueIDs = append(uniqueIDs, id)
+		}
+	}
+
+	// 统计任务数量
+	var count int64
+	database.DB.Model(&models.Task{}).
+		Where("creator_id IN ? OR executor_id IN ?", uniqueIDs, uniqueIDs).
+		Count(&count)
+
+	return count
+}
+
 // GetDepartmentMembersForFilter 获取部门成员列表（用于任务筛选）
 // 返回指定部门的所有成员，包括部门负责人
-func (s *DepartmentService) GetDepartmentMembersForFilter(deptID uint) ([]dto.DepartmentMemberForFilterResponse, error) {
+// withStats: 是否统计各成员任务数量
+func (s *DepartmentService) GetDepartmentMembersForFilter(deptID uint, withStats bool) ([]dto.DepartmentMemberForFilterResponse, error) {
 	// 验证部门存在
 	var dept models.Department
 	if err := database.DB.First(&dept, deptID).Error; err != nil {
@@ -704,12 +767,17 @@ func (s *DepartmentService) GetDepartmentMembersForFilter(deptID uint) ([]dto.De
 	for _, leader := range leaders {
 		var user models.User
 		if err := database.DB.Select("id, username, nickname").First(&user, leader.UserID).Error; err == nil {
-			result = append(result, dto.DepartmentMemberForFilterResponse{
+			item := dto.DepartmentMemberForFilterResponse{
 				UserID:   user.ID,
 				Username: user.Username,
 				Nickname: user.Nickname,
 				IsLeader: true,
-			})
+			}
+			if withStats {
+				count := s.countMemberTasks(user.ID)
+				item.TaskCount = &count
+			}
+			result = append(result, item)
 		}
 	}
 
@@ -726,13 +794,27 @@ func (s *DepartmentService) GetDepartmentMembersForFilter(deptID uint) ([]dto.De
 		if leaderIDs[member.ID] {
 			continue
 		}
-		result = append(result, dto.DepartmentMemberForFilterResponse{
+		item := dto.DepartmentMemberForFilterResponse{
 			UserID:   member.ID,
 			Username: member.Username,
 			Nickname: member.Nickname,
 			IsLeader: false,
-		})
+		}
+		if withStats {
+			count := s.countMemberTasks(member.ID)
+			item.TaskCount = &count
+		}
+		result = append(result, item)
 	}
 
 	return result, nil
+}
+
+// countMemberTasks 统计成员任务数量（该成员创建或执行的任务）
+func (s *DepartmentService) countMemberTasks(userID uint) int64 {
+	var count int64
+	database.DB.Model(&models.Task{}).
+		Where("creator_id = ? OR executor_id = ?", userID, userID).
+		Count(&count)
+	return count
 }

@@ -408,6 +408,7 @@ func (ctrl *DepartmentController) GetDepartmentTree(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
+// @Param with_stats query bool false "是否统计各部门任务数量" default(false)
 // @Success 200 {array} dto.ManagedDepartmentResponse "获取成功"
 // @Failure 401 {object} map[string]interface{} "未授权"
 // @Failure 500 {object} map[string]interface{} "服务器错误"
@@ -426,7 +427,10 @@ func (ctrl *DepartmentController) GetManagedDepartmentsForFilter(c *gin.Context)
 		return
 	}
 
-	departments, err := ctrl.deptService.GetManagedDepartmentsForFilter(userID)
+	// 获取 with_stats 参数
+	withStats := c.Query("with_stats") == "true"
+
+	departments, err := ctrl.deptService.GetManagedDepartmentsForFilter(userID, withStats)
 	if err != nil {
 		utils.Error(c, 500, err.Error())
 		return
@@ -443,6 +447,7 @@ func (ctrl *DepartmentController) GetManagedDepartmentsForFilter(c *gin.Context)
 // @Produce json
 // @Security BearerAuth
 // @Param id path int true "部门ID"
+// @Param with_stats query bool false "是否统计各成员任务数量" default(false)
 // @Success 200 {array} dto.DepartmentMemberForFilterResponse "获取成功"
 // @Failure 400 {object} map[string]interface{} "无效的部门ID"
 // @Failure 401 {object} map[string]interface{} "未授权"
@@ -456,7 +461,10 @@ func (ctrl *DepartmentController) GetDepartmentMembersForFilter(c *gin.Context) 
 		return
 	}
 
-	members, err := ctrl.deptService.GetDepartmentMembersForFilter(uint(id))
+	// 获取 with_stats 参数
+	withStats := c.Query("with_stats") == "true"
+
+	members, err := ctrl.deptService.GetDepartmentMembersForFilter(uint(id), withStats)
 	if err != nil {
 		utils.Error(c, 500, err.Error())
 		return

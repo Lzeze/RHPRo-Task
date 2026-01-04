@@ -13,7 +13,8 @@ services:
     environment:
       - TZ=Asia/Shanghai
     volumes:
-      - ./logs:/app/logs
+      - rhppro-logs:/app/logs
+      - rhppro-uploads:/app/uploads
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
@@ -22,3 +23,9 @@ services:
 networks:
   rhppro-network:
     driver: bridge
+
+volumes:
+  rhppro-logs:
+    driver: local
+  rhppro-uploads:
+    driver: local

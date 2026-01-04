@@ -325,6 +325,9 @@ definitions:
       nickname:
         description: 用户昵称
         type: string
+      task_count:
+        description: 任务总数（仅当 with_stats=true 时返回）
+        type: integer
       user_id:
         description: 用户ID
         type: integer
@@ -636,6 +639,9 @@ definitions:
       name:
         description: 部门名称
         type: string
+      task_count:
+        description: 任务总数（仅当 with_stats=true 时返回）
+        type: integer
     type: object
   dto.PaginationResponse:
     properties:
@@ -2543,6 +2549,11 @@ paths:
         name: id
         required: true
         type: integer
+      - default: false
+        description: 是否统计各成员任务数量
+        in: query
+        name: with_stats
+        type: boolean
       produces:
       - application/json
       responses:
@@ -2660,6 +2671,12 @@ paths:
       consumes:
       - application/json
       description: 获取当前用户可管理的部门列表，用于任务列表的部门筛选。超级管理员返回所有部门，部门负责人返回所负责的部门+所属部门，普通用户返回空列表
+      parameters:
+      - default: false
+        description: 是否统计各部门任务数量
+        in: query
+        name: with_stats
+        type: boolean
       produces:
       - application/json
       responses:
