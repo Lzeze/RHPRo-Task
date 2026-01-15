@@ -63,6 +63,17 @@ type Task struct {
 	SplitAt *time.Time `json:"split_at,omitempty"`
 	// 思路方案截止天数（需求类任务创建时可设定，表示执行人接受任务后需在N天内提交方案，0表示不限制）
 	SolutionDeadline *int `json:"solution_deadline,omitempty"`
+
+	// ========== 年度规划系统扩展字段 ==========
+	// 绑定的计划节点ID
+	// PlanNodeID *uint `gorm:"index" json:"plan_node_id,omitempty"`
+	// // 绑定时间
+	// BoundAt *time.Time `json:"bound_at,omitempty"`
+	// // 绑定人ID
+	// BoundBy *uint `json:"bound_by,omitempty"`
+
+	// // 关联
+	// PlanNode *PlanNode `gorm:"foreignKey:PlanNodeID" json:"plan_node,omitempty"`
 }
 
 // TableName 指定表名
