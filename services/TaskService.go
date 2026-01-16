@@ -576,8 +576,9 @@ func (s *TaskService) GetMyTasks(req *dto.TaskQueryRequest, userID uint) (*dto.P
 	offset := (page - 1) * pageSize
 
 	var tasks []models.Task
+	// 排序：已完成的靠后，最新创建的靠前
 	if err := baseQuery.Offset(offset).Limit(pageSize).
-		Order("created_at DESC").
+		Order("CASE WHEN status_code = 'completed' THEN 1 ELSE 0 END ASC, created_at DESC").
 		Find(&tasks).Error; err != nil {
 		return nil, err
 	}
