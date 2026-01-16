@@ -121,3 +121,35 @@ func PtrToResponseTime(t *time.Time) *ResponseTime {
 	rt := ToResponseTime(*t)
 	return &rt
 }
+
+// FormatTimeForDisplay 将时间字符串格式化为指定格式
+// value: 原始时间字符串
+// outputFormat: 输出格式，为空时默认使用 TimeFormatDatetime (YYYY-MM-DD HH:MM:SS)
+func FormatTimeForDisplay(value string, outputFormat ...string) string {
+	if value == "" {
+		return "空"
+	}
+
+	// 确定输出格式
+	format := TimeFormatDatetime
+	if len(outputFormat) > 0 && outputFormat[0] != "" {
+		format = outputFormat[0]
+	}
+
+	// 尝试多种日期格式解析
+	inputFormats := []string{
+		time.RFC3339,
+		"2006-01-02T15:04:05Z",
+		"2006-01-02T15:04:05",
+		"2006-01-02 15:04:05",
+		"2006-01-02",
+	}
+
+	for _, inputFormat := range inputFormats {
+		if t, err := time.Parse(inputFormat, value); err == nil {
+			return t.Format(format)
+		}
+	}
+
+	return value
+}

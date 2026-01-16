@@ -325,6 +325,8 @@ func (s *TaskDetailService) convertValueForDisplay(fieldName, value string, user
 		default:
 			return value
 		}
+	case "expected_start_date", "expected_end_date", "actual_start_date", "actual_end_date":
+		return dto.FormatTimeForDisplay(value)
 	default:
 		return value
 	}

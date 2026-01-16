@@ -142,7 +142,7 @@ func (s *TaskService) CreateTask(req *dto.TaskRequest, creatorID uint) (*models.
 		}
 		for _, status := range forbiddenStatuses {
 			if parentTask.StatusCode == status {
-				return nil, errors.New("父任务状态不允许创建子任务")
+				return nil, errors.New("父任务状态待开始之前不允许创建子任务")
 			}
 		}
 		// }
